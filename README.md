@@ -1,3 +1,17 @@
+BitcoinZ - Your Financial Freedom
+- Anonymous coin
+- Supply 21B coins / 12500 coins every 2.5 minutes
+- no premine / no tax
+- tech: zcl spirit + zcash white paper + bitcoin 
+- no corpo coin
+- current block: 71 / no public pools 
+- pure community coin 
+- post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
+- post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
+- post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
+
+Mother coins: ZCL, ZEC, BTC
+
 Zclassic v1.0.10-1
 
 NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
