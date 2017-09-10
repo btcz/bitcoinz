@@ -14,7 +14,7 @@ BitcoinZ - Your Financial Freedom
 
 Mother coins: ZCL, ZEC, BTC
 
-BitcoinZ are unfinished and highly experimental. Use at your own risk.
+BitcoinZ is unfinished and highly experimental. Use at your own risk.
 
 Zclassic v1.0.10-1
 
