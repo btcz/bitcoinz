@@ -1,7 +1,7 @@
 # BitcoinZ - Your Financial Freedom
 - ticker: BTZ
 - Anonymous coin
-- Supply 21B coins / 12500 coins every 2.5 minutes
+- Max supply 21B coins / Current supply: 12500 coins every 2.5 minutes
 - No premine / no tax
 - Tech: zcl spirit + zcash white paper + bitcoin. Current block size is equal BCC (2MB every 2.5 mins)  
 - Always POW!
