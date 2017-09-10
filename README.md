@@ -7,11 +7,13 @@
 - Always POW! (We don't have any plans to switch to POS)
 - Announcement block: 71 / no public pools 
 - No corpo coin  / Pure community coin 
+- Mother coins: ZCL, ZEC, BTC
+
+- [bitcointalk.org ANN thread](https://bitcointalk.org/index.php?topic=2166510.new#new)
+
 - Post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
 - Post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
 - Post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
-
-Mother coins: ZCL, ZEC, BTC
 
 ## Roadmap
 - Integrate community to setup more nodes / exchanges listing / post ANN thread / setup slack 
