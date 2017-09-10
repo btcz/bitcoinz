@@ -3,6 +3,7 @@ BitcoinZ - Your Financial Freedom
 - Supply 21B coins / 12500 coins every 2.5 minutes
 - no premine / no tax
 - tech: zcl spirit + zcash white paper + bitcoin 
+- always POW!
 - no corpo coin
 - current block: 71 / no public pools 
 - pure community coin 
