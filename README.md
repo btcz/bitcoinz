@@ -1,21 +1,28 @@
-BitcoinZ - Your Financial Freedom
+# BitcoinZ - Your Financial Freedom
 - ticker: BTZ
 - Anonymous coin
 - Supply 21B coins / 12500 coins every 2.5 minutes
-- no premine / no tax
-- tech: zcl spirit + zcash white paper + bitcoin 
-- always POW!
-- no corpo coin
-- current block: 71 / no public pools 
-- pure community coin 
-- post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
-- post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
-- post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
+- No premine / no tax
+- Tech: zcl spirit + zcash white paper + bitcoin. Current block size is equal BCC (2MB every 2.5 mins)  
+- Always POW!
+- No corpo coin
+- Announcement block: 71 / no public pools 
+- Pure community coin 
+- Post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
+- Post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
+- Post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
 
 Mother coins: ZCL, ZEC, BTC
 
+## Roadmap
+- Integrate community to setup more nodes / exchanges listing / post ANN thread / setup slack 
+- Finish rebranding
+- Merge latest ZEC changes
+- Enable Segwit
+
 BitcoinZ is unfinished and highly experimental. Use at your own risk.
 
+==========================
 Zclassic v1.0.10-1
 
 NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
