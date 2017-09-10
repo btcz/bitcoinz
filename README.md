@@ -2,12 +2,11 @@
 - ticker: BTZ
 - Anonymous coin
 - Max supply 21B coins / Current supply: 12500 coins every 2.5 minutes
-- No premine / no tax
+- No premine (Satoshi has about 10% of BTC marketcap!) / no tax 
 - Tech: zcl spirit + zcash white paper + bitcoin. Current block size is equal BCC (2MB every 2.5 mins)  
-- Always POW!
-- No corpo coin
+- Always POW! (We don't have any plans to switch to POS)
 - Announcement block: 71 / no public pools 
-- Pure community coin 
+- No corpo coin  / Pure community coin 
 - Post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
 - Post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
 - Post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
