@@ -1,4 +1,5 @@
 BitcoinZ - Your Financial Freedom
+- ticker: BTZ
 - Anonymous coin
 - Supply 21B coins / 12500 coins every 2.5 minutes
 - no premine / no tax
@@ -12,6 +13,8 @@ BitcoinZ - Your Financial Freedom
 - post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
 
 Mother coins: ZCL, ZEC, BTC
+
+BitcoinZ are unfinished and highly experimental. Use at your own risk.
 
 Zclassic v1.0.10-1
 
