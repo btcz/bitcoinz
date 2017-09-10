@@ -23,6 +23,7 @@ Mother coins: ZCL, ZEC, BTC
 BitcoinZ is unfinished and highly experimental. Use at your own risk.
 
 ==========================
+
 Zclassic v1.0.10-1
 
 NOTICE, the default ports have changed! The p2p port is now 8033 and rpcport is 8023
