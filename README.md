@@ -9,7 +9,9 @@
 - No corpo coin  / Pure community coin 
 - Mother coins: ZCL, ZEC, BTC
 
+
 - [bitcointalk.org ANN thread](https://bitcointalk.org/index.php?topic=2166510.new#new)
+
 
 - Post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
 - Post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
