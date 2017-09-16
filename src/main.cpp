@@ -1372,9 +1372,11 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if (!(CheckEquihashSolution(&block, Params()) &&
-          CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    if (block.GetHash() != Params().GenesisBlock().GetHash()) {
+		if (!(CheckEquihashSolution(&block, Params()) &&
+			  CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
+			return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    }
 
     return true;
 }
