@@ -1,4 +1,4 @@
-#BitcoinZ - Your Financial Freedom
+# BitcoinZ - Your Financial Freedom
 Community gift to the World.
 
 Type: Cryptocurrency
@@ -9,7 +9,7 @@ Tech: zcl spirit + zcash white paper + bitcoin.
 Current block size is similar to BCC/BCH (BTZ = 2MB every 2.5 mins ~ BCC/BCH = 8MB every 10 min)
 Mother coins: ZCL, ZEC, BTC
 
-##BitcoinZ Principles: 
+## BitcoinZ Principles: 
 - Anonymous
 It is recommended to use anonymous zaddr for all transactions. Public taddrs transactions are also allowed.
 - All contributors are welcome and everyone is volunteer - no premine or dev taxes (Satoshi has about 10% of BTC marketcap!)
