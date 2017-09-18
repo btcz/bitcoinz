@@ -465,7 +465,7 @@ boost::filesystem::path GetDefaultDataDir()
     return pathRet / "Zclassic";
 #else
     // Unix
-    return pathRet / ".zclassic";
+    return pathRet / ".bitcoinz";
 #endif
 #endif
 }
@@ -582,7 +582,7 @@ void ClearDatadirCache()
 
 boost::filesystem::path GetConfigFile()
 {
-    boost::filesystem::path pathConfigFile(GetArg("-conf", "zclassic.conf"));
+    boost::filesystem::path pathConfigFile(GetArg("-conf", "bitcoinz.conf"));
     if (!pathConfigFile.is_complete())
         pathConfigFile = GetDataDir(false) / pathConfigFile;
 
