@@ -38,6 +38,7 @@ All exchanges are allowed. The best one are decentralized. We plan to implement 
 
 ### Ports:
 RPC port: 1979
+
 P2P port: 1989
 
 Install
