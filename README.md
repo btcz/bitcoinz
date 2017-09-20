@@ -33,13 +33,13 @@ All exchanges are allowed. The best one are decentralized. We plan to implement 
 - Post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
 
 ## Roadmap
-- Update to latest Zcash codebase
-- Finish rebranding
+- Windows build
+- Windows GUI wallet
+- Anonymous messaging channels
 
 ### Ports:
-RPC port: 1979
-
-P2P port: 1989
+- RPC port: 1979
+- P2P port: 1989
 
 Install
 -----------------
