@@ -36,6 +36,11 @@ All exchanges are allowed. The best one are decentralized. We plan to implement 
 - Update to latest Zcash codebase
 - Finish rebranding
 
+### Ports:
+RPC port: 1979
+
+P2P port: 1989
+
 Install
 -----------------
 ### Linux
