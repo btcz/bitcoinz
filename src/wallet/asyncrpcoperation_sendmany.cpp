@@ -93,6 +93,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         }
     }
 
+    if (isfromzaddr_ && minDepth==0) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Minconf cannot be zero when sending from zaddr");
+    }
+
     // Log the context info i.e. the call parameters to z_sendmany
     if (LogAcceptCategory("zrpcunsafe")) {
         LogPrint("zrpcunsafe", "%s: z_sendmany initialized (params=%s)\n", getId(), contextInfo.write());
@@ -589,6 +593,10 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             {
                 LOCK2(cs_main, pwalletMain->cs_wallet);
                 const CWalletTx& wtx = pwalletMain->mapWallet[jso.hash];
+                // Zero confirmaton notes belong to transactions which have not yet been mined
+                if (mapBlockIndex.find(wtx.hashBlock) == mapBlockIndex.end()) {
+                    throw JSONRPCError(RPC_WALLET_ERROR, strprintf("mapBlockIndex does not contain block hash %s", wtx.hashBlock.ToString()));
+                }
                 wtxHeight = mapBlockIndex[wtx.hashBlock]->nHeight;
                 wtxDepth = wtx.GetDepthInMainChain();
             }

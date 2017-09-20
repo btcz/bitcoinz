@@ -112,3 +112,6 @@ libzcashconsensus.pc
 
 contrib/debian/files
 contrib/debian/substvars
+
+.idea/
+*.iml
