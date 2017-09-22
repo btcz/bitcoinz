@@ -7,9 +7,8 @@ Community gift to the World.
 - Ticker: BTZ
 - Algo: Equihash
 - Max supply 21B coins / Current supply: 12500 coins every 2.5 minutes
-- Tech: zcl spirit + zcash white paper + bitcoin. 
 - Current block size is similar to BCC/BCH (BTZ = 2MB every 2.5 mins ~ BCC/BCH = 8MB every 10 min)
-- Mother coins: ZCL, ZEC, BTC
+- Technology / Mother coins: ZCL spirit, ZEC privacy, BTC fundamentals
 
 ## BitcoinZ Principles: 
 - Anonymous
