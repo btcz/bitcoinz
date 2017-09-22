@@ -32,6 +32,8 @@ All exchanges are allowed. The best one are decentralized. We plan to implement 
 - Post your nodes https://github.com/bitcoinz-pod/bitcoinz/issues/1
 - Post pools: https://github.com/bitcoinz-pod/bitcoinz/issues/2
 - Post exchanges: https://github.com/bitcoinz-pod/bitcoinz/issues/3
+- Explorers
+https://btzexplorer.blockhub.info
 
 [BitcoinZ Cold Wallet](https://github.com/bitcoinz-pod/zgenerate/releases) - Windows binary is available. All you need to own all coin in your address is only private key.
 
