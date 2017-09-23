@@ -69,7 +69,7 @@ Install
 ```
 
 ### Windows
-Windows build is maintained in (bitcoinz-win)[https://github.com/bitcoinz-pod/bitcoinz-win] project.
+Windows build is maintained in [bitcoinz-win project](https://github.com/bitcoinz-pod/bitcoinz-win).
 
 Security Warnings
 -----------------
