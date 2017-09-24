@@ -99,6 +99,8 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
+        // use name as: echo -n hostname | sha256sum
+        vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.btz", "btzseed.blockhub.info"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
