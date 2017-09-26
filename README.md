@@ -35,7 +35,9 @@ All exchanges are allowed. The best one are decentralized. We plan to implement 
 - Explorers
 https://btzexplorer.blockhub.info
 
-[BitcoinZ Cold Wallet](https://github.com/bitcoinz-pod/zgenerate/releases) - Windows binary is available. All you need to own all coin in your address is only private key.
+### Other wallets
+- [BitcoinZ Windows Wallet](https://github.com/bitcoinz-pod/bitcoinz-windows-wallet/releases)
+- [BitcoinZ Cold Wallet](https://github.com/bitcoinz-pod/zgenerate/releases) - Windows binary is available. All you need to own all coin in your address is only private key.
 
 ## Roadmap
 - Windows build
