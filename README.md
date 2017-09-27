@@ -76,7 +76,4 @@ Windows build is maintained in [bitcoinz-win project](https://github.com/bitcoin
 Security Warnings
 -----------------
 
-See important security warnings in
-[doc/security-warnings.md](doc/security-warnings.md).
-
-BitcoinZ is unfinished and highly experimental. Use at your own risk.
+**BitcoinZ is experimental and a work-in-progress.** Use at your own risk.
