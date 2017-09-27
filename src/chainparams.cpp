@@ -38,7 +38,7 @@ class CMainParams : public CChainParams {
 public:
     CMainParams() {
         strNetworkID = "main";
-        strCurrencyUnits = "BTZ";
+        strCurrencyUnits = "BTCZ";
         consensus.fCoinbaseMustBeProtected = true;
         consensus.nSubsidySlowStartInterval = 2;
         consensus.nSubsidyHalvingInterval = 840000;
@@ -100,7 +100,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
-        vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.btz", "btzseed.blockhub.info"));
+        vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
@@ -143,7 +143,7 @@ public:
 			( 2008, uint256S("0x000001877891c7c11f77acf00d35f10b24bac5a7e1f5526ff9adc6c660e233ff"))
 			( 2011, uint256S("0x00000189d75d3f0a0f2d4bb8d5235b38b28ebafb3f3aca9770a656ed61ec24cc"))
 			( 2016, uint256S("0x000000dba6dde8505b0dde0e8be0f3f731e3686087dc43f30b2baf2f904ebeac"))
-			( 4121, uint256S("0x0000005f730aad045c803d6a6732994ed1b7536f47d542c3a07944b90011ad18")),
+			( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40")),
 			1505597832,
 			6821,
             953

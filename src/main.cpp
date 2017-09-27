@@ -41,7 +41,7 @@
 using namespace std;
 
 #if defined(NDEBUG)
-# error "Zcash cannot be compiled without assertions."
+# error "BitcoinZ cannot be compiled without assertions."
 #endif
 
 /**
@@ -94,7 +94,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Zcash Signed Message:\n";
+const string strMessageMagic = "BitcoinZ Signed Message:\n";
 
 // Internal stuff
 namespace {
