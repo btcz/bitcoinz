@@ -103,6 +103,7 @@ public:
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
         vSeeds.push_back(CDNSSeedData("2d59ee78b381697a4795079b1232396b64bc06ab5bd08d094d0a41d999edbf7a.BTCZ", "bitcoinz.ph"));
         vSeeds.push_back(CDNSSeedData("7e2071b6fc04a4b47d4973958d931d41479ffe069dc4c611f4a9d8ce8be737a9.BTCZ", "zparty.pl"));
+        vSeeds.push_back(CDNSSeedData("6587c9bfccb608dddf1dbba7e2ec8fc91ebe70138e175e2949f3588934687b9b.BTCZ", "dnsseed.kemperink.org"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
