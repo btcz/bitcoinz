@@ -28,32 +28,6 @@ function zcashd_generate {
     zcash_rpc generate 101 > /dev/null
 }
 
-function extract_benchmark_datadir {
-    if [ -f "$1.tar.xz" ]; then
-        # Check the hash of the archive:
-        "$SHA256CMD" $SHA256ARGS -c <<EOF
-$2  $1.tar.xz
-EOF
-        ARCHIVE_RESULT=$?
-    else
-        echo "$1.tar.xz not found."
-        ARCHIVE_RESULT=1
-    fi
-    if [ $ARCHIVE_RESULT -ne 0 ]; then
-        zcashd_stop
-        echo
-        echo "Please download it and place it in the base directory of the repository."
-        exit 1
-    fi
-    xzcat "$1.tar.xz" | tar x
-}
-
-function use_200k_benchmark {
-    rm -rf benchmark-200k-UTXOs
-    extract_benchmark_datadir benchmark-200k-UTXOs dc8ab89eaa13730da57d9ac373c1f4e818a37181c1443f61fd11327e49fbcc5e
-    DATADIR="./benchmark-200k-UTXOs/node$1"
-}
-
 function zcashd_start {
     case "$1" in
         sendtoaddress|loadwallet)
@@ -65,7 +39,7 @@ function zcashd_start {
                     use_200k_benchmark 1
                     ;;
                 *)
-                    echo "Bad arguments."
+                    echo "Bad arguments to zcashd_start."
                     exit 1
             esac
             ;;
@@ -95,7 +69,7 @@ function zcashd_massif_start {
                     use_200k_benchmark 1
                     ;;
                 *)
-                    echo "Bad arguments."
+                    echo "Bad arguments to zcashd_massif_start."
                     exit 1
             esac
             ;;
@@ -204,11 +178,11 @@ case "$1" in
                 zcash_rpc zcbenchmark sendtoaddress 10 "${@:4}"
                 ;;
             loadwallet)
-                zcash_rpc zcbenchmark loadwallet 10 
+                zcash_rpc zcbenchmark loadwallet 10
                 ;;
             *)
                 zcashd_stop
-                echo "Bad arguments."
+                echo "Bad arguments to time."
                 exit 1
         esac
         zcashd_stop
@@ -247,9 +221,12 @@ case "$1" in
             sendtoaddress)
                 zcash_rpc zcbenchmark sendtoaddress 1 "${@:4}"
                 ;;
+            loadwallet)
+                # The initial load is sufficient for measurement
+                ;;
             *)
                 zcashd_massif_stop
-                echo "Bad arguments."
+                echo "Bad arguments to memory."
                 exit 1
         esac
         zcashd_massif_stop
@@ -288,7 +265,7 @@ case "$1" in
                 ;;
             *)
                 zcashd_valgrind_stop
-                echo "Bad arguments."
+                echo "Bad arguments to valgrind."
                 exit 1
         esac
         zcashd_valgrind_stop
@@ -309,12 +286,12 @@ case "$1" in
                 rm -f valgrind.out
                 ;;
             *)
-                echo "Bad arguments."
+                echo "Bad arguments to valgrind-tests."
                 exit 1
         esac
         ;;
     *)
-        echo "Bad arguments."
+        echo "Invalid benchmark type."
         exit 1
 esac
 
