@@ -27,7 +27,6 @@ then
     echo "rpcuser=rpc`pwgen 15 1`" > ~/.bitcoinz/bitcoinz.conf
     echo "rpcpassword=rpc`pwgen 15 1`" >> ~/.bitcoinz/bitcoinz.conf
 fi
-./fetch-params.sh
 EOF
 chmod +x /tmp/config_setup.sh
 sudo -H -u $1 /tmp/config_setup.sh
