@@ -11,7 +11,7 @@ if id "$1" >/dev/null 2>&1
 then
     echo "Installing BitcoinZ service for $1 user..."
 else
-    echo -e "User $1 does not exist.\nTo add user run the following command:\nsudo adduser --disabled-password --gecos "" $1"
+    echo -e "User $1 does not exist.\nTo add user run the following command:\nsudo adduser --disabled-password --gecos '' $1"
     exit 1
 fi
 
