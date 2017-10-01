@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt -y update
-sudo apt-get install -y libc6-dev g++-multilib python p7zip-full pwgen jq curl egrep
+sudo apt-get install -y libc6-dev g++-multilib python p7zip-full pwgen jq curl
 cd ~
 
 if [ -f bitcoinz.zip ]
