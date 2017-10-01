@@ -1,2 +1,2 @@
 BitcoinZ Team:
-      Rebranding
+      https://github.com/bitcoinz-pod/bitcoinz-windows-wallet/releases

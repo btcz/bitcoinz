@@ -6,7 +6,7 @@ set -e
 set -x
 
 BUILD_PATH="/tmp/zcbuild"
-PACKAGE_NAME="zcash"
+PACKAGE_NAME="bitcoinz"
 SRC_PATH=`pwd`
 SRC_DEB=$SRC_PATH/contrib/debian
 SRC_DOC=$SRC_PATH/doc
@@ -42,7 +42,7 @@ cp $SRC_PATH/src/zcashd $DEB_BIN
 cp $SRC_PATH/src/zcash-cli $DEB_BIN
 cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/zcash-fetch-params
 # Copy docs
-cp $SRC_PATH/doc/release-notes/release-notes-1.0.0.md $DEB_DOC/changelog
+cp $SRC_PATH/doc/release-notes/release-notes-1.0.2.md $DEB_DOC/changelog
 cp $SRC_DEB/changelog $DEB_DOC/changelog.Debian
 cp $SRC_DEB/copyright $DEB_DOC
 cp -r $SRC_DEB/examples $DEB_DOC
