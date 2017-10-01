@@ -52,6 +52,8 @@ Install
 -----------------
 ### Linux
 
+### [Quick guide for beginners](https://github.com/bitcoinz-pod/bitcoinz/wiki/Quick-guide-for-beginners)
+
 Get dependencies
 ```{r, engine='bash'}
 sudo apt-get install \
