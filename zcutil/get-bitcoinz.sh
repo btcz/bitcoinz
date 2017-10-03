@@ -10,6 +10,7 @@ then
 fi
 wget -O bitcoinz.zip `curl -s 'https://api.github.com/repos/bitcoinz-pod/bitcoinz/releases/latest' | jq -r '.assets[].browser_download_url' | egrep "bitcoinz.+x64.zip"`
 7z x -y bitcoinz.zip
+chmod a+x ~/bitcoinz-pkg/*
 rm bitcoinz.zip
 
 cd ~/bitcoinz-pkg
