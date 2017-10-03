@@ -1,7 +1,9 @@
-![BTCZ](https://raw.githubusercontent.com/wiki/bitcoinz-pod/bitcoinz/BitcoinZ.png)
-
 # BitcoinZ - Your Financial Freedom
 Community gift to the World.
+
+**Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
+
+![BTCZ](https://raw.githubusercontent.com/wiki/bitcoinz-pod/bitcoinz/BitcoinZ.png)
 
 - Type: Cryptocurrency
 - Ticker: BTCZ
