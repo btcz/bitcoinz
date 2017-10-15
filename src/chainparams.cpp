@@ -147,7 +147,8 @@ public:
             ( 2008, uint256S("0x000001877891c7c11f77acf00d35f10b24bac5a7e1f5526ff9adc6c660e233ff"))
             ( 2011, uint256S("0x00000189d75d3f0a0f2d4bb8d5235b38b28ebafb3f3aca9770a656ed61ec24cc"))
             ( 2016, uint256S("0x000000dba6dde8505b0dde0e8be0f3f731e3686087dc43f30b2baf2f904ebeac"))
-            ( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40")),
+            ( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40"))
+            ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")), // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
             1505597832,
             6821,
             953
