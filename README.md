@@ -3,7 +3,7 @@ Community gift to the World.
 
 **Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
-![BTCZ](https://raw.githubusercontent.com/wiki/bitcoinz-pod/bitcoinz/BitcoinZ.png)
+![BTCZ](https://ip.bitcointalk.org/?u=https%3A%2F%2Fi.imgur.com%2FXflfHDN.png&t=582&c=-VhG9Suykc7RCA)
 
 - Type: Cryptocurrency
 - Ticker: BTCZ
