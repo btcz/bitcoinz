@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec zcash-cli --datadir=/bitcoinz/data "${@}"

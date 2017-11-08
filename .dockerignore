@@ -1,0 +1,4 @@
+Makefile
+doc/man/Makefile
+src/Makefile
+Dockerfile
