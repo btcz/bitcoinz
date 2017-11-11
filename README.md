@@ -1,7 +1,7 @@
-# BitcoinZ - Your Financial Freedom
-Community gift to the World.
+# BitcoinZ - Your Financial Freedom with Anonymous Transactions
+The community gift to the world.
 
-**Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
+**Keep your wallet running to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coin wallet offline.**
 
 ![BTCZ](https://ip.bitcointalk.org/?u=https%3A%2F%2Fi.imgur.com%2FXflfHDN.png&t=582&c=-VhG9Suykc7RCA)
 
