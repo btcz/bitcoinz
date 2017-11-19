@@ -105,6 +105,10 @@ public:
         vSeeds.push_back(CDNSSeedData("7e2071b6fc04a4b47d4973958d931d41479ffe069dc4c611f4a9d8ce8be737a9.BTCZ", "zparty.pl"));
         vSeeds.push_back(CDNSSeedData("6587c9bfccb608dddf1dbba7e2ec8fc91ebe70138e175e2949f3588934687b9b.BTCZ", "dnsseed.kemperink.org"));
         vSeeds.push_back(CDNSSeedData("a094ea4307abc8b674662175d8e0627c4a30e4916b98ca4b160c2de6e321767c.BTCZ", "seeder.nomadteam.net"));
+        vSeeds.push_back(CDNSSeedData("487658a406d62f020c5656d50923f094a688b92d6c85b3ccd8769b60b2c6449f.BTCZ", "btcz.webrats.com"));
+        vSeeds.push_back(CDNSSeedData("74e66cfeadbfe82ce1f328850f48d67b0cf93777ff843935fa183ffe151e28cb.BTCZ", "btcz.es"));
+        vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
+        vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
@@ -148,7 +152,8 @@ public:
             ( 2011, uint256S("0x00000189d75d3f0a0f2d4bb8d5235b38b28ebafb3f3aca9770a656ed61ec24cc"))
             ( 2016, uint256S("0x000000dba6dde8505b0dde0e8be0f3f731e3686087dc43f30b2baf2f904ebeac"))
             ( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40"))
-            ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")), // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
+            ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")) // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
+            ( 40000, uint256S("0x00000005a2d9a94e2e16f9c1e578a2eb46cc267ab7a51539d22ff8aa0096140b")),
             1505597832,
             6821,
             953
