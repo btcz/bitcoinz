@@ -101,8 +101,6 @@ public:
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
-        vSeeds.push_back(CDNSSeedData("8f5854b5a55e7e440f86061528d138245e56c53ed2a494b0376a7d4919d51d21.BTCZ", "seed.bitcoinz.ph"));
-        vSeeds.push_back(CDNSSeedData("7e2071b6fc04a4b47d4973958d931d41479ffe069dc4c611f4a9d8ce8be737a9.BTCZ", "zparty.pl"));
         vSeeds.push_back(CDNSSeedData("6587c9bfccb608dddf1dbba7e2ec8fc91ebe70138e175e2949f3588934687b9b.BTCZ", "dnsseed.kemperink.org"));
         vSeeds.push_back(CDNSSeedData("a094ea4307abc8b674662175d8e0627c4a30e4916b98ca4b160c2de6e321767c.BTCZ", "seeder.nomadteam.net"));
         vSeeds.push_back(CDNSSeedData("487658a406d62f020c5656d50923f094a688b92d6c85b3ccd8769b60b2c6449f.BTCZ", "btcz.webrats.com"));
