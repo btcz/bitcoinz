@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef __UNIVALUE_H__
-#define __UNIVALUE_H__
+#ifndef UNIVALUE_H__
+#define UNIVALUE_H__
 
 #include <stdint.h>
 
@@ -25,11 +25,6 @@ public:
         typ = initialType;
         val = initialStr;
     }
-    #ifdef __APPLE__
-    UniValue(size_t val_) {
-        setInt((uint64_t)val_);
-    }
-    #endif
     UniValue(uint64_t val_) {
         setInt(val_);
     }
@@ -59,9 +54,6 @@ public:
     bool setNull();
     bool setBool(bool val);
     bool setNumStr(const std::string& val);
-    #ifdef __APPLE__
-    bool setInt(size_t val);
-    #endif
     bool setInt(uint64_t val);
     bool setInt(int64_t val);
     bool setInt(int val_) { return setInt((int64_t)val_); }
@@ -197,14 +189,7 @@ static inline std::pair<std::string,UniValue> Pair(const char *cKey, std::string
     UniValue uVal(strVal);
     return std::make_pair(key, uVal);
 }
-#ifdef __APPLE__
-static inline std::pair<std::string,UniValue> Pair(const char *cKey, size_t u64Val)
-{
-    std::string key(cKey);
-    UniValue uVal(u64Val);
-    return std::make_pair(key, uVal);
-}
-#endif
+
 static inline std::pair<std::string,UniValue> Pair(const char *cKey, uint64_t u64Val)
 {
     std::string key(cKey);
@@ -308,4 +293,4 @@ extern const UniValue NullUniValue;
 
 const UniValue& find_value( const UniValue& obj, const std::string& name);
 
-#endif // __UNIVALUE_H__
+#endif // UNIVALUE_H__

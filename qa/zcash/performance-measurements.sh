@@ -28,9 +28,35 @@ function zcashd_generate {
     zcash_rpc generate 101 > /dev/null
 }
 
+function extract_benchmark_datadir {
+    if [ -f "$1.tar.xz" ]; then
+        # Check the hash of the archive:
+        "$SHA256CMD" $SHA256ARGS -c <<EOF
+$2  $1.tar.xz
+EOF
+        ARCHIVE_RESULT=$?
+    else
+        echo "$1.tar.xz not found."
+        ARCHIVE_RESULT=1
+    fi
+    if [ $ARCHIVE_RESULT -ne 0 ]; then
+        zcashd_stop
+        echo
+        echo "Please download it and place it in the base directory of the repository."
+        exit 1
+    fi
+    xzcat "$1.tar.xz" | tar x
+}
+
+function use_200k_benchmark {
+    rm -rf benchmark-200k-UTXOs
+    extract_benchmark_datadir benchmark-200k-UTXOs dc8ab89eaa13730da57d9ac373c1f4e818a37181c1443f61fd11327e49fbcc5e
+    DATADIR="./benchmark-200k-UTXOs/node$1"
+}
+
 function zcashd_start {
     case "$1" in
-        sendtoaddress|loadwallet)
+        sendtoaddress|loadwallet|listunspent)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
@@ -46,7 +72,7 @@ function zcashd_start {
         *)
             rm -rf "$DATADIR"
             mkdir -p "$DATADIR/regtest"
-            touch "$DATADIR/bitcoinz.conf"
+            touch "$DATADIR/zcash.conf"
     esac
     ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
@@ -60,7 +86,7 @@ function zcashd_stop {
 
 function zcashd_massif_start {
     case "$1" in
-        sendtoaddress|loadwallet)
+        sendtoaddress|loadwallet|listunspent)
             case "$2" in
                 200k-recv)
                     use_200k_benchmark 0
@@ -76,7 +102,7 @@ function zcashd_massif_start {
         *)
             rm -rf "$DATADIR"
             mkdir -p "$DATADIR/regtest"
-            touch "$DATADIR/bitcoinz.conf"
+            touch "$DATADIR/zcash.conf"
     esac
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
@@ -127,6 +153,13 @@ EOF
     fi
     xzcat block-107134.tar.xz | tar x -C "$DATADIR/regtest"
 }
+
+
+if [ $# -lt 2 ]
+then
+    echo "$0 : At least two arguments are required!"
+    exit 1
+fi
 
 # Precomputation
 case "$1" in
@@ -180,6 +213,9 @@ case "$1" in
             loadwallet)
                 zcash_rpc zcbenchmark loadwallet 10
                 ;;
+            listunspent)
+                zcash_rpc zcbenchmark listunspent 10
+                ;;
             *)
                 zcashd_stop
                 echo "Bad arguments to time."
@@ -208,6 +244,9 @@ case "$1" in
             verifyequihash)
                 zcash_rpc zcbenchmark verifyequihash 1
                 ;;
+            validatelargetx)
+                zcash_rpc zcbenchmark validatelargetx 1
+                ;;
             trydecryptnotes)
                 zcash_rpc zcbenchmark trydecryptnotes 1 "${@:3}"
                 ;;
@@ -223,6 +262,9 @@ case "$1" in
                 ;;
             loadwallet)
                 # The initial load is sufficient for measurement
+                ;;
+            listunspent)
+                zcash_rpc zcbenchmark listunspent 1
                 ;;
             *)
                 zcashd_massif_stop

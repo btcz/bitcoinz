@@ -2,11 +2,7 @@
 
 set -eu
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    PARAMS_DIR="$HOME/Library/Application Support/ZcashParams"
-else
-    PARAMS_DIR="$HOME/.zcash-params"
-fi
+PARAMS_DIR="$HOME/.zcash-params"
 
 SPROUT_PKEY_NAME='sprout-proving.key'
 SPROUT_VKEY_NAME='sprout-verifying.key'
@@ -63,7 +59,7 @@ EOF
 function fetch_failure {
     cat >&2 <<EOF
 
-Failed to fetch the BitcoinZ zkSNARK parameters!
+Failed to fetch the Zcash zkSNARK parameters!
 Try installing one of the following programs and make sure you're online:
 
  * ipfs
@@ -116,7 +112,7 @@ function lock() {
 
 function exit_locked_error {
     echo "Only one instance of fetch-params.sh can be run at a time." >&2
-    #exit 1
+    exit 1
 }
 
 function main() {
@@ -125,9 +121,9 @@ function main() {
     || exit_locked_error
 
     cat <<EOF
-BitcoinZ - fetch-params.sh
+Zcash - fetch-params.sh
 
-This script will fetch the BitcoinZ zkSNARK parameters and verify their
+This script will fetch the Zcash zkSNARK parameters and verify their
 integrity with sha256sum.
 
 If they already exist locally, it will exit now and do nothing else.
@@ -139,7 +135,7 @@ EOF
         mkdir -p "$PARAMS_DIR"
         README_PATH="$PARAMS_DIR/README"
         cat >> "$README_PATH" <<EOF
-This directory stores common BitcoinZ zkSNARK parameters. Note that it is
+This directory stores common Zcash zkSNARK parameters. Note that it is
 distinct from the daemon's -datadir argument because the parameters are
 large and may be shared across multiple distinct -datadir's such as when
 setting up test networks.

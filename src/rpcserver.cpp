@@ -246,7 +246,8 @@ UniValue stop(const UniValue& params, bool fHelp)
         throw runtime_error(
             "stop\n"
             "\nStop BitcoinZ server.");
-    // Shutdown will take long enough that the response should get back
+    // Event loop will exit after current HTTP requests have been handled, so
+    // this reply will get back to the client.
     StartShutdown();
     return "BitcoinZ server stopping";
 }
@@ -395,7 +396,11 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "z_exportkey",            &z_exportkey,            true  },
     { "wallet",             "z_importkey",            &z_importkey,            true  },
     { "wallet",             "z_exportwallet",         &z_exportwallet,         true  },
-    { "wallet",             "z_importwallet",         &z_importwallet,         true  }
+    { "wallet",             "z_importwallet",         &z_importwallet,         true  },
+
+    // TODO: rearrange into another category
+    { "disclosure",         "z_getpaymentdisclosure", &z_getpaymentdisclosure, true  },
+    { "disclosure",         "z_validatepaymentdisclosure", &z_validatepaymentdisclosure, true }
 #endif // ENABLE_WALLET
 };
 

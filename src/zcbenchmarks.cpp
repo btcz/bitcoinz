@@ -61,7 +61,7 @@ void post_wallet_load(){
     // Generate coins in the background
     if (pwalletMain || !GetArg("-mineraddress", "").empty())
         GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain, GetArg("-genproclimit", 1));
-#endif    
+#endif
 }
 
 
@@ -97,11 +97,7 @@ double benchmark_parameter_loading()
     struct timeval tv_start;
     timer_start(tv_start);
 
-    auto newParams = ZCJoinSplit::Unopened();
-
-    newParams->loadVerifyingKey(vk_path.string());
-    newParams->setProvingKeyPath(pk_path.string());
-    newParams->loadProvingKey();
+    auto newParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
 
     double ret = timer_stop(tv_start);
 
@@ -464,4 +460,13 @@ double benchmark_loadwallet()
     auto res = timer_stop(tv_start);
     post_wallet_load();
     return res;
+}
+
+double benchmark_listunspent()
+{
+    UniValue params(UniValue::VARR);
+    struct timeval tv_start;
+    timer_start(tv_start);
+    auto unspent = listunspent(params, false);
+    return timer_stop(tv_start);
 }
