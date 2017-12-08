@@ -9,6 +9,6 @@
 52.50.226.122:1989
 46.101.249.50:1989
 
-
 # Onion nodes
-ajnnljf6ybwyazfw.onion:1989
+sp6lvlurevy4fplr.onion
+xiv7crijwn4i4hwj.onion

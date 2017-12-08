@@ -33,7 +33,6 @@ using namespace std;
 const arith_uint256 maxUint = UintToArith256(uint256S("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
 
 
-
 class CMainParams : public CChainParams {
 public:
     CMainParams() {
