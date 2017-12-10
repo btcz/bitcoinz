@@ -105,6 +105,7 @@ public:
         vSeeds.push_back(CDNSSeedData("74e66cfeadbfe82ce1f328850f48d67b0cf93777ff843935fa183ffe151e28cb.BTCZ", "btcz.es"));
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
         vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
+        vSeeds.push_back(CDNSSeedData("776c5ea2c482f4abb1ae956180f22f5b05ac2d6dc26ff72a2c186b2d765e9524.BTCZ", "btcz.gisli.fr"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
