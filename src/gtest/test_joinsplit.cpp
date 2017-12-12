@@ -320,11 +320,11 @@ TEST(joinsplit, full_api_test)
         increment_note_witnesses(note1.cm(), witnesses, tree);
         Note note2(addr.a_pk, 100, random_uint256(), random_uint256());
         increment_note_witnesses(note2.cm(), witnesses, tree);
-        Note note3(addr.a_pk, 2100000000000001, random_uint256(), random_uint256());
+        Note note3(addr.a_pk, 2100000000000000001, random_uint256(), random_uint256());
         increment_note_witnesses(note3.cm(), witnesses, tree);
-        Note note4(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        Note note4(addr.a_pk, 1900000000000000000, random_uint256(), random_uint256());
         increment_note_witnesses(note4.cm(), witnesses, tree);
-        Note note5(addr.a_pk, 1900000000000000, random_uint256(), random_uint256());
+        Note note5(addr.a_pk, 1900000000000000000, random_uint256(), random_uint256());
         increment_note_witnesses(note5.cm(), witnesses, tree);
 
         // Should work
@@ -351,7 +351,7 @@ TEST(joinsplit, full_api_test)
             JSOutput(),
             JSOutput()
         },
-        2100000000000001,
+        2100000000000000001,
         0,
         tree.root(),
         "nonsensical vpub_old value");
@@ -367,7 +367,7 @@ TEST(joinsplit, full_api_test)
             JSOutput()
         },
         0,
-        2100000000000001,
+        2100000000000000001,
         tree.root(),
         "nonsensical vpub_new value");
 
@@ -468,7 +468,7 @@ TEST(joinsplit, full_api_test)
             JSInput()
         },
         {
-            JSOutput(addr, 2100000000000001),
+            JSOutput(addr, 2100000000000000001),
             JSOutput()
         },
         0,
@@ -483,8 +483,8 @@ TEST(joinsplit, full_api_test)
             JSInput()
         },
         {
-            JSOutput(addr, 1900000000000000),
-            JSOutput(addr, 1900000000000000)
+            JSOutput(addr, 1900000000000000000),
+            JSOutput(addr, 1900000000000000000)
         },
         0,
         0,
@@ -498,7 +498,7 @@ TEST(joinsplit, full_api_test)
             JSInput()
         },
         {
-            JSOutput(addr, 1900000000000000),
+            JSOutput(addr, 1900000000000000000),
             JSOutput()
         },
         0,

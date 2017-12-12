@@ -277,6 +277,8 @@ struct ReadAlerts : public TestingSetup
     std::vector<CAlert> alerts;
 };
 
+/* Alerts disabled
+
 BOOST_FIXTURE_TEST_SUITE(Alert_tests, ReadAlerts)
 
 
@@ -443,5 +445,7 @@ BOOST_AUTO_TEST_CASE(PartitionAlert)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+*/
 
 #endif
