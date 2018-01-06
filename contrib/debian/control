@@ -11,7 +11,7 @@ Vcs-Git: https://github.com/bitcoinz-pod/bitcoinz.git
 Vcs-Browser: https://github.com/bitcoinz-pod
 
 Package: bitcoinz
-Version: 1.0.2
+Version: 1.0.3
 Depends: ${shlibs:Depends}
 Architecture: all
 Description: HTTPS for money.

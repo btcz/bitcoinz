@@ -42,7 +42,7 @@ cp $SRC_PATH/src/zcashd $DEB_BIN
 cp $SRC_PATH/src/zcash-cli $DEB_BIN
 cp $SRC_PATH/zcutil/fetch-params.sh $DEB_BIN/zcash-fetch-params
 # Copy docs
-cp $SRC_PATH/doc/release-notes/release-notes-1.0.2.md $DEB_DOC/changelog
+cp $SRC_PATH/doc/release-notes/release-notes-1.0.3.md $DEB_DOC/changelog
 cp $SRC_DEB/changelog $DEB_DOC/changelog.Debian
 cp $SRC_DEB/copyright $DEB_DOC
 cp -r $SRC_DEB/examples $DEB_DOC
@@ -51,8 +51,8 @@ cp $SRC_DOC/man/zcashd.1 $DEB_MAN
 cp $SRC_DOC/man/zcash-cli.1 $DEB_MAN
 cp $SRC_DOC/man/zcash-fetch-params.1 $DEB_MAN
 # Copy bash completion files
-cp $SRC_PATH/contrib/bitcoind.bash-completion $DEB_CMP/zcashd
-cp $SRC_PATH/contrib/bitcoin-cli.bash-completion $DEB_CMP/zcash-cli
+cp $SRC_PATH/contrib/zcashd.bash-completion $DEB_CMP/zcashd
+cp $SRC_PATH/contrib/zcash-cli.bash-completion $DEB_CMP/zcash-cli
 # Gzip files
 gzip --best -n $DEB_DOC/changelog
 gzip --best -n $DEB_DOC/changelog.Debian
