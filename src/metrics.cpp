@@ -16,7 +16,14 @@
 #include <boost/thread.hpp>
 #include <boost/thread/synchronized_value.hpp>
 #include <string>
+
+#ifdef WIN32
+#include <io.h>
+#include <windows.h>
+#else
 #include <sys/ioctl.h>
+#endif
+
 #include <unistd.h>
 
 void AtomicTimer::start()
