@@ -44,15 +44,31 @@ public:
     static const mp_size_t num_limbs = n;
     static const constexpr bigint<n>& mod = modulus;
 #ifdef PROFILE_OP_COUNTS
+#ifdef _WIN32
+    static int64_t add_cnt;
+    static int64_t sub_cnt;
+    static int64_t mul_cnt;
+    static int64_t sqr_cnt;
+    static int64_t inv_cnt;
+#else
     static long long add_cnt;
     static long long sub_cnt;
     static long long mul_cnt;
     static long long sqr_cnt;
     static long long inv_cnt;
 #endif
+#endif
+#ifdef _WIN32
+    static uint64_t num_bits;
+#else
     static size_t num_bits;
+#endif
     static bigint<n> euler; // (modulus-1)/2
+#ifdef _WIN32
+    static uint64_t s; // modulus = 2^s * t + 1
+#else
     static size_t s; // modulus = 2^s * t + 1
+#endif
     static bigint<n> t; // with t odd
     static bigint<n> t_minus_1_over_2; // (t-1)/2
     static Fp_model<n, modulus> nqr; // a quadratic nonresidue
@@ -67,9 +83,17 @@ public:
 
     Fp_model() {};
     Fp_model(const bigint<n> &b);
+#ifdef _WIN32
+    Fp_model(const int64_t x, const bool is_unsigned=false);
+#else
     Fp_model(const long x, const bool is_unsigned=false);
+#endif
 
+#ifdef _WIN32
+    void set_ulong(const uint64_t x);
+#else
     void set_ulong(const unsigned long x);
+#endif
 
     void mul_reduce(const bigint<n> &other);
 
@@ -82,7 +106,11 @@ public:
     /* Return the last limb of the standard representation of the
        field element. E.g. on 64-bit architectures Fp(123).as_ulong()
        and Fp(2^64+123).as_ulong() would both return 123. */
+#ifdef _WIN32
+    uint64_t as_ulong() const;
+#else
     unsigned long as_ulong() const;
+#endif
 
     bool operator==(const Fp_model& other) const;
     bool operator!=(const Fp_model& other) const;
@@ -93,7 +121,11 @@ public:
     Fp_model& operator+=(const Fp_model& other);
     Fp_model& operator-=(const Fp_model& other);
     Fp_model& operator*=(const Fp_model& other);
+#ifdef _WIN32
+    Fp_model& operator^=(const uint64_t pow);
+#else
     Fp_model& operator^=(const unsigned long pow);
+#endif
 
     template<mp_size_t m>
     Fp_model& operator^=(const bigint<m> &pow);
@@ -107,12 +139,21 @@ public:
     Fp_model inverse() const;
     Fp_model sqrt() const; // HAS TO BE A SQUARE (else does not terminate)
 
+#ifdef _WIN32
+    Fp_model operator^(const uint64_t pow) const;
+#else
     Fp_model operator^(const unsigned long pow) const;
+#endif
     template<mp_size_t m>
     Fp_model operator^(const bigint<m> &pow) const;
 
+#ifdef _WIN32
+    static uint64_t size_in_bits() { return num_bits; }
+    static uint64_t capacity() { return num_bits - 1; }
+#else
     static size_t size_in_bits() { return num_bits; }
     static size_t capacity() { return num_bits - 1; }
+#endif
     static bigint<n> field_char() { return modulus; }
 
     static Fp_model<n, modulus> zero();
@@ -125,29 +166,57 @@ public:
 
 #ifdef PROFILE_OP_COUNTS
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+int64_t Fp_model<n, modulus>::add_cnt = 0;
+#else
 long long Fp_model<n, modulus>::add_cnt = 0;
-
-template<mp_size_t n, const bigint<n>& modulus>
-long long Fp_model<n, modulus>::sub_cnt = 0;
-
-template<mp_size_t n, const bigint<n>& modulus>
-long long Fp_model<n, modulus>::mul_cnt = 0;
-
-template<mp_size_t n, const bigint<n>& modulus>
-long long Fp_model<n, modulus>::sqr_cnt = 0;
-
-template<mp_size_t n, const bigint<n>& modulus>
-long long Fp_model<n, modulus>::inv_cnt = 0;
 #endif
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+int64_t Fp_model<n, modulus>::sub_cnt = 0;
+#else
+long long Fp_model<n, modulus>::sub_cnt = 0;
+#endif
+
+template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+int64_t Fp_model<n, modulus>::mul_cnt = 0;
+#else
+long long Fp_model<n, modulus>::mul_cnt = 0;
+#endif
+
+template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+int64_t Fp_model<n, modulus>::sqr_cnt = 0;
+#else
+long long Fp_model<n, modulus>::sqr_cnt = 0;
+#endif
+
+template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+int64_t Fp_model<n, modulus>::inv_cnt = 0;
+#else
+long long Fp_model<n, modulus>::inv_cnt = 0;
+#endif
+#endif
+
+template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+uint64_t Fp_model<n, modulus>::num_bits;
+#else
 size_t Fp_model<n, modulus>::num_bits;
+#endif
 
 template<mp_size_t n, const bigint<n>& modulus>
 bigint<n> Fp_model<n, modulus>::euler;
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+uint64_t Fp_model<n, modulus>::s;
+#else
 size_t Fp_model<n, modulus>::s;
+#endif
 
 template<mp_size_t n, const bigint<n>& modulus>
 bigint<n> Fp_model<n, modulus>::t;

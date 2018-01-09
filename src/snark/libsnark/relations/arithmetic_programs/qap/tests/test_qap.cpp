@@ -92,13 +92,21 @@ TEST(relations, qap)
 
     enter_block("Test QAP with binary input");
 
+#ifdef _WIN32
+    test_qap<Fr<alt_bn128_pp> >(UINT64_C(1) << 21, num_inputs, true);
+#else
     test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, true);
+#endif
 
     leave_block("Test QAP with binary input");
 
     enter_block("Test QAP with field input");
 
+#ifdef _WIN32
+    test_qap<Fr<alt_bn128_pp> >(UINT64_C(1) << 21, num_inputs, false);
+#else
     test_qap<Fr<alt_bn128_pp> >(1ul << 21, num_inputs, false);
+#endif
 
     leave_block("Test QAP with field input");
 }

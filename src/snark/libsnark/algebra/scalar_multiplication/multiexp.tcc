@@ -40,7 +40,11 @@ public:
 #if defined(__x86_64__) && defined(USE_ASM)
         if (n == 3)
         {
+#ifdef _WIN32
+            int64_t res;
+#else
             long res;
+#endif
             __asm__
                 ("// check for overflow           \n\t"
                  "mov $0, %[res]                  \n\t"
@@ -58,7 +62,11 @@ public:
         }
         else if (n == 4)
         {
+#ifdef _WIN32
+            int64_t res;
+#else
             long res;
+#endif
             __asm__
                 ("// check for overflow           \n\t"
                  "mov $0, %[res]                  \n\t"
@@ -77,7 +85,11 @@ public:
         }
         else if (n == 5)
         {
+#ifdef _WIN32
+            int64_t res;
+#else
             long res;
+#endif
             __asm__
                 ("// check for overflow           \n\t"
                  "mov $0, %[res]                  \n\t"
@@ -190,7 +202,11 @@ T multi_exp_inner(typename std::vector<T>::const_iterator vec_start,
     if (vec_len != odd_vec_len)
     {
         g.emplace_back(T::zero());
+#ifdef _WIN32
+        opt_q.emplace_back(ordered_exponent<n>(odd_vec_len - 1, bigint<n>(UINT64_C(0))));
+#else
         opt_q.emplace_back(ordered_exponent<n>(odd_vec_len - 1, bigint<n>(0ul)));
+#endif
     }
     assert(g.size() % 2 == 1);
     assert(opt_q.size() == g.size());
@@ -214,7 +230,11 @@ T multi_exp_inner(typename std::vector<T>::const_iterator vec_start,
         const size_t bbits = b.r.num_bits();
         const size_t limit = (abits-bbits >= 20 ? 20 : abits-bbits);
 
+#ifdef _WIN32
+        if (bbits < UINT64_C(1)<<limit)
+#else
         if (bbits < 1ul<<limit)
+#endif
         {
             /*
               In this case, exponentiating to the power of a is cheaper than
@@ -389,7 +409,11 @@ size_t get_exp_window_size(const size_t num_scalars)
 #endif
     }
     size_t window = 1;
+#ifdef _WIN32
+    for (int64_t i = T::fixed_base_exp_window_table.size()-1; i >= 0; --i)
+#else
     for (long i = T::fixed_base_exp_window_table.size()-1; i >= 0; --i)
+#endif
     {
 #ifdef DEBUG
         if (!inhibit_profiling_info)
@@ -420,9 +444,17 @@ window_table<T> get_window_table(const size_t scalar_size,
                                  const size_t window,
                                  const T &g)
 {
+#ifdef _WIN32
+    const size_t in_window = UINT64_C(1)<<window;
+#else
     const size_t in_window = 1ul<<window;
+#endif
     const size_t outerc = (scalar_size+window-1)/window;
+#ifdef _WIN32
+    const size_t last_in_window = UINT64_C(1)<<(scalar_size - (outerc-1)*window);
+#else
     const size_t last_in_window = 1ul<<(scalar_size - (outerc-1)*window);
+#endif
 #ifdef DEBUG
     if (!inhibit_profiling_info)
     {

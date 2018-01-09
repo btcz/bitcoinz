@@ -17,9 +17,17 @@
 namespace libsnark {
 
 template<mp_size_t n>
+#ifdef _WIN32
+bigint<n>::bigint(const uint64_t x) /// Initalize from a small integer
+#else
 bigint<n>::bigint(const unsigned long x) /// Initalize from a small integer
+#endif
 {
+#ifdef _WIN32
+    static_assert(UINT64_MAX <= GMP_NUMB_MAX, "uint64_t does not fit in a GMP limb");
+#else
     static_assert(ULONG_MAX <= GMP_NUMB_MAX, "unsigned long does not fit in a GMP limb");
+#endif
     this->data[0] = x;
 }
 
@@ -115,7 +123,11 @@ size_t bigint<n>::num_bits() const
 
     return 0;
 */
+#ifdef _WIN32
+    for (int64_t i = n-1; i >= 0; --i)
+#else
     for (long i = n-1; i >= 0; --i)
+#endif
     {
         mp_limb_t x = this->data[i];
         if (x == 0)
@@ -124,14 +136,22 @@ size_t bigint<n>::num_bits() const
         }
         else
         {
+#ifdef _WIN32
+            return ((i+1) * GMP_NUMB_BITS) - __builtin_clzll(x);
+#else
             return ((i+1) * GMP_NUMB_BITS) - __builtin_clzl(x);
+#endif
         }
     }
     return 0;
 }
 
 template<mp_size_t n>
+#ifdef _WIN32
+uint64_t bigint<n>::as_ulong() const
+#else
 unsigned long bigint<n>::as_ulong() const
+#endif
 {
     return this->data[0];
 }

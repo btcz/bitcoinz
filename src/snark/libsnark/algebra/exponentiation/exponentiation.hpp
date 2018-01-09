@@ -22,7 +22,11 @@ template<typename FieldT, mp_size_t m>
 FieldT power(const FieldT &base, const bigint<m> &exponent);
 
 template<typename FieldT>
+#ifdef _WIN32
+FieldT power(const FieldT &base, const uint64_t exponent);
+#else
 FieldT power(const FieldT &base, const unsigned long exponent);
+#endif
 
 } // libsnark
 

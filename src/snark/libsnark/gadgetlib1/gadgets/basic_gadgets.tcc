@@ -275,11 +275,19 @@ void test_disjunction_gadget(const size_t n)
     disjunction_gadget<FieldT> d(pb, inputs, output, "d");
     d.generate_r1cs_constraints();
 
+#ifdef _WIN32
+    for (size_t w = 0; w < UINT64_C(1)<<n; ++w)
+#else
     for (size_t w = 0; w < 1ul<<n; ++w)
+#endif
     {
         for (size_t j = 0; j < n; ++j)
         {
+#ifdef _WIN32
+            pb.val(inputs[j]) = FieldT((w & (UINT64_C(1)<<j)) ? 1 : 0);
+#else
             pb.val(inputs[j]) = FieldT((w & (1ul<<j)) ? 1 : 0);
+#endif
         }
 
         d.generate_r1cs_witness();
@@ -366,11 +374,19 @@ void test_conjunction_gadget(const size_t n)
     conjunction_gadget<FieldT> c(pb, inputs, output, "c");
     c.generate_r1cs_constraints();
 
+#ifdef _WIN32
+    for (size_t w = 0; w < UINT64_C(1)<<n; ++w)
+#else
     for (size_t w = 0; w < 1ul<<n; ++w)
+#endif
     {
         for (size_t j = 0; j < n; ++j)
         {
+#ifdef _WIN32
+            pb.val(inputs[j]) = (w & (UINT64_C(1)<<j)) ? FieldT::one() : FieldT::zero();
+#else
             pb.val(inputs[j]) = (w & (1ul<<j)) ? FieldT::one() : FieldT::zero();
+#endif
         }
 
         c.generate_r1cs_witness();
@@ -378,13 +394,22 @@ void test_conjunction_gadget(const size_t n)
 #ifdef DEBUG
         printf("positive test for %zu\n", w);
 #endif
+#ifdef _WIN32
+        assert(pb.val(output) == (w == (UINT64_C(1)<<n) - 1 ? FieldT::one() : FieldT::zero()));
+#else
         assert(pb.val(output) == (w == (1ul<<n) - 1 ? FieldT::one() : FieldT::zero()));
+#endif
         assert(pb.is_satisfied());
 
 #ifdef DEBUG
         printf("negative test for %zu\n", w);
 #endif
+
+#ifdef _WIN32
+        pb.val(output) = (w == (UINT64_C(1)<<n) - 1 ? FieldT::zero() : FieldT::one());
+#else
         pb.val(output) = (w == (1ul<<n) - 1 ? FieldT::zero() : FieldT::one());
+#endif
         assert(!pb.is_satisfied());
     }
 
@@ -454,9 +479,17 @@ void test_comparison_gadget(const size_t n)
     comparison_gadget<FieldT> cmp(pb, n, A, B, less, less_or_eq, "cmp");
     cmp.generate_r1cs_constraints();
 
+#ifdef _WIN32
+    for (size_t a = 0; a < UINT64_C(1)<<n; ++a)
+#else
     for (size_t a = 0; a < 1ul<<n; ++a)
+#endif
     {
+#ifdef _WIN32
+        for (size_t b = 0; b < UINT64_C(1)<<n; ++b)
+#else
         for (size_t b = 0; b < 1ul<<n; ++b)
+#endif
         {
             pb.val(A) = FieldT(a);
             pb.val(B) = FieldT(b);
@@ -523,16 +556,30 @@ void test_inner_product_gadget(const size_t n)
     inner_product_gadget<FieldT> g(pb, A, B, result, "g");
     g.generate_r1cs_constraints();
 
+#ifdef _WIN32
+    for (size_t i = 0; i < UINT64_C(1)<<n; ++i)
+#else
     for (size_t i = 0; i < 1ul<<n; ++i)
+#endif
     {
+#ifdef _WIN32
+        for (size_t j = 0; j < UINT64_C(1)<<n; ++j)
+#else
         for (size_t j = 0; j < 1ul<<n; ++j)
+#endif
         {
             size_t correct = 0;
             for (size_t k = 0; k < n; ++k)
             {
+#ifdef _WIN32
+                pb.val(A[k]) = (i & (UINT64_C(1)<<k) ? FieldT::one() : FieldT::zero());
+                pb.val(B[k]) = (j & (UINT64_C(1)<<k) ? FieldT::one() : FieldT::zero());
+                correct += ((i & (UINT64_C(1)<<k)) && (j & (UINT64_C(1)<<k)) ? 1 : 0);
+#else
                 pb.val(A[k]) = (i & (1ul<<k) ? FieldT::one() : FieldT::zero());
                 pb.val(B[k]) = (j & (1ul<<k) ? FieldT::one() : FieldT::zero());
                 correct += ((i & (1ul<<k)) && (j & (1ul<<k)) ? 1 : 0);
+#endif
             }
 
             g.generate_r1cs_witness();
@@ -587,7 +634,11 @@ void loose_multiplexing_gadget<FieldT>::generate_r1cs_witness()
 {
     /* assumes that idx can be fit in ulong; true for our purposes for now */
     const bigint<FieldT::num_limbs> valint = this->pb.val(index).as_bigint();
+#ifdef _WIN32
+    uint64_t idx = valint.as_ulong();
+#else
     unsigned long idx = valint.as_ulong();
+#endif
     const bigint<FieldT::num_limbs> arrsize(arr.size());
 
     if (idx >= arr.size() || mpn_cmp(valint.data, arrsize.data, FieldT::num_limbs) >= 0)
@@ -619,7 +670,11 @@ void test_loose_multiplexing_gadget(const size_t n)
     protoboard<FieldT> pb;
 
     pb_variable_array<FieldT> arr;
+#ifdef _WIN32
+    arr.allocate(pb, UINT64_C(1)<<n, "arr");
+#else
     arr.allocate(pb, 1ul<<n, "arr");
+#endif
     pb_variable<FieldT> index, result, success_flag;
     index.allocate(pb, "index");
     result.allocate(pb, "result");
@@ -628,20 +683,40 @@ void test_loose_multiplexing_gadget(const size_t n)
     loose_multiplexing_gadget<FieldT> g(pb, arr, index, result, success_flag, "g");
     g.generate_r1cs_constraints();
 
+#ifdef _WIN32
+    for (size_t i = 0; i < UINT64_C(1)<<n; ++i)
+#else
     for (size_t i = 0; i < 1ul<<n; ++i)
+#endif
     {
+#ifdef _WIN32
+        pb.val(arr[i]) = FieldT((19*i) % (UINT64_C(1)<<n));
+#else
         pb.val(arr[i]) = FieldT((19*i) % (1ul<<n));
+#endif
     }
 
+#ifdef _WIN32
+    for (int idx = -1; idx <= (int)(UINT64_C(1)<<n); ++idx)
+#else
     for (int idx = -1; idx <= (int)(1ul<<n); ++idx)
+#endif
     {
         pb.val(index) = FieldT(idx);
         g.generate_r1cs_witness();
 
+#ifdef _WIN32
+        if (0 <= idx && idx <= (int)(UINT64_C(1)<<n) - 1)
+#else
         if (0 <= idx && idx <= (int)(1ul<<n) - 1)
+#endif
         {
             printf("demuxing element %d (in bounds)\n", idx);
+#ifdef _WIN32
+            assert(pb.val(result) == FieldT((19*idx) % (UINT64_C(1)<<n)));
+#else
             assert(pb.val(result) == FieldT((19*idx) % (1ul<<n)));
+#endif
             assert(pb.val(success_flag) == FieldT::one());
             assert(pb.is_satisfied());
             pb.val(result) -= FieldT::one();

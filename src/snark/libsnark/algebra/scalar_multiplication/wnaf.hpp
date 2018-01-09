@@ -18,7 +18,11 @@ namespace libsnark {
  * Find the wNAF representation of the given scalar relative to the given window size.
  */
 template<mp_size_t n>
+#ifdef _WIN32
+std::vector<int64_t> find_wnaf(const size_t window_size, const bigint<n> &scalar);
+#else
 std::vector<long> find_wnaf(const size_t window_size, const bigint<n> &scalar);
+#endif
 
 /**
  * In additive notation, use wNAF exponentiation (with the given window size) to compute scalar * base.

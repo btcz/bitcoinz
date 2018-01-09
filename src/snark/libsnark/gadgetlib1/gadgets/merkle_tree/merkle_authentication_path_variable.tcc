@@ -41,7 +41,11 @@ void merkle_authentication_path_variable<FieldT, HashT>::generate_r1cs_witness(c
 
     for (size_t i = 0; i < tree_depth; ++i)
     {
+#ifdef _WIN32
+        if (address & (UINT64_C(1) << (tree_depth-1-i)))
+#else
         if (address & (1ul << (tree_depth-1-i)))
+#endif
         {
             left_digests[i].generate_r1cs_witness(path[i]);
         }
@@ -58,7 +62,11 @@ merkle_authentication_path merkle_authentication_path_variable<FieldT, HashT>::g
     merkle_authentication_path result;
     for (size_t i = 0; i < tree_depth; ++i)
     {
+#ifdef _WIN32
+        if (address & (UINT64_C(1) << (tree_depth-1-i)))
+#else
         if (address & (1ul << (tree_depth-1-i)))
+#endif
         {
             result.emplace_back(left_digests[i].get_digest());
         }

@@ -149,7 +149,11 @@ Fp6_3over2_model<n,modulus> Fp6_3over2_model<n,modulus>::inverse() const
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+Fp6_3over2_model<n,modulus> Fp6_3over2_model<n,modulus>::Frobenius_map(uint64_t power) const
+#else
 Fp6_3over2_model<n,modulus> Fp6_3over2_model<n,modulus>::Frobenius_map(unsigned long power) const
+#endif
 {
     return Fp6_3over2_model<n,modulus>(c0.Frobenius_map(power),
                                        Frobenius_coeffs_c1[power % 6] * c1.Frobenius_map(power),
@@ -194,7 +198,11 @@ std::istream& operator>>(std::istream& in, std::vector<Fp6_3over2_model<n, modul
 {
     v.clear();
 
+#ifdef _WIN32
+    uint64_t s;
+#else
     size_t s;
+#endif
     in >> s;
 
     char b;

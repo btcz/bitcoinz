@@ -37,7 +37,11 @@ public:
     typedef Fp_model<n, modulus> my_Fp;
 
     static bigint<2*n> euler; // (modulus^2-1)/2
+#ifdef _WIN32
+    static uint64_t s;       // modulus^2 = 2^s * t + 1
+#else
     static size_t s;       // modulus^2 = 2^s * t + 1
+#endif
     static bigint<2*n> t;  // with t odd
     static bigint<2*n> t_minus_1_over_2; // (t-1)/2
     static my_Fp non_residue; // X^4-non_residue irreducible over Fp; used for constructing Fp2 = Fp[X] / (X^2 - non_residue)
@@ -66,7 +70,11 @@ public:
     Fp2_model operator-() const;
     Fp2_model squared() const; // default is squared_complex
     Fp2_model inverse() const;
+#ifdef _WIN32
+    Fp2_model Frobenius_map(uint64_t power) const;
+#else
     Fp2_model Frobenius_map(unsigned long power) const;
+#endif
     Fp2_model sqrt() const; // HAS TO BE A SQUARE (else does not terminate)
     Fp2_model squared_karatsuba() const;
     Fp2_model squared_complex() const;
@@ -74,7 +82,11 @@ public:
     template<mp_size_t m>
     Fp2_model operator^(const bigint<m> &other) const;
 
+#ifdef _WIN32
+    static uint64_t size_in_bits() { return 2*my_Fp::size_in_bits(); }
+#else
     static size_t size_in_bits() { return 2*my_Fp::size_in_bits(); }
+#endif
     static bigint<n> base_field_char() { return modulus; }
 
     friend std::ostream& operator<< <n, modulus>(std::ostream &out, const Fp2_model<n, modulus> &el);
@@ -94,7 +106,11 @@ template<mp_size_t n, const bigint<n>& modulus>
 bigint<2*n> Fp2_model<n, modulus>::euler;
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+uint64_t Fp2_model<n, modulus>::s;
+#else
 size_t Fp2_model<n, modulus>::s;
+#endif
 
 template<mp_size_t n, const bigint<n>& modulus>
 bigint<2*n> Fp2_model<n, modulus>::t;
