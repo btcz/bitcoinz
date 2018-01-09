@@ -16,7 +16,7 @@ source ~/.cargo/env
 rustup install stable-x86_64-unknown-linux-gnu
 rustup install stable-x86_64-pc-windows-gnu
 rustup target add x86_64-pc-windows-gnu
-vi  ~/.cargo/config, add£º
+vi  ~/.cargo/config, add:
 [target.x86_64-pc-windows-gnu]
 linker = "/usr/bin/x86_64-w64-mingw32-gcc"
 
@@ -28,12 +28,11 @@ linker = "/usr/bin/x86_64-w64-mingw32-gcc"
 
 4. compile
 (1)source ~/.cargo/env
-(2)
-for win:
-./zcutil/build-win.sh  --disable-tests
-for linux:
-./zcutil/build.sh
+(2)for win:
+./zcutil/build-win.sh --disable-tests
 //cross compiling gtest for win failed, but compiling for linux passed
+for linux: depends/package/rust.mk and librustzcash.mk should use the version in master branch.
+./zcutil/build.sh
 
 We will get zcashd.exe zcash-cli.exe in src directory
 my compiled version: https://mega.nz/#F!IvI21L7D!ogpzIDwr0MJT-TrF5buTJg
