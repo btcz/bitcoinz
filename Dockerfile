@@ -3,6 +3,7 @@ FROM debian:stretch-slim as build
 # Install our build dependencies
 RUN apt-get update \
   && apt-get install -y \
+    curl \
     build-essential \
   	pkg-config \
   	libc6-dev \
@@ -36,6 +37,7 @@ RUN groupadd -r bitcoinz && useradd -r -d /bitcoinz -g bitcoinz bitcoinz
 # Install our run dependencies
 RUN apt-get update \
   && apt-get install -y \
+    curl \
     libc6-dev \
     g++-multilib \
   && rm -rf /var/lib/apt/lists/*
