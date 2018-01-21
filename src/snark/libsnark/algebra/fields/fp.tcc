@@ -194,7 +194,11 @@ Fp_model<n,modulus>::Fp_model(const bigint<n> &b)
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+Fp_model<n,modulus>::Fp_model(const int64_t x, const bool is_unsigned)
+#else
 Fp_model<n,modulus>::Fp_model(const long x, const bool is_unsigned)
+#endif
 {
     if (is_unsigned || x >= 0)
     {
@@ -210,7 +214,11 @@ Fp_model<n,modulus>::Fp_model(const long x, const bool is_unsigned)
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+void Fp_model<n,modulus>::set_ulong(const uint64_t x)
+#else
 void Fp_model<n,modulus>::set_ulong(const unsigned long x)
+#endif
 {
     this->mont_repr.clear();
     this->mont_repr.data[0] = x;
@@ -237,7 +245,11 @@ bigint<n> Fp_model<n,modulus>::as_bigint() const
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+uint64_t Fp_model<n,modulus>::as_ulong() const
+#else
 unsigned long Fp_model<n,modulus>::as_ulong() const
+#endif
 {
     return this->as_bigint().as_ulong();
 }
@@ -502,7 +514,11 @@ Fp_model<n,modulus>& Fp_model<n,modulus>::operator*=(const Fp_model<n,modulus>& 
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+Fp_model<n,modulus>& Fp_model<n,modulus>::operator^=(const uint64_t pow)
+#else
 Fp_model<n,modulus>& Fp_model<n,modulus>::operator^=(const unsigned long pow)
+#endif
 {
     (*this) = power<Fp_model<n, modulus> >(*this, pow);
     return (*this);
@@ -538,7 +554,11 @@ Fp_model<n,modulus> Fp_model<n,modulus>::operator*(const Fp_model<n,modulus>& ot
 }
 
 template<mp_size_t n, const bigint<n>& modulus>
+#ifdef _WIN32
+Fp_model<n,modulus> Fp_model<n,modulus>::operator^(const uint64_t pow) const
+#else
 Fp_model<n,modulus> Fp_model<n,modulus>::operator^(const unsigned long pow) const
+#endif
 {
     Fp_model<n, modulus> r(*this);
     return (r ^= pow);
@@ -684,13 +704,26 @@ Fp_model<n, modulus> Fp_model<n,modulus>::random_element() /// returns random el
         r.mont_repr.randomize();
 
         /* clear all bits higher than MSB of modulus */
+#ifdef _WIN32
+        uint64_t bitno = GMP_NUMB_BITS * n - 1;
+#else
         size_t bitno = GMP_NUMB_BITS * n - 1;
+#endif
         while (modulus.test_bit(bitno) == false)
         {
+#ifdef _WIN32
+            const uint64_t part = bitno/GMP_NUMB_BITS;
+            const uint64_t bit = bitno - (GMP_NUMB_BITS*part);
+#else
             const std::size_t part = bitno/GMP_NUMB_BITS;
             const std::size_t bit = bitno - (GMP_NUMB_BITS*part);
+#endif
 
+#ifdef _WIN32
+            r.mont_repr.data[part] &= ~(UINT64_C(1)<<bit);
+#else
             r.mont_repr.data[part] &= ~(1ul<<bit);
+#endif
 
             bitno--;
         }
@@ -710,7 +743,11 @@ Fp_model<n,modulus> Fp_model<n,modulus>::sqrt() const
 
     Fp_model<n,modulus> one = Fp_model<n,modulus>::one();
 
+#ifdef _WIN32
+    uint64_t v = Fp_model<n,modulus>::s;
+#else
     size_t v = Fp_model<n,modulus>::s;
+#endif
     Fp_model<n,modulus> z = Fp_model<n,modulus>::nqr_to_t;
     Fp_model<n,modulus> w = (*this)^Fp_model<n,modulus>::t_minus_1_over_2;
     Fp_model<n,modulus> x = (*this) * w;
@@ -734,7 +771,11 @@ Fp_model<n,modulus> Fp_model<n,modulus>::sqrt() const
 
     while (b != one)
     {
+#ifdef _WIN32
+        uint64_t m = 0;
+#else
         size_t m = 0;
+#endif
         Fp_model<n,modulus> b2m = b;
         while (b2m != one)
         {

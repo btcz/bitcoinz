@@ -28,14 +28,22 @@
 
 namespace libsnark {
 
+#ifdef _WIN32
+int64_t get_nsec_time()
+#else
 long long get_nsec_time()
+#endif
 {
     auto timepoint = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(timepoint.time_since_epoch()).count();
 }
 
 /* Return total CPU time consumsed by all threads of the process, in nanoseconds. */
+#ifdef _WIN32
+int64_t get_nsec_cpu_time()
+#else
 long long get_nsec_cpu_time()
+#endif
 {
     ::timespec ts;
     if ( ::clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) )
@@ -45,8 +53,13 @@ long long get_nsec_cpu_time()
     return ts.tv_sec * 1000000000ll + ts.tv_nsec;
 }
 
+#ifdef _WIN32
+int64_t start_time, last_time;
+int64_t start_cpu_time, last_cpu_time;
+#else
 long long start_time, last_time;
 long long start_cpu_time, last_cpu_time;
+#endif
 
 void start_profiling()
 {
@@ -57,20 +70,37 @@ void start_profiling()
 }
 
 std::map<std::string, size_t> invocation_counts;
+#ifdef _WIN32
+std::map<std::string, int64_t> enter_times;
+std::map<std::string, int64_t> last_times;
+std::map<std::string, int64_t> cumulative_times;
+#else
 std::map<std::string, long long> enter_times;
 std::map<std::string, long long> last_times;
 std::map<std::string, long long> cumulative_times;
+#endif
 //TODO: Instead of analogous maps for time and cpu_time, use a single struct-valued map
+#ifdef _WIN32
+std::map<std::string, int64_t> enter_cpu_times;
+std::map<std::string, int64_t> last_cpu_times;
+std::map<std::pair<std::string, std::string>, int64_t> op_counts;
+std::map<std::pair<std::string, std::string>, int64_t> cumulative_op_counts; // ((msg, data_point), value)
+#else
 std::map<std::string, long long> enter_cpu_times;
 std::map<std::string, long long> last_cpu_times;
 std::map<std::pair<std::string, std::string>, long long> op_counts;
 std::map<std::pair<std::string, std::string>, long long> cumulative_op_counts; // ((msg, data_point), value)
+#endif
     // TODO: Convert op_counts and cumulative_op_counts from pair to structs
 size_t indentation = 0;
 
 std::vector<std::string> block_names;
 
+#ifdef _WIN32
+std::list<std::pair<std::string, int64_t*> > op_data_points = {
+#else
 std::list<std::pair<std::string, long long*> > op_data_points = {
+#endif
 #ifdef PROFILE_OP_COUNTS
     std::make_pair("Fradd", &Fr<default_ec_pp>::add_cnt),
     std::make_pair("Frsub", &Fr<default_ec_pp>::sub_cnt),
@@ -98,7 +128,11 @@ void clear_profiling_counters()
     cumulative_times.clear();
 }
 
+#ifdef _WIN32
+void print_cumulative_time_entry(const std::string &key, const int64_t factor)
+#else
 void print_cumulative_time_entry(const std::string &key, const long long factor)
+#endif
 {
     const double total_ms = (cumulative_times.at(key) * 1e-6);
     const size_t cnt = invocation_counts.at(key);
@@ -106,7 +140,11 @@ void print_cumulative_time_entry(const std::string &key, const long long factor)
     printf("   %-45s: %12.5fms = %lld * %0.5fms (%zu invocations, %0.5fms = %lld * %0.5fms per invocation)\n", key.c_str(), total_ms, factor, total_ms/factor, cnt, avg_ms, factor, avg_ms/factor);
 }
 
+#ifdef _WIN32
+void print_cumulative_times(const int64_t factor)
+#else
 void print_cumulative_times(const long long factor)
+#endif
 {
     printf("Dumping times:\n");
     for (auto& kv : cumulative_times)
@@ -155,7 +193,11 @@ void print_op_profiling(const std::string &msg)
 
     printf("(opcounts) = (");
     bool first = true;
+#ifdef _WIN32
+    for (std::pair<std::string, int64_t*> p : op_data_points)
+#else
     for (std::pair<std::string, long long*> p : op_data_points)
+#endif
     {
         if (!first)
         {
@@ -171,14 +213,29 @@ void print_op_profiling(const std::string &msg)
 #endif
 }
 
+#ifdef _WIN32
+static void print_times_from_last_and_start(int64_t     now, int64_t     last,
+                                            int64_t cpu_now, int64_t cpu_last)
+#else
 static void print_times_from_last_and_start(long long     now, long long     last,
                                             long long cpu_now, long long cpu_last)
+#endif
 {
+#ifdef _WIN32
+    int64_t time_from_start = now - start_time;
+    int64_t time_from_last = now - last;
+#else
     long long time_from_start = now - start_time;
     long long time_from_last = now - last;
+#endif
 
+#ifdef _WIN32
+    int64_t cpu_time_from_start = cpu_now - start_cpu_time;
+    int64_t cpu_time_from_last = cpu_now - cpu_last;
+#else
     long long cpu_time_from_start = cpu_now - start_cpu_time;
     long long cpu_time_from_last = cpu_now - cpu_last;
+#endif
 
     if (time_from_last != 0) {
         double parallelism_from_last = 1.0 * cpu_time_from_last / time_from_last;
@@ -199,8 +256,13 @@ void print_time(const char* msg)
         return;
     }
 
+#ifdef _WIN32
+    int64_t now = get_nsec_time();
+    int64_t cpu_now = get_nsec_cpu_time();
+#else
     long long now = get_nsec_time();
     long long cpu_now = get_nsec_cpu_time();
+#endif
 
     printf("%-35s\t", msg);
     print_times_from_last_and_start(now, last_time, cpu_now, last_cpu_time);
@@ -231,7 +293,11 @@ void print_indent()
 
 void op_profiling_enter(const std::string &msg)
 {
+#ifdef _WIN32
+    for (std::pair<std::string, int64_t*> p : op_data_points)
+#else
     for (std::pair<std::string, long long*> p : op_data_points)
+#endif
     {
         op_counts[std::make_pair(msg, p.first)] = *(p.second);
     }
@@ -245,9 +311,17 @@ void enter_block(const std::string &msg, const bool indent)
     }
 
     block_names.emplace_back(msg);
+#ifdef _WIN32
+    int64_t t = get_nsec_time();
+#else
     long long t = get_nsec_time();
+#endif
     enter_times[msg] = t;
+#ifdef _WIN32
+    int64_t cpu_t = get_nsec_cpu_time();
+#else
     long long cpu_t = get_nsec_cpu_time();
+#endif
     enter_cpu_times[msg] = cpu_t;
 
     if (inhibit_profiling_info)
@@ -288,15 +362,27 @@ void leave_block(const std::string &msg, const bool indent)
 
     ++invocation_counts[msg];
 
+#ifdef _WIN32
+    int64_t t = get_nsec_time();
+#else
     long long t = get_nsec_time();
+#endif
     last_times[msg] = (t - enter_times[msg]);
     cumulative_times[msg] += (t - enter_times[msg]);
 
+#ifdef _WIN32
+    int64_t cpu_t = get_nsec_cpu_time();
+#else
     long long cpu_t = get_nsec_cpu_time();
+#endif
     last_cpu_times[msg] = (cpu_t - enter_cpu_times[msg]);
 
 #ifdef PROFILE_OP_COUNTS
+#ifdef _WIN32
+    for (std::pair<std::string, int64_t*> p : op_data_points)
+#else
     for (std::pair<std::string, long long*> p : op_data_points)
+#endif
     {
         cumulative_op_counts[std::make_pair(msg, p.first)] += *(p.second)-op_counts[std::make_pair(msg, p.first)];
     }

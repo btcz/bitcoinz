@@ -26,7 +26,11 @@ namespace libsnark {
  * Mnemonic typedefs.
  */
 typedef size_t var_index_t;
+#ifdef _WIN32
+typedef int64_t integer_coeff_t;
+#else
 typedef long integer_coeff_t;
+#endif
 
 /**
  * Forward declaration.

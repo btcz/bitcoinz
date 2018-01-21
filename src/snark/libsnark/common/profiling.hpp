@@ -22,7 +22,11 @@
 namespace libsnark {
 
 void start_profiling();
+#ifdef _WIN32
+int64_t get_nsec_time();
+#else
 long long get_nsec_time();
+#endif
 void print_time(const char* msg);
 void print_header(const char* msg);
 
@@ -31,13 +35,23 @@ void print_indent();
 extern bool inhibit_profiling_info;
 extern bool inhibit_profiling_counters;
 extern std::map<std::string, size_t> invocation_counts;
+#ifdef _WIN32
+extern std::map<std::string, int64_t> last_times;
+extern std::map<std::string, int64_t> cumulative_times;
+#else
 extern std::map<std::string, long long> last_times;
 extern std::map<std::string, long long> cumulative_times;
+#endif
 
 void clear_profiling_counters();
 
+#ifdef _WIN32
+void print_cumulative_time_entry(const std::string &key, const int64_t factor=1);
+void print_cumulative_times(const int64_t factor=1);
+#else
 void print_cumulative_time_entry(const std::string &key, const long long factor=1);
 void print_cumulative_times(const long long factor=1);
+#endif
 void print_cumulative_op_counts(const bool only_fq=false);
 
 void enter_block(const std::string &msg, const bool indent=true);

@@ -25,7 +25,11 @@ FieldT power(const FieldT &base, const bigint<m> &exponent)
 
     bool found_one = false;
 
+#ifdef _WIN32
+    for (int64_t i = exponent.max_bits() - 1; i >= 0; --i)
+#else
     for (long i = exponent.max_bits() - 1; i >= 0; --i)
+#endif
     {
         if (found_one)
         {
@@ -43,7 +47,11 @@ FieldT power(const FieldT &base, const bigint<m> &exponent)
 }
 
 template<typename FieldT>
+#ifdef _WIN32
+FieldT power(const FieldT &base, const uint64_t exponent)
+#else
 FieldT power(const FieldT &base, const unsigned long exponent)
+#endif
 {
     return power<FieldT>(base, bigint<1>(exponent));
 }

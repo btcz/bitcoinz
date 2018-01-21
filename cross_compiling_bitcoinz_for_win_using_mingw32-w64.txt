@@ -1,0 +1,42 @@
+OS: ubuntu16.04
+1. sudo apt-get install mingw-w64
+It will install x86_64-w64-mingw32-gcc with two version thread models: posix and win32.
+/usr/bin/x86_64-w64-mingw32-gcc-win32
+/usr/bin/x86_64-w64-mingw32-gcc-posix
+/usr/bin/x86_64-w64-mingw32-g++-win32
+/usr/bin/x86_64-w64-mingw32-g++-posix
+
+execute the following commands to make sure the posix model was selected:
+sudo update-alternatives --config x86_64-w64-mingw32-gcc
+sudo update-alternatives --config x86_64-w64-mingw32-g++
+
+2. install rust
+curl https://sh.rustup.rs -sSf | sh
+source ~/.cargo/env
+rustup install stable-x86_64-unknown-linux-gnu
+rustup install stable-x86_64-pc-windows-gnu
+rustup target add x86_64-pc-windows-gnu
+vi  ~/.cargo/config, add:
+[target.x86_64-pc-windows-gnu]
+linker = "/usr/bin/x86_64-w64-mingw32-gcc"
+
+3. patch the source tree (created by git format-patch -M master;  Thanks to the Devs of zclassic and zen)
+0001-cross-compiling-for-win.patch
+0002-update-libsnark-add-_WIN32-for-mingw32-w64.patch
+0003-remove-src-directory-in-snark.patch
+0004-update-Makefile-in-snark-add-mingw-detect.patch
+
+4. compile
+(1)source ~/.cargo/env
+(2)for win:
+./zcutil/build-win.sh --disable-tests
+//cross compiling gtest for win failed, but compiling for linux passed
+for linux: depends/package/rust.mk and librustzcash.mk should use the version in master branch, and change '-lboost_program_options-mt-s' in src/snark/Makefile to '-lboost_program_options-mt'. I don't know how to distinguish between gcc and mingw in Makefile, and why $(shell $CC -dumpmachine) didn't work.
+./zcutil/build.sh
+
+We will get zcashd.exe zcash-cli.exe in src directory
+my compiled version: https://mega.nz/#F!IvI21L7D!ogpzIDwr0MJT-TrF5buTJg
+
+5. test
+zcashd.exe -reindex, and "jre\bin\java.exe -jar BitcoinZWallet.jar"
+

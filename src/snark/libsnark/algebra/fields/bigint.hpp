@@ -33,7 +33,11 @@ public:
     mp_limb_t data[n] = {0};
 
     bigint() = default;
+#ifdef _WIN32
+    bigint(const uint64_t x); /// Initalize from a small integer
+#else
     bigint(const unsigned long x); /// Initalize from a small integer
+#endif
     bigint(const char* s); /// Initialize from a string containing an integer in decimal notation
     bigint(const mpz_t r); /// Initialize from MPZ element
 
@@ -46,7 +50,11 @@ public:
     size_t max_bits() const { return n * GMP_NUMB_BITS; }
     size_t num_bits() const;
 
+#ifdef _WIN32
+    uint64_t as_ulong() const; /* return the last limb of the integer */
+#else
     unsigned long as_ulong() const; /* return the last limb of the integer */
+#endif
     void to_mpz(mpz_t r) const;
     bool test_bit(const std::size_t bitno) const;
 
