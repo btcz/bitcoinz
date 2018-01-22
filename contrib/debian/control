@@ -1,8 +1,8 @@
 Source: bitcoinz
 Section: utils
 Priority: optional
-Maintainer: BitcoinZ team <team@btcz.com>
-Homepage: https://bitcoinz.site
+Maintainer: BitcoinZ team <team@btcz.org>
+Homepage: https://btcz.rocks
 Build-Depends: autoconf, automake, bsdmainutils, build-essential,
  git, g++-multilib, libc6-dev, libtool,
  m4, ncurses-dev, pkg-config, python,
@@ -11,12 +11,8 @@ Vcs-Git: https://github.com/bitcoinz-pod/bitcoinz.git
 Vcs-Browser: https://github.com/bitcoinz-pod
 
 Package: bitcoinz
-Version: 1.0.3
+Version: 1.1.3
 Depends: ${shlibs:Depends}
 Architecture: all
-Description: HTTPS for money.
- Based on Bitcoin's & Zcash code, it intends to offer a far higher standard
- of privacy and anonymity through a sophisticiated zero-knowledge
- proving scheme which preserves confidentiality of transaction metadata.
- This package provides the daemon, zcashd, and the CLI tool,
- zcash-cli, to interact with the daemon.
+Description: Community coin.
+ BitcoinZ is based on Bitcoin's & Zcash code.

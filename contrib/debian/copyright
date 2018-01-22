@@ -1,6 +1,6 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
 Upstream-Name: BitcoinZ
-Upstream-Contact: BitcoinZ <team@btcz>
+Upstream-Contact: BitcoinZ <team@btcz.org>
 Source: https://github.com/bitcoinz-pod/bitcoinz
 
 Files: *
