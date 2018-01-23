@@ -277,6 +277,7 @@ void Shutdown()
  */
 void HandleSIGTERM(int)
 {
+    std::cout << "Quit signal received. Wait until the program properly terminates... " << std::endl;
     fRequestShutdown = true;
 }
 
@@ -715,6 +716,21 @@ bool AppInitServers(boost::thread_group& threadGroup)
     return true;
 }
 
+#ifdef WIN32
+BOOL WINAPI consoleHandler(DWORD signal)
+{
+    switch(signal)
+    {
+       case CTRL_CLOSE_EVENT:
+       case CTRL_LOGOFF_EVENT:
+       case CTRL_SHUTDOWN_EVENT:
+       case CTRL_C_EVENT:
+          HandleSIGTERM(0);
+          return true;
+    }
+}
+#endif
+
 /** Initialize bitcoin.
  *  @pre Parameters should be parsed and config file should be read.
  */
@@ -774,6 +790,13 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
     signal(SIGPIPE, SIG_IGN);
+#endif
+
+#ifdef WIN32
+    SetConsoleCtrlHandler(consoleHandler, true);
+    HWND hwnd = GetConsoleWindow();
+    HMENU hmenu = GetSystemMenu(hwnd, FALSE);
+    EnableMenuItem(hmenu, SC_CLOSE, MF_GRAYED);
 #endif
 
     // ********************************************************* Step 2: parameter interactions

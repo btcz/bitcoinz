@@ -6,6 +6,13 @@
 #* @copyright  MIT license (see LICENSE file)
 #*******************************************************************************/
 
+# Determine building operating system
+ifeq ($(OS),Windows_NT)
+    uname_S := Windows
+else
+    uname_S := $(shell uname -s)
+endif
+
 # To override these, use "make OPTFLAGS=..." etc.
 CURVE = BN128
 OPTFLAGS = -O2 -march=native -mtune=native
@@ -175,6 +182,7 @@ all: \
      $(if $(NO_GTEST),,$(EXECUTABLES_WITH_GTEST) $(GTEST_TESTS)) \
      $(if $(NO_SUPERCOP),,$(EXECUTABLES_WITH_SUPERCOP)) \
      $(EXECUTABLES) \
+     $(LIBSNARK_A) \
      $(if $(NO_DOCS),,doc)
 
 doc: $(DOCS)
