@@ -104,6 +104,7 @@ public:
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
         vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
         vSeeds.push_back(CDNSSeedData("776c5ea2c482f4abb1ae956180f22f5b05ac2d6dc26ff72a2c186b2d765e9524.BTCZ", "btcz.gisli.fr"));
+        vSeeds.push_back(CDNSSeedData("137f43c75c7915a0dcef3b77920e17fb60f45603cf45ed04ec6cf5383678f29f.BTCZ", "btcz-us.crypt29.net"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
@@ -151,8 +152,8 @@ public:
             ( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40"))
             ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")) // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
             ( 40000, uint256S("0x00000005a2d9a94e2e16f9c1e578a2eb46cc267ab7a51539d22ff8aa0096140b"))
-            ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a"))
-            ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c")),
+            ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a")),
+            //( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c")),
 
             1513441422,     // * UNIX timestamp of last checkpoint block
             212352,         // * total number of transactions between genesis and last checkpoint
