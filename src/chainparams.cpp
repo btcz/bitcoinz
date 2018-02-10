@@ -100,8 +100,6 @@ public:
         // use name as: echo -n hostname | sha256sum
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
         vSeeds.push_back(CDNSSeedData("6587c9bfccb608dddf1dbba7e2ec8fc91ebe70138e175e2949f3588934687b9b.BTCZ", "dnsseed.kemperink.org"));
-        vSeeds.push_back(CDNSSeedData("a094ea4307abc8b674662175d8e0627c4a30e4916b98ca4b160c2de6e321767c.BTCZ", "seeder.nomadteam.net"));
-        vSeeds.push_back(CDNSSeedData("487658a406d62f020c5656d50923f094a688b92d6c85b3ccd8769b60b2c6449f.BTCZ", "btcz.webrats.com"));
         vSeeds.push_back(CDNSSeedData("74e66cfeadbfe82ce1f328850f48d67b0cf93777ff843935fa183ffe151e28cb.BTCZ", "btcz.es"));
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
         vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
