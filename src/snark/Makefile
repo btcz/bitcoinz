@@ -113,18 +113,9 @@ EXECUTABLES_WITH_GTEST =
 EXECUTABLES_WITH_SUPERCOP = \
 	libsnark/zk_proof_systems/ppzkadsnark/r1cs_ppzkadsnark/examples/demo_r1cs_ppzkadsnark
 
-GTEST_TESTS = libsnark/gtests
+GTEST_TESTS =
 
-GTEST_SRCS = \
-	libsnark/algebra/curves/tests/test_bilinearity.cpp \
-	libsnark/algebra/curves/tests/test_groups.cpp \
-	libsnark/algebra/fields/tests/test_bigint.cpp \
-	libsnark/algebra/fields/tests/test_fields.cpp \
-	libsnark/gadgetlib1/gadgets/hashes/sha256/tests/test_sha256_gadget.cpp \
-	libsnark/gadgetlib1/gadgets/merkle_tree/tests/test_merkle_tree_gadgets.cpp \
-	libsnark/relations/arithmetic_programs/qap/tests/test_qap.cpp \
-	libsnark/zk_proof_systems/ppzksnark/r1cs_ppzksnark/tests/test_r1cs_ppzksnark.cpp \
-	libsnark/gtests.cpp
+GTEST_SRCS =
 
 DOCS = README.html
 
