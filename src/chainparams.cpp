@@ -99,6 +99,7 @@ public:
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
+        vSeeds.push_back(CDNSSeedData("acdd520508bbfa96029867cf64b824fa5e41ebe47918bd4b7855d7a186ed795c.BTCZ", "bzseed.secnode.tk"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
