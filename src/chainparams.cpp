@@ -98,14 +98,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
-        vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
-        vSeeds.push_back(CDNSSeedData("6587c9bfccb608dddf1dbba7e2ec8fc91ebe70138e175e2949f3588934687b9b.BTCZ", "dnsseed.kemperink.org"));
-        vSeeds.push_back(CDNSSeedData("a094ea4307abc8b674662175d8e0627c4a30e4916b98ca4b160c2de6e321767c.BTCZ", "seeder.nomadteam.net"));
-        vSeeds.push_back(CDNSSeedData("487658a406d62f020c5656d50923f094a688b92d6c85b3ccd8769b60b2c6449f.BTCZ", "btcz.webrats.com"));
-        vSeeds.push_back(CDNSSeedData("74e66cfeadbfe82ce1f328850f48d67b0cf93777ff843935fa183ffe151e28cb.BTCZ", "btcz.es"));
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
-        vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
-        vSeeds.push_back(CDNSSeedData("776c5ea2c482f4abb1ae956180f22f5b05ac2d6dc26ff72a2c186b2d765e9524.BTCZ", "btcz.gisli.fr"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
@@ -153,12 +146,13 @@ public:
             ( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40"))
             ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")) // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
             ( 40000, uint256S("0x00000005a2d9a94e2e16f9c1e578a2eb46cc267ab7a51539d22ff8aa0096140b"))
-            ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a")),
+            ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a"))
+            ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c")),
 
-            1513441422,     // * UNIX timestamp of last checkpoint block
-            212352,         // * total number of transactions between genesis and last checkpoint
+            1517704199,     // * UNIX timestamp of last checkpoint block
+            339853,         // * total number of transactions between genesis and last checkpoint
                             //   (the tx=... number in the SetBestChain debug.log lines)
-            2184.192        // * estimated number of transactions per day after checkpoint
+            2324.664259935  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 

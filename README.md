@@ -1,8 +1,6 @@
 # BitcoinZ
 **Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
-![BTCZ](https://ip.bitcointalk.org/?u=https%3A%2F%2Fi.imgur.com%2FXflfHDN.png&t=582&c=-VhG9Suykc7RCA)
-
 ### Ports:
 - RPC port: 1979
 - P2P port: 1989
@@ -22,13 +20,33 @@ sudo apt-get install \
 ```
 
 Install
+
 ```{r, engine='bash'}
+# Clone Bitcoinz Repository
+git clone https://github.com/bitcoinz-pod/bitcoinz
 # Build
+cd bitcoinz/
 ./zcutil/build.sh -j$(nproc)
 # fetch key
 ./zcutil/fetch-params.sh
 # Run
 ./src/zcashd
+# Test getting information about the network
+cd src/
+./zcash-cli getmininginfo
+# Test creating new transparent address
+./zcash-cli getnewaddress
+# Test creating new private address
+./zcash-cli z_getnewaddress
+# Test checking transparent balance
+./zcash-cli getbalance
+# Test checking total balance 
+./zcash-cli z_gettotalbalance
+# Check all available wallet commands
+./zcash-cli help
+# Get more info about a single wallet command
+./zcash-cli help "The-command-you-want-to-learn-more-about"
+./zcash-cli help "getbalance"
 ```
 
 ### Docker
