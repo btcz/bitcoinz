@@ -1,8 +1,6 @@
 # BitcoinZ
 **Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
-![BTCZ](https://ip.bitcointalk.org/?u=https%3A%2F%2Fi.imgur.com%2FXflfHDN.png&t=582&c=-VhG9Suykc7RCA)
-
 ### Ports:
 - RPC port: 1979
 - P2P port: 1989
