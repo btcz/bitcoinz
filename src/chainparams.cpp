@@ -98,9 +98,13 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
+        vSeeds.push_back(CDNSSeedData("b8491e7ea3502b8fcda9106923e68b92ef43c331dbf9cfb3c94af473bfbf308b.BTCZ", "btcz.kovach.biz"));
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
         vSeeds.push_back(CDNSSeedData("acdd520508bbfa96029867cf64b824fa5e41ebe47918bd4b7855d7a186ed795c.BTCZ", "bzseed.secnode.tk"));
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
+        vSeeds.push_back(CDNSSeedData("137f43c75c7915a0dcef3b77920e17fb60f45603cf45ed04ec6cf5383678f29f.BTCZ", "btcz-us.crypt29.net"));
+        vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
+        vSeeds.push_back(CDNSSeedData("04c5106b3e9e3b7b0e3c849d482475cf4a7753e7ae61e2515f0c6e2e5d5abc92.BTCZ", "dnsseed.ppcall.ru"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
