@@ -57,6 +57,8 @@ RUN chmod +x /usr/local/bin/cli
 # Copy zcash params
 COPY --from=build /root/.zcash-params /bitcoinz/.zcash-params
 
+# Add volume to use as persistent storage
+VOLUME ["/bitcoinz/data"]
 RUN chown -R bitcoinz: /bitcoinz
 USER bitcoinz
 WORKDIR /bitcoinz
