@@ -74,9 +74,7 @@ src/univalue/gen
 *.la
 
 # Compilation
-src/Makefile
-doc/man/Makefile
-/Makefile
+Makefile
 
 # Unit-tests
 Makefile.test
@@ -115,6 +113,3 @@ libzcashconsensus.pc
 
 contrib/debian/files
 contrib/debian/substvars
-
-.idea/
-*.iml
