@@ -61,10 +61,14 @@ public:
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        const size_t N = 200, K = 9;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
+        const size_t N1 = 200, K1 = 9, eq1end=150000; //eq1end block at which these equihash parameters cease to be valid.
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N1, K1));
+        nEquihashN1 = N1;
+        nEquihashK1 = K1;
+        const size_t N2 = 144, K2 = 5, eq2start = 140000;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N2, K2));
+        nEquihashN2 = N2;
+        nEquihashK2 = K2;
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -190,6 +194,15 @@ public:
         vAlertPubKey = ParseHex("048679fb891b15d0cada9692047fd0ae26ad8bfb83fabddbb50334ee5bc0683294deb410be20513c5af6e7b9cec717ade82b27080ee6ef9a245c36a795ab044bb3");
         nDefaultPort = 11989;
         nPruneAfterHeight = 1000;
+        const size_t N1 = 200, K1 = 9, eq1end=14500; //eq1end block at which these equihash parameters cease to be valid.
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N1, K1));
+        nEquihashN1 = N1;
+        nEquihashK1 = K1;
+        const size_t N2 = 144, K2 = 5, eq2start = 14000;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N2, K2));
+        nEquihashN2 = N2;
+        nEquihashK2 = K2;
+        
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1479443947;
@@ -267,10 +280,14 @@ public:
         pchMessageStart[2] = 0x3f;
         pchMessageStart[3] = 0x5f;
         nMaxTipAge = 24 * 60 * 60;
-        const size_t N = 48, K = 5;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
+        const size_t N1 = 48, K1 = 5, eq1end=1; //eq1end block at which these equihash parameters cease to be valid.
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N1, K1));
+        nEquihashN1 = N1;
+        nEquihashK1 = K1;
+        const size_t N2 = 48, K2 = 5, eq2start = 1;
+        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N2, K2));
+        nEquihashN2 = N2;
+        nEquihashK2 = K2;
         genesis.nTime = 1482971059;
         genesis.nBits = 0x200f0f0f;
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000009");

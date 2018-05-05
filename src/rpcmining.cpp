@@ -201,8 +201,8 @@ UniValue generate(const UniValue& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
-    unsigned int n = Params().EquihashN();
-    unsigned int k = Params().EquihashK();
+    unsigned int n = Params().EquihashN1();
+    unsigned int k = Params().EquihashK1();
     while (nHeight < nHeightEnd)
     {
 #ifdef ENABLE_WALLET
