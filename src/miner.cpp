@@ -499,6 +499,10 @@ void static BitcoinMiner()
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
+
+//NOTE: Need to add code here to change params based on block height
+
+
     unsigned int n = chainparams.EquihashN1();
     unsigned int k = chainparams.EquihashK1();
 

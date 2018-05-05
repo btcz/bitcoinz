@@ -201,8 +201,11 @@ UniValue generate(const UniValue& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
-    unsigned int n = Params().EquihashN1();
-    unsigned int k = Params().EquihashK1();
+
+//NOTE: May need to add code here to change params based on block height. Or perhaps fix o K2 and N2
+
+    unsigned int n = Params().EquihashN2();
+    unsigned int k = Params().EquihashK2();
     while (nHeight < nHeightEnd)
     {
 #ifdef ENABLE_WALLET
