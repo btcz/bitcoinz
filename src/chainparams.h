@@ -85,12 +85,6 @@ public:
     unsigned long eh_epoch_1_end() const { return eh_epoch_1_endblock; }
     unsigned long eh_epoch_2_start() const { return eh_epoch_2_startblock; }
 
-//for testing
-    unsigned long EquihashN1() const { return 200; }
-    unsigned long EquihashK1() const { return 9; }
-    unsigned long EquihashN2() const { return 200; }
-    unsigned long EquihashK2() const { return 9; }
-
     std::string CurrencyUnits() const { return strCurrencyUnits; }
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
     bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
