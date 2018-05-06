@@ -61,14 +61,11 @@ public:
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        const size_t N1 = 200, K1 = 9, eq1end=150000; //eq1end block at which these equihash parameters cease to be valid.
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N1, K1));
-        nEquihashN1 = N1;
-        nEquihashK1 = K1;
-        const size_t N2 = 144, K2 = 5, eq2start = 140000;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N2, K2));
-        nEquihashN2 = N2;
-        nEquihashK2 = K2;
+        eh_epoch_1 = eh200_9;
+        eh_epoch_2 = eh144_5;
+        eh_epoch_1_endblock = 150000;
+        eh_epoch_2_startblock = 140000;
+        
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -194,14 +191,10 @@ public:
         vAlertPubKey = ParseHex("048679fb891b15d0cada9692047fd0ae26ad8bfb83fabddbb50334ee5bc0683294deb410be20513c5af6e7b9cec717ade82b27080ee6ef9a245c36a795ab044bb3");
         nDefaultPort = 11989;
         nPruneAfterHeight = 1000;
-        const size_t N1 = 200, K1 = 9, eq1end=14500; //eq1end block at which these equihash parameters cease to be valid.
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N1, K1));
-        nEquihashN1 = N1;
-        nEquihashK1 = K1;
-        const size_t N2 = 144, K2 = 5, eq2start = 14000;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N2, K2));
-        nEquihashN2 = N2;
-        nEquihashK2 = K2;
+        eh_epoch_1 = eh200_9;
+        eh_epoch_2 = eh144_5;
+        eh_epoch_1_endblock = 14704;
+        eh_epoch_2_startblock = 14500;
         
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
@@ -280,14 +273,12 @@ public:
         pchMessageStart[2] = 0x3f;
         pchMessageStart[3] = 0x5f;
         nMaxTipAge = 24 * 60 * 60;
-        const size_t N1 = 48, K1 = 5, eq1end=1; //eq1end block at which these equihash parameters cease to be valid.
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N1, K1));
-        nEquihashN1 = N1;
-        nEquihashK1 = K1;
-        const size_t N2 = 48, K2 = 5, eq2start = 1;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N2, K2));
-        nEquihashN2 = N2;
-        nEquihashK2 = K2;
+
+        eh_epoch_1 = eh48_5;
+        eh_epoch_2 = eh48_5;
+        eh_epoch_1_endblock = 1;
+        eh_epoch_2_startblock = 1;
+
         genesis.nTime = 1482971059;
         genesis.nBits = 0x200f0f0f;
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000009");
@@ -391,4 +382,22 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
 std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
     assert(i >= 0 && i < vFoundersRewardAddress.size());
     return vFoundersRewardAddress[i];
+}
+
+
+int validEHparameterList(EHparameters *ehparams, unsigned long blockheight, const CChainParams& params){
+    //if in overlap period, there will be two valid solutions, else 1.
+    //The upcoming version of EH is preferred so will always be first element
+    //returns number of elements in list
+    if(blockheight>=params.eh_epoch_2_start() && blockheight>=params.eh_epoch_1_end()){
+        ehparams[0]=params.eh_epoch_2_params();
+        return 1;
+    }
+    if(blockheight<params.eh_epoch_2_start()){
+        ehparams[0]=params.eh_epoch_1_params();
+        return 1;
+    }
+    ehparams[0]=params.eh_epoch_2_params();
+    ehparams[1]=params.eh_epoch_1_params();
+    return 2;
 }
