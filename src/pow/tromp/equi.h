@@ -17,11 +17,11 @@ typedef unsigned char uchar;
 // algorithm parameters, prefixed with W to reduce include file conflicts
 
 #ifndef WN
-#define WN	144
+#define WN	200
 #endif
 
 #ifndef WK
-#define WK	5
+#define WK	9
 #endif
 
 #define NDIGITS		(WK+1)

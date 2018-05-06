@@ -13,7 +13,6 @@
 #include "streams.h"
 #include "uint256.h"
 #include "util.h"
-#include "main.h"
 
 #include "sodium.h"
 
@@ -84,31 +83,21 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
 
 bool CheckEquihashSolution(const CBlockHeader *pblock, const CChainParams& params)
 {
-    unsigned int n = params.EquihashN1();
-    unsigned int k = params.EquihashK1();
-    unsigned int nHeight=1;
-
-    // Get current block via previous block hash
-    CBlockIndex* pindexPrev = NULL;
-    LogPrint("pow", "hashprevblock is: %s \n", pblock->hashPrevBlock.ToString());
-    LogPrint("pow", "hashGenesisBlock is: %s \n", params.GetConsensus().hashGenesisBlock.ToString());
-
-
-    if (pblock->hashPrevBlock != params.GetConsensus().hashGenesisBlock) {
-        BlockMap::iterator mi = mapBlockIndex.find(pblock->hashPrevBlock);
-        if (mi == mapBlockIndex.end())
-            return error("CheckEquihashSolution(): block index not found");
-        pindexPrev = (*mi).second;
-        if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
-            return error("CheckEquihashSolution(): Previous Block invalid");
-    nHeight = pindexPrev->nHeight+1;
+    //Set parameters N,K from solution size. Filtering of valid parameters
+    //for the givenblock height will be carried out in main.cpp/ContextualCheckBlockHeader
+    unsigned int n,k;
+    size_t nSolSize = pblock->nSolution.size();
+    switch (nSolSize){
+        case 1344: n=200; k=9; break;
+        case 100:  n=144; k=5; break;
+        case 68:   n=96;  k=5; break;
+        case 36:   n=48;  k=5; break;
+        default: return error("CheckEquihashSolution: Unsupported solution size of %d", nSolSize);
     }
-    
 
-    LogPrint("pow", "CheckEquihashSolution checking block: %d \n", nHeight);
+    LogPrint("pow", "selected n,k : %d, %d \n", n,k);
 
     //need to put block height param switching code here
-    
 
     // Hash state
     crypto_generichash_blake2b_state state;
