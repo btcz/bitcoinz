@@ -3096,6 +3096,10 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
             solutionInvalid=0;
     }
 
+    //Block will be validated prior to mining, and will have a zero length equihash solution. These need to be let through. Checkequihashsolution will catch them.
+    if(!nSolSize)
+        solutionInvalid=0;
+
     if(solutionInvalid){
         return state.DoS(100,error("ContextualCheckBlockHeader: Equihash solution size %d for block %d does not match a valid length",nSolSize, nHeight),
            REJECT_INVALID,"bad-equihash-solution-size");

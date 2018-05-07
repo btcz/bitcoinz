@@ -90,10 +90,9 @@ public:
         genesis.nBits    = 0x1f07ffff;
         genesis.nNonce   = uint256S("0x000000000000000000000000000000000000000000000000000000000000021d");
         genesis.nSolution.clear();
-
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        assert(consensus.hashGenesisBlock == uint256S("0xf499ee3d498b4298ac6a64205b8addb7c43197e2a660229be65db8a4534d75c2")); //incremented by 1 making 2
+        assert(consensus.hashGenesisBlock == uint256S("0xf499ee3d498b4298ac6a64205b8addb7c43197e2a660229be65db8a4534d75c1")); //incremented by 1 making 2
         assert(genesis.hashMerkleRoot == uint256S("0xf40283d893eb46b35379a404cf06bd58c22ce05b32a4a641adec56e0792789ad"));
 
         vFixedSeeds.clear();
@@ -322,8 +321,8 @@ const CChainParams &Params() {
 
 CChainParams &Params(CBaseChainParams::Network network) {
     switch (network) {
-        case CBaseChainParams::MAIN:
-            return mainParams;
+//        case CBaseChainParams::MAIN:
+//            return mainParams;
         case CBaseChainParams::TESTNET:
             return testNetParams;
         case CBaseChainParams::REGTEST:
