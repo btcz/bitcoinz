@@ -72,7 +72,7 @@ function zcashd_start {
         *)
             rm -rf "$DATADIR"
             mkdir -p "$DATADIR/regtest"
-            touch "$DATADIR/zcash.conf"
+            touch "$DATADIR/bitcoinz.conf"
     esac
     ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &
     ZCASHD_PID=$!
@@ -102,7 +102,7 @@ function zcashd_massif_start {
         *)
             rm -rf "$DATADIR"
             mkdir -p "$DATADIR/regtest"
-            touch "$DATADIR/zcash.conf"
+            touch "$DATADIR/bitcoinz.conf"
     esac
     rm -f massif.out
     valgrind --tool=massif --time-unit=ms --massif-out-file=massif.out ./src/zcashd -regtest -datadir="$DATADIR" -rpcuser=user -rpcpassword=password -rpcport=5983 -showmetrics=0 &

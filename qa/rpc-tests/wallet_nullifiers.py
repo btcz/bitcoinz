@@ -22,9 +22,9 @@ class WalletNullifiersTest (BitcoinTestFramework):
         myzaddr0 = self.nodes[0].z_getnewaddress()
 
         # send node 0 taddr to zaddr to get out of coinbase
-        mytaddr = self.nodes[0].getnewaddress();
+        mytaddr = self.nodes[0].getnewaddress()
         recipients = []
-        recipients.append({"address":myzaddr0, "amount":Decimal('10.0')-Decimal('0.0001')}) # utxo amount less fee
+        recipients.append({"address":myzaddr0, "amount":Decimal('12500.0')-Decimal('0.0001')}) # utxo amount less fee
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
 
         opids = []
@@ -65,7 +65,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # send node 0 zaddr to note 2 zaddr
         recipients = []
-        recipients.append({"address":myzaddr, "amount":7.0})
+        recipients.append({"address":myzaddr, "amount":8750.0})
         myopid = self.nodes[0].z_sendmany(myzaddr0, recipients)
 
         opids = []
@@ -88,7 +88,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         self.sync_all()
 
         # check zaddr balance
-        zsendmanynotevalue = Decimal('7.0')
+        zsendmanynotevalue = Decimal('8750.0')
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zsendmanynotevalue)
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zsendmanynotevalue)
 
@@ -97,7 +97,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # send node 2 zaddr to note 3 zaddr
         recipients = []
-        recipients.append({"address":myzaddr3, "amount":2.0})
+        recipients.append({"address":myzaddr3, "amount":2500.0})
         myopid = self.nodes[2].z_sendmany(myzaddr, recipients)
 
         opids = []
@@ -120,7 +120,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         self.sync_all()
 
         # check zaddr balance
-        zsendmany2notevalue = Decimal('2.0')
+        zsendmany2notevalue = Decimal('2500.0')
         zsendmanyfee = Decimal('0.0001')
         zaddrremaining = zsendmanynotevalue - zsendmany2notevalue - zsendmanyfee
         assert_equal(self.nodes[3].z_getbalance(myzaddr3), zsendmany2notevalue)
@@ -136,9 +136,9 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # This requires that node 1 be unlocked, which triggers caching of
         # uncached nullifiers.
         self.nodes[1].walletpassphrase("test", 600)
-        mytaddr1 = self.nodes[1].getnewaddress();
+        mytaddr1 = self.nodes[1].getnewaddress()
         recipients = []
-        recipients.append({"address":mytaddr1, "amount":1.0})
+        recipients.append({"address":mytaddr1, "amount":1250.0})
         myopid = self.nodes[1].z_sendmany(myzaddr, recipients)
 
         opids = []
@@ -165,14 +165,14 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # Now that the encrypted wallet has been unlocked, the note nullifiers
         # have been cached and spent notes can be detected. Thus the two wallets
         # are in agreement once more.
-        zsendmany3notevalue = Decimal('1.0')
+        zsendmany3notevalue = Decimal('1250.0')
         zaddrremaining2 = zaddrremaining - zsendmany3notevalue - zsendmanyfee
         assert_equal(self.nodes[1].z_getbalance(myzaddr), zaddrremaining2)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining2)
 
         # Test viewing keys
 
-        node3mined = Decimal('250.0')
+        node3mined = Decimal('312500.0')
         assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance().items()}, {
             'transparent': node3mined,
             'private': zsendmany2notevalue,
@@ -206,13 +206,13 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # corresponding to the sum of all notes the address received.
         # TODO: Fix this during the Sapling upgrade (via #2277)
         assert_equal({k: Decimal(v) for k, v in self.nodes[3].z_gettotalbalance(1, True).items()}, {
-            'transparent': node3mined + Decimal('1.0'),
+            'transparent': node3mined + Decimal('1250.0'),
             'private': zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,
-            'total': node3mined + Decimal('1.0') + zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,
+            'total': node3mined + Decimal('1250.0') + zsendmany2notevalue + zsendmanynotevalue + zaddrremaining + zaddrremaining2,
         })
 
         # Check individual balances reflect the above
-        assert_equal(self.nodes[3].z_getbalance(mytaddr1), Decimal('1.0'))
+        assert_equal(self.nodes[3].z_getbalance(mytaddr1), Decimal('1250.0'))
         assert_equal(self.nodes[3].z_getbalance(myzaddr), zsendmanynotevalue + zaddrremaining + zaddrremaining2)
 
 if __name__ == '__main__':

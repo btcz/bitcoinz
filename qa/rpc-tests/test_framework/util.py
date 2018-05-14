@@ -75,7 +75,7 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
+    with open(os.path.join(datadir, "bitcoinz.conf"), 'w') as f:
         f.write("regtest=1\n");
         f.write("showmetrics=0\n");
         f.write("rpcuser=rt\n");
@@ -121,7 +121,7 @@ def initialize_chain(test_dir):
         # gets 25 mature blocks and 25 immature.
         # blocks are created with timestamps 10 minutes apart, starting
         # at 1 Jan 2014
-        block_time = 1388534400
+        block_time = 1482992659
         for i in range(2):
             for peer in range(4):
                 for j in range(25):
@@ -144,7 +144,7 @@ def initialize_chain(test_dir):
         from_dir = os.path.join("cache", "node"+str(i))
         to_dir = os.path.join(test_dir,  "node"+str(i))
         shutil.copytree(from_dir, to_dir)
-        initialize_datadir(test_dir, i) # Overwrite port/rpcport in zcash.conf
+        initialize_datadir(test_dir, i) # Overwrite port/rpcport in bitcoinz.conf
 
 def initialize_chain_clean(test_dir, num_nodes):
     """
@@ -389,12 +389,12 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
             elif status == "success":
                 txid = results[0]['result']['txid']
             break
-    assert_equal(in_status, status)
-    if errormsg is not None:
-        assert(in_errormsg is not None)
-        assert_equal(in_errormsg in errormsg, True)
     if os.getenv("PYTHON_DEBUG", ""):
         print('...returned status: {}'.format(status))
         if errormsg is not None:
             print('...returned error: {}'.format(errormsg))
+    assert_equal(in_status, status)
+    if errormsg is not None:
+        assert(in_errormsg is not None)
+        assert_equal(in_errormsg in errormsg, True)
     return txid
