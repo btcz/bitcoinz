@@ -63,8 +63,8 @@ public:
         nPruneAfterHeight = 100000;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
-        eh_epoch_1_endblock = 150000;
-        eh_epoch_2_startblock = 140000;
+        eh_epoch_1_endblock = 170000;
+        eh_epoch_2_startblock = 160000;
         
 
         /**
@@ -153,12 +153,14 @@ public:
             ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")) // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
             ( 40000, uint256S("0x00000005a2d9a94e2e16f9c1e578a2eb46cc267ab7a51539d22ff8aa0096140b"))
             ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a"))
-            ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c")),
+            ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c"))
+            ( 105841, uint256S("0x000000010305387fd72bc70ce5cc5b512fe513016e7208b9ee61d601fe212991"))  //Mr Hawking, Rest in peace.
+            ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8")),
 
-            1517704199,     // * UNIX timestamp of last checkpoint block
-            339853,         // * total number of transactions between genesis and last checkpoint
+            1526168168,     // * UNIX timestamp of last checkpoint block
+            565727,         // * total number of transactions between genesis and last checkpoint
                             //   (the tx=... number in the SetBestChain debug.log lines)
-            2324.664259935  // * estimated number of transactions per day after checkpoint
+            2327.5625143  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
@@ -228,7 +230,7 @@ public:
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
-        fMiningRequiresPeers = true;
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
@@ -322,8 +324,8 @@ const CChainParams &Params() {
 
 CChainParams &Params(CBaseChainParams::Network network) {
     switch (network) {
-//        case CBaseChainParams::MAIN:
-//            return mainParams;
+        case CBaseChainParams::MAIN:
+            return mainParams;
         case CBaseChainParams::TESTNET:
             return testNetParams;
         case CBaseChainParams::REGTEST:
