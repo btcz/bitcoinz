@@ -22,11 +22,18 @@
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
+    const CChainParams& chainParams = Params();
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // Genesis block
     if (pindexLast == NULL)
         return nProofOfWorkLimit;
+
+    // Reset the difficulty after the algo fork
+    if (pindexLast->nHeight > chainParams.eh_epoch_1_end() - 1
+      && pindexLast->nHeight < chainParams.eh_epoch_1_end() + params.nPowAveragingWindow) {
+      return nProofOfWorkLimit;
+    }
 
     // Find the first block in the averaging interval
     const CBlockIndex* pindexFirst = pindexLast;
