@@ -31,8 +31,9 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
 
     // Reset the difficulty after the algo fork
     if (pindexLast->nHeight > chainParams.eh_epoch_1_end() - 1
-      && pindexLast->nHeight < chainParams.eh_epoch_1_end() + params.nPowAveragingWindow) {
-      return nProofOfWorkLimit;
+        && pindexLast->nHeight < chainParams.eh_epoch_1_end() + params.nPowAveragingWindow) {
+        LogPrint("pow", "Reset the difficulty for the eh_epoch_2 algo change: %d\n", nProofOfWorkLimit);
+        return nProofOfWorkLimit;
     }
 
     // Find the first block in the averaging interval

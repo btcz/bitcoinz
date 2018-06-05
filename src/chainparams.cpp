@@ -63,9 +63,9 @@ public:
         nPruneAfterHeight = 100000;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
-        eh_epoch_1_endblock = 170000;
+        eh_epoch_1_endblock = 160010;
         eh_epoch_2_startblock = 160000;
-        
+
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -196,7 +196,7 @@ public:
         eh_epoch_2 = eh144_5;
         eh_epoch_1_endblock = 30000;
         eh_epoch_2_startblock = 14500;
-        
+
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1479443947;
@@ -391,7 +391,7 @@ int validEHparameterList(EHparameters *ehparams, unsigned long blockheight, cons
     //if in overlap period, there will be two valid solutions, else 1.
     //The upcoming version of EH is preferred so will always be first element
     //returns number of elements in list
-    if(blockheight>=params.eh_epoch_2_start() && blockheight>=params.eh_epoch_1_end()){
+    if(blockheight>=params.eh_epoch_2_start() && blockheight>params.eh_epoch_1_end()){
         ehparams[0]=params.eh_epoch_2_params();
         return 1;
     }
