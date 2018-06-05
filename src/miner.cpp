@@ -548,7 +548,7 @@ void static BitcoinMiner()
 
             // Get equihash parameters for the next block to be mined.
             EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
-            validEHparameterList(ehparams,nHeight,chainparams);
+            validEHparameterList(ehparams,nHeight+1,chainparams);
 
             unsigned int n = ehparams[0].n;
             unsigned int k = ehparams[0].k;
@@ -618,7 +618,7 @@ void static BitcoinMiner()
 #endif
                         (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
-                    LogPrint("pow", "- Checking solution against target pblock: %d, hashTarget: %d\n", UintToArith256(pblock->GetHash()), hashTarget);
+                    LogPrint("pow", "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
 
