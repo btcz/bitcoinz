@@ -11,7 +11,7 @@ Vcs-Git: https://github.com/bitcoinz-pod/bitcoinz.git
 Vcs-Browser: https://github.com/bitcoinz-pod
 
 Package: bitcoinz
-Version: 1.2.0
+Version: 1.2.1
 Depends: ${shlibs:Depends}
 Architecture: all
 Description: Community coin.
