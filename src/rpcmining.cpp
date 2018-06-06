@@ -201,10 +201,19 @@ UniValue generate(const UniValue& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
-    unsigned int n = Params().EquihashN();
-    unsigned int k = Params().EquihashK();
+
+
+
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+    const CChainParams& chainparams = Params();
+
     while (nHeight < nHeightEnd)
     {
+            validEHparameterList(ehparams,nHeight+1,chainparams);
+            unsigned int n = ehparams[0].n;
+            unsigned int k = ehparams[0].k;
+
+
 #ifdef ENABLE_WALLET
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
 #else

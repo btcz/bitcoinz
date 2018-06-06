@@ -78,7 +78,7 @@ void ThreadSendAlert()
     // These versions are protocol versions
     // 170002 : 1.0.0
     alert.nMinVer       = 170002;
-    alert.nMaxVer       = 770002;
+    alert.nMaxVer       = 770004;
 
     //
     // main.cpp:
@@ -88,7 +88,7 @@ void ThreadSendAlert()
     //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "Your client version 1.0.10 has degraded networking behavior. Please update to the most recent version of BitcoinZ (1.1.5 or later).";
+    alert.strStatusBar  = "Your client version 1.0.10 has degraded networking behavior. Please update to the most recent version of BitcoinZ (1.2.0 or later).";
     alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:

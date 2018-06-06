@@ -61,10 +61,11 @@ public:
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        const size_t N = 200, K = 9;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
+        eh_epoch_1 = eh200_9;
+        eh_epoch_2 = eh144_5;
+        eh_epoch_1_endblock = 160010;
+        eh_epoch_2_startblock = 160000;
+
 
         /**
          * Build the genesis block. Note that the output of its generation
@@ -89,10 +90,9 @@ public:
         genesis.nBits    = 0x1f07ffff;
         genesis.nNonce   = uint256S("0x000000000000000000000000000000000000000000000000000000000000021d");
         genesis.nSolution.clear();
-
         consensus.hashGenesisBlock = genesis.GetHash();
 
-        assert(consensus.hashGenesisBlock == uint256S("0xf499ee3d498b4298ac6a64205b8addb7c43197e2a660229be65db8a4534d75c1"));
+        assert(consensus.hashGenesisBlock == uint256S("0xf499ee3d498b4298ac6a64205b8addb7c43197e2a660229be65db8a4534d75c1")); //incremented by 1 making 2
         assert(genesis.hashMerkleRoot == uint256S("0xf40283d893eb46b35379a404cf06bd58c22ce05b32a4a641adec56e0792789ad"));
 
         vFixedSeeds.clear();
@@ -102,9 +102,6 @@ public:
         vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
         vSeeds.push_back(CDNSSeedData("acdd520508bbfa96029867cf64b824fa5e41ebe47918bd4b7855d7a186ed795c.BTCZ", "bzseed.secnode.tk"));
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
-        vSeeds.push_back(CDNSSeedData("137f43c75c7915a0dcef3b77920e17fb60f45603cf45ed04ec6cf5383678f29f.BTCZ", "btcz-us.crypt29.net"));
-        vSeeds.push_back(CDNSSeedData("f80236771af4ea523700ed3c53200aa81e3aad51b488e3f6abc22ae8c352f6eb.BTCZ", "btcz.vnminers.com"));
-        vSeeds.push_back(CDNSSeedData("04c5106b3e9e3b7b0e3c849d482475cf4a7753e7ae61e2515f0c6e2e5d5abc92.BTCZ", "dnsseed.ppcall.ru"));
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
@@ -153,12 +150,14 @@ public:
             ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")) // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
             ( 40000, uint256S("0x00000005a2d9a94e2e16f9c1e578a2eb46cc267ab7a51539d22ff8aa0096140b"))
             ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a"))
-            ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c")),
+            ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c"))
+            ( 105841, uint256S("0x000000010305387fd72bc70ce5cc5b512fe513016e7208b9ee61d601fe212991"))  //Mr Hawking, Rest in peace.
+            ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8")),
 
-            1517704199,     // * UNIX timestamp of last checkpoint block
-            339853,         // * total number of transactions between genesis and last checkpoint
+            1526168168,     // * UNIX timestamp of last checkpoint block
+            565727,         // * total number of transactions between genesis and last checkpoint
                             //   (the tx=... number in the SetBestChain debug.log lines)
-            2324.664259935  // * estimated number of transactions per day after checkpoint
+            2327.5625143  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
@@ -190,6 +189,11 @@ public:
         vAlertPubKey = ParseHex("048679fb891b15d0cada9692047fd0ae26ad8bfb83fabddbb50334ee5bc0683294deb410be20513c5af6e7b9cec717ade82b27080ee6ef9a245c36a795ab044bb3");
         nDefaultPort = 11989;
         nPruneAfterHeight = 1000;
+        eh_epoch_1 = eh200_9;
+        eh_epoch_2 = eh144_5;
+        eh_epoch_1_endblock = 30000;
+        eh_epoch_2_startblock = 14500;
+
 
         //! Modify the testnet genesis block so the timestamp is valid for a later start.
         genesis.nTime = 1479443947;
@@ -202,6 +206,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
+        vSeeds.push_back(CDNSSeedData("978b674532d58328c4da63ab138c476ffa2f8a8b2b5a023a668fd3a97eb7c48b.TZB", "testnetseed.btcz.biz"));
         //vSeeds.push_back(CDNSSeedData("rotorproject.org", "test-dnsseed.rotorproject.org")); // Zclassic
 
         // guarantees the first 2 characters, when base58 encoded, are "tm"
@@ -267,10 +272,12 @@ public:
         pchMessageStart[2] = 0x3f;
         pchMessageStart[3] = 0x5f;
         nMaxTipAge = 24 * 60 * 60;
-        const size_t N = 48, K = 5;
-        BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
-        nEquihashN = N;
-        nEquihashK = K;
+
+        eh_epoch_1 = eh48_5;
+        eh_epoch_2 = eh48_5;
+        eh_epoch_1_endblock = 1;
+        eh_epoch_2_startblock = 1;
+
         genesis.nTime = 1482971059;
         genesis.nBits = 0x200f0f0f;
         genesis.nNonce = uint256S("0x0000000000000000000000000000000000000000000000000000000000000009");
@@ -374,4 +381,22 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
 std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
     assert(i >= 0 && i < vFoundersRewardAddress.size());
     return vFoundersRewardAddress[i];
+}
+
+
+int validEHparameterList(EHparameters *ehparams, unsigned long blockheight, const CChainParams& params){
+    //if in overlap period, there will be two valid solutions, else 1.
+    //The upcoming version of EH is preferred so will always be first element
+    //returns number of elements in list
+    if(blockheight>=params.eh_epoch_2_start() && blockheight>params.eh_epoch_1_end()){
+        ehparams[0]=params.eh_epoch_2_params();
+        return 1;
+    }
+    if(blockheight<params.eh_epoch_2_start()){
+        ehparams[0]=params.eh_epoch_1_params();
+        return 1;
+    }
+    ehparams[0]=params.eh_epoch_2_params();
+    ehparams[1]=params.eh_epoch_1_params();
+    return 2;
 }

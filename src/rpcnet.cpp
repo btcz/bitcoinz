@@ -95,7 +95,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             "    \"timeoffset\": ttt,         (numeric) The time offset in seconds\n"
             "    \"pingtime\": n,             (numeric) ping time\n"
             "    \"pingwait\": n,             (numeric) ping wait\n"
-            "    \"version\": v,              (numeric) The peer version, such as 770002\n"
+            "    \"version\": v,              (numeric) The peer version, such as 770004\n"
             "    \"subver\": \"/MagicBean:x.y.z[-v]/\",  (string) The string version\n"
             "    \"inbound\": true|false,     (boolean) Inbound (true) or Outbound (false)\n"
             "    \"startingheight\": n,       (numeric) The starting height (block) of the peer\n"

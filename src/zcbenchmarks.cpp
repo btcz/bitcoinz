@@ -160,6 +160,9 @@ double benchmark_verify_joinsplit(const JSDescription &joinsplit)
     return timer_stop(tv_start);
 }
 
+
+//Benchmark EH parameters hard coded to 200,9. Based on situation, may want to chanege that. 
+
 #ifdef ENABLE_MINING
 double benchmark_solve_equihash()
 {
@@ -168,8 +171,8 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
 
-    unsigned int n = Params(CBaseChainParams::MAIN).EquihashN();
-    unsigned int k = Params(CBaseChainParams::MAIN).EquihashK();
+    unsigned int n = 200;
+    unsigned int k = 9;
     crypto_generichash_blake2b_state eh_state;
     EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());
