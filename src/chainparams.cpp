@@ -131,34 +131,20 @@ public:
         checkpointData = (Checkpoints::CCheckpointData) {
             boost::assign::map_list_of
             ( 0, uint256S("0xf499ee3d498b4298ac6a64205b8addb7c43197e2a660229be65db8a4534d75c1"))
-            ( 966, uint256S("0x00000014ee022afd1cafd8cb9e9cb396bf39e68a36e83e3ebc83d206dc1ebacf"))
-            ( 1410, uint256S("0x0000007343c5cdaa4c069b45fc80775ab51f54070792ca10a586f33ad7f5b34e"))
-            ( 1776, uint256S("0x000000f8f364b114704f0dec7c51a4a1f68e8e05425c65261bd7c246e9672006"))
-            ( 1817, uint256S("0x000000c783d9244d884c4208ca83efb71a5ec2127b0410557b0218ce5732619a"))
-            ( 1830, uint256S("0x0000011d4dcd27ce6c4d2810c38d58ee7aaca384fb70b80c6ca5082909cc9464"))
-            ( 1863, uint256S("0x000000e69d7743dfaca51f25e2b9d1829622c9b81f337fd864853bc0f2a2b8ca"))
-            ( 1918, uint256S("0x000000c1c00845a2d23bed939cd1d991f979a7d8637de1e62be097c6588a1872"))
-            ( 1929, uint256S("0x0000009ba74be101085199bfea1e32cffe5f2dc945fa417eafd75ce5ed447081"))
-            ( 1939, uint256S("0x000000fb643c78413d1efbe6889ea6c5a3242df0c4715b845952c4524cfc22ad"))
-            ( 1944, uint256S("0x0000008d240cc7a212c960152f2de6e52bb6724a57b5a41211535ecbe65450c1"))
-            ( 1989, uint256S("0x0000015e8724264b731e81b31052d9aace1b8be89c495702001353b055e8a486"))
-            ( 1995, uint256S("0x00000132a89578398e906e7e15ea2e3b2c43147afd2db0f9acf4978f4940ddc5"))
             ( 2007, uint256S("0x000000215111f83669484439371ced6e3bc48cd7e7d6be8afa18952206304a1b"))
-            ( 2008, uint256S("0x000001877891c7c11f77acf00d35f10b24bac5a7e1f5526ff9adc6c660e233ff"))
-            ( 2011, uint256S("0x00000189d75d3f0a0f2d4bb8d5235b38b28ebafb3f3aca9770a656ed61ec24cc"))
-            ( 2016, uint256S("0x000000dba6dde8505b0dde0e8be0f3f731e3686087dc43f30b2baf2f904ebeac"))
             ( 10000, uint256S("0x00000002ccb858ec2c35fb79ce2079333461efa50f2b59814558b9ae3ce62a40"))
             ( 20675, uint256S("0x00000004804df1618f984fef70c1a210988ade5093b6947c691422fc93013a63")) // Thaddeus Kosciuszko - 200th death anniversary (October 15 2017)
             ( 40000, uint256S("0x00000005a2d9a94e2e16f9c1e578a2eb46cc267ab7a51539d22ff8aa0096140b"))
             ( 56000, uint256S("0x000000026a063927c6746acec6c0957d1f69fa2ab1a59c06ce30d60bbbcea92a"))
             ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c"))
-            ( 105841, uint256S("0x000000010305387fd72bc70ce5cc5b512fe513016e7208b9ee61d601fe212991"))  //Mr Hawking, Rest in peace.
-            ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8")),
+            ( 105841, uint256S("0x000000010305387fd72bc70ce5cc5b512fe513016e7208b9ee61d601fe212991"))  //Dr Hawking, Rest in peace.
+            ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8"))
+            ( 153955, uint256S("0x00000006913d3122f32e60c9d64e87edd8e9a05444447df49713c15fbae6484d")),
 
-            1526168168,     // * UNIX timestamp of last checkpoint block
-            565727,         // * total number of transactions between genesis and last checkpoint
+            1528292585,     // * UNIX timestamp of last checkpoint block
+            616001,         // * total number of transactions between genesis and last checkpoint
                             //   (the tx=... number in the SetBestChain debug.log lines)
-            2327.5625143  // * estimated number of transactions per day after checkpoint
+            2304.6771849  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
