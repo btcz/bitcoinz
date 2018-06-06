@@ -103,6 +103,8 @@ public:
         vSeeds.push_back(CDNSSeedData("acdd520508bbfa96029867cf64b824fa5e41ebe47918bd4b7855d7a186ed795c.BTCZ", "bzseed.secnode.tk"));
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
         vSeeds.push_back(CDNSSeedData("0416c4d89c3c4078f7127b7b482c5c242328306f1706fe2edcdb7c94e2fdad45.BTCZ", "seed.btcz.biz"));
+        vSeeds.push_back(CDNSSeedData("e3dca99ba0e7b1d24cca73458f1d67f4014a60565bcf05e5748271922ce897a0.BTCZ", "btczseed.1ds.us"));
+
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
         base58Prefixes[PUBKEY_ADDRESS]     = {0x1C,0xB8};
