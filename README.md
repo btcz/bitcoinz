@@ -33,20 +33,20 @@ cd bitcoinz/
 ./src/bitcoinzd
 # Test getting information about the network
 cd src/
-./zcash-cli getmininginfo
+./bitcoinz-cli getmininginfo
 # Test creating new transparent address
-./zcash-cli getnewaddress
+./bitcoinz-cli getnewaddress
 # Test creating new private address
-./zcash-cli z_getnewaddress
+./bitcoinz-cli z_getnewaddress
 # Test checking transparent balance
-./zcash-cli getbalance
+./bitcoinz-cli getbalance
 # Test checking total balance 
-./zcash-cli z_gettotalbalance
+./bitcoinz-cli z_gettotalbalance
 # Check all available wallet commands
-./zcash-cli help
+./bitcoinz-cli help
 # Get more info about a single wallet command
-./zcash-cli help "The-command-you-want-to-learn-more-about"
-./zcash-cli help "getbalance"
+./bitcoinz-cli help "The-command-you-want-to-learn-more-about"
+./bitcoinz-cli help "getbalance"
 ```
 
 ### Docker
@@ -83,7 +83,7 @@ Follow the logs
 docker logs -f bitcoinz-node
 ```
 
-The cli command is a wrapper to zcash-cli that works with an already running Docker container
+The cli command is a wrapper to bitcoinz-cli that works with an already running Docker container
 ```
 docker exec -it bitcoinz-node cli help
 ```

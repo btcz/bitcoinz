@@ -31,7 +31,7 @@ RE_FORTIFY_USED = re.compile('Binary compiled with FORTIFY_SOURCE support.*Yes')
 
 def test_rpath_runpath(filename):
     output = subprocess.check_output(
-        [repofile('qa/zcash/checksec.sh'), '--file', repofile(filename)]
+        [repofile('qa/bitcoinz/checksec.sh'), '--file', repofile(filename)]
     )
     if RE_RPATH_RUNPATH.search(output):
         print('PASS: %s has no RPATH or RUNPATH.' % filename)
@@ -43,7 +43,7 @@ def test_rpath_runpath(filename):
 
 def test_fortify_source(filename):
     proc = subprocess.Popen(
-        [repofile('qa/zcash/checksec.sh'), '--fortify-file', repofile(filename)],
+        [repofile('qa/bitcoinz/checksec.sh'), '--fortify-file', repofile(filename)],
         stdout=subprocess.PIPE,
     )
     line1 = proc.stdout.readline()
@@ -62,21 +62,21 @@ def check_security_hardening():
     # PIE, RELRO, Canary, and NX are tested by make check-security.
     ret &= subprocess.call(['make', '-C', repofile('src'), 'check-security']) == 0
 
-    ret &= test_rpath_runpath('src/zcashd')
-    ret &= test_rpath_runpath('src/zcash-cli')
+    ret &= test_rpath_runpath('src/bitcoinzd')
+    ret &= test_rpath_runpath('src/bitcoinz-cli')
     ret &= test_rpath_runpath('src/zcash-gtest')
-    ret &= test_rpath_runpath('src/zcash-tx')
+    ret &= test_rpath_runpath('src/bitcoinz-tx')
     ret &= test_rpath_runpath('src/test/test_bitcoin')
-    ret &= test_rpath_runpath('src/zcash/GenerateParams')
+    ret &= test_rpath_runpath('src/bitcoinz/GenerateParams')
 
     # NOTE: checksec.sh does not reliably determine whether FORTIFY_SOURCE
     # is enabled for the entire binary. See issue #915.
-    ret &= test_fortify_source('src/zcashd')
-    ret &= test_fortify_source('src/zcash-cli')
+    ret &= test_fortify_source('src/bitcoinzd')
+    ret &= test_fortify_source('src/bitcoinz-cli')
     ret &= test_fortify_source('src/zcash-gtest')
-    ret &= test_fortify_source('src/zcash-tx')
+    ret &= test_fortify_source('src/bitcoinz-tx')
     ret &= test_fortify_source('src/test/test_bitcoin')
-    ret &= test_fortify_source('src/zcash/GenerateParams')
+    ret &= test_fortify_source('src/bitcoinz/GenerateParams')
 
     return ret
 

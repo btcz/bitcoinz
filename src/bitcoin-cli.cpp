@@ -72,9 +72,9 @@ static bool AppInitRPC(int argc, char* argv[])
         std::string strUsage = _("BitcoinZ RPC client version") + " " + FormatFullVersion() + "\n" + PrivacyInfo();
         if (!mapArgs.count("-version")) {
             strUsage += "\n" + _("Usage:") + "\n" +
-                  "  zcash-cli [options] <command> [params]  " + _("Send command to BitcoinZ") + "\n" +
-                  "  zcash-cli [options] help                " + _("List commands") + "\n" +
-                  "  zcash-cli [options] help <command>      " + _("Get help for a command") + "\n";
+                  "  bitcoinz-cli [options] <command> [params]  " + _("Send command to BitcoinZ") + "\n" +
+                  "  bitcoinz-cli [options] help                " + _("List commands") + "\n" +
+                  "  bitcoinz-cli [options] help <command>      " + _("Get help for a command") + "\n";
 
             strUsage += "\n" + HelpMessageCli();
         } else {
