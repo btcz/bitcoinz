@@ -22,7 +22,7 @@ then
     mkdir -p ~/.bitcoinz
 fi
 
-if ! [[ -f ~/.bitcoinz/bitcoinz.conf ]] 
+if ! [[ -f ~/.bitcoinz/bitcoinz.conf ]]
 then
     echo "rpcuser=rpc`pwgen 15 1`" > ~/.bitcoinz/bitcoinz.conf
     echo "rpcpassword=rpc`pwgen 15 1`" >> ~/.bitcoinz/bitcoinz.conf
@@ -38,7 +38,7 @@ cat > /etc/systemd/system/bitcoinz.service << EOF
 Description=bitcoinz
 
 [Service]
-ExecStart=`cd ~; pwd`/bitcoinz-pkg/zcashd
+ExecStart=`cd ~; pwd`/bitcoinz-pkg/bitcoinzd
 User=$1
 Restart=always
 

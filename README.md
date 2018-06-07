@@ -30,7 +30,7 @@ cd bitcoinz/
 # fetch key
 ./zcutil/fetch-params.sh
 # Run
-./src/zcashd
+./src/bitcoinzd
 # Test getting information about the network
 cd src/
 ./zcash-cli getmininginfo
@@ -74,8 +74,8 @@ $ docker run -d --name bitcoinz-node \
 Verify bitcoinz-node is running
 ```
 $ docker ps
-CONTAINER ID        IMAGE                  COMMAND                  CREATED             STATUS              PORTS                                              NAMES
-31868a91456d        btcz/bitcoinz          "zcashd --datadir=..."   2 hours ago         Up 2 hours          127.0.0.1:1979->1979/tcp, 0.0.0.0:1989->1989/tcp   bitcoinz-node
+CONTAINER ID        IMAGE                  COMMAND                     CREATED             STATUS              PORTS                                              NAMES
+31868a91456d        btcz/bitcoinz          "bitcoinzd --datadir=..."   2 hours ago         Up 2 hours          127.0.0.1:1979->1979/tcp, 0.0.0.0:1989->1989/tcp   bitcoinz-node
 ```
 
 Follow the logs
