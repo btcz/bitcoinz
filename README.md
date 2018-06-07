@@ -23,7 +23,7 @@ Install
 
 ```{r, engine='bash'}
 # Clone Bitcoinz Repository
-git clone https://github.com/bitcoinz-pod/bitcoinz
+git clone https://github.com/btcz/bitcoinz
 # Build
 cd bitcoinz/
 ./zcutil/build.sh -j$(nproc)
