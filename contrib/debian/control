@@ -1,18 +1,17 @@
 Source: bitcoinz
 Section: utils
 Priority: optional
-Maintainer: BitcoinZ team <team@btcz.org>
+Maintainer: The BitcoinZ Community <bitcoinzcommunity@gmail.com>
 Homepage: https://btcz.rocks
 Build-Depends: autoconf, automake, bsdmainutils, build-essential,
  git, g++-multilib, libc6-dev, libtool,
  m4, ncurses-dev, pkg-config, python,
  unzip, wget, zlib1g-dev
-Vcs-Git: https://github.com/bitcoinz-pod/bitcoinz.git
-Vcs-Browser: https://github.com/bitcoinz-pod
+Vcs-Git: https://github.com/btcz/bitcoinz.git
+Vcs-Browser: https://github.com/btcz
 
 Package: bitcoinz
-Version: 1.2.1
+Version: 1.3.0
 Depends: ${shlibs:Depends}
 Architecture: all
-Description: Community coin.
- BitcoinZ is based on Bitcoin's & Zcash code.
+Description: BitcoinZ is a decentralized community project based on the Bitcoin and Zcash codebase.

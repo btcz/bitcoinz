@@ -1,2 +1,2 @@
-DEBIAN/manpages/zcash-cli.1
-DEBIAN/manpages/zcashd.1
+DEBIAN/manpages/bitcoinz-cli.1
+DEBIAN/manpages/bitcoinzd.1

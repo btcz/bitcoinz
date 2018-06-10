@@ -16,14 +16,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "Zcash"
-            VALUE "FileDescription",    "zcash-tx (CLI Zcash transaction editor utility)"
+            VALUE "CompanyName",        "BitcoinZ"
+            VALUE "FileDescription",    "bitcoinz-tx (CLI BitcoinZ transaction editor utility)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "zcash-tx"
+            VALUE "InternalName",       "bitcoinz-tx"
             VALUE "LegalCopyright",     COPYRIGHT_STR
             VALUE "LegalTrademarks1",   "Distributed under the MIT software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "zcash-tx.exe"
-            VALUE "ProductName",        "zcash-tx"
+            VALUE "OriginalFilename",   "bitcoinz-tx.exe"
+            VALUE "ProductName",        "bitcoinz-tx"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

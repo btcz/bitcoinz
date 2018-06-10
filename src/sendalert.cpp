@@ -1,3 +1,4 @@
+// Copyright (c) 2018 The BitcoinZ Community
 // Copyright (c) 2016 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
@@ -27,7 +28,7 @@ Modify the alert parameters, id and message found in this file.
 
 Build and run with -sendalert or -printalert.
 
-./zcashd -printtoconsole -sendalert
+./bitcoinzd -printtoconsole -sendalert
 
 One minute after starting up, the alert will be broadcast. It is then
 flooded through the network until the nRelayUntil time, and will be

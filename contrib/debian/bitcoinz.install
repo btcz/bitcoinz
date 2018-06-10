@@ -1,3 +1,3 @@
-usr/bin/zcashd
-usr/bin/zcash-cli
+usr/bin/bitcoinzd
+usr/bin/bitcoinz-cli
 usr/bin/zcash-fetch-params
