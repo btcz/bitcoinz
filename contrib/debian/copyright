@@ -1,10 +1,10 @@
 Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?rev=174
 Upstream-Name: BitcoinZ
-Upstream-Contact: BitcoinZ <team@btcz.org>
-Source: https://github.com/bitcoinz-pod/bitcoinz
+Upstream-Contact: The BitcoinZ Community <bitcoinzcommunity@gmail.com>
+Source: https://github.com/btcz/bitcoinz
 
 Files: *
-Copyright: 2017-2018 BitcoinZ developers
+Copyright: 2017-2018 The BitcoinZ Community
  2016-2017, The Zcash developers
  2009-2017, Bitcoin Core developers
 License: Expat

@@ -44,7 +44,7 @@ daemon operation.
 
 By default, the AMQP feature is automatically compiled in if the
 necessary prerequisites are found.  To disable, use --disable-proton
-during the *configure* step of building bitcoinzd
+during the *configure* step of building bitcoinzd:
 
     $ ./configure --disable-proton (other options)
 

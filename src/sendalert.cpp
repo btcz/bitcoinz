@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The BitcoinZ developers
+// Copyright (c) 2018 The BitcoinZ Community
 // Copyright (c) 2016 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
