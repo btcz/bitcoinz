@@ -2,3 +2,4 @@ Makefile
 doc/man/Makefile
 src/Makefile
 Dockerfile
+qa/Dockerfile.test

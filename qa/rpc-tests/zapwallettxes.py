@@ -30,16 +30,16 @@ class ZapWalletTXesTest (BitcoinTestFramework):
         self.nodes[1].generate(101)
         self.sync_all()
 
-        assert_equal(self.nodes[0].getbalance(), 40)
+        assert_equal(self.nodes[0].getbalance(), 50000)
 
-        txid0 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11)
-        txid1 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 10)
+        txid0 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 13750)
+        txid1 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 12500)
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
 
-        txid2 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 11)
-        txid3 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 5)
+        txid2 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 13750)
+        txid3 = self.nodes[0].sendtoaddress(self.nodes[2].getnewaddress(), 6250)
 
         tx0 = self.nodes[0].gettransaction(txid0)
         assert_equal(tx0['txid'], txid0) # tx0 must be available (confirmed)
@@ -53,7 +53,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
         tx3 = self.nodes[0].gettransaction(txid3)
         assert_equal(tx3['txid'], txid3) # tx3 must be available (unconfirmed)
 
-        # restart zcashd
+        # restart bitcoinzd
         self.nodes[0].stop()
         bitcoind_processes[0].wait()
         self.nodes[0] = start_node(0,self.options.tmpdir)
@@ -64,7 +64,7 @@ class ZapWalletTXesTest (BitcoinTestFramework):
         self.nodes[0].stop()
         bitcoind_processes[0].wait()
 
-        # restart zcashd with zapwallettxes
+        # restart bitcoinzd with zapwallettxes
         self.nodes[0] = start_node(0,self.options.tmpdir, ["-zapwallettxes=1"])
 
         aException = False

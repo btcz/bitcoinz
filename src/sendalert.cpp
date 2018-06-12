@@ -1,3 +1,4 @@
+// Copyright (c) 2018 The BitcoinZ Community
 // Copyright (c) 2016 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
@@ -27,7 +28,7 @@ Modify the alert parameters, id and message found in this file.
 
 Build and run with -sendalert or -printalert.
 
-./zcashd -printtoconsole -sendalert
+./bitcoinzd -printtoconsole -sendalert
 
 One minute after starting up, the alert will be broadcast. It is then
 flooded through the network until the nRelayUntil time, and will be
@@ -78,7 +79,7 @@ void ThreadSendAlert()
     // These versions are protocol versions
     // 170002 : 1.0.0
     alert.nMinVer       = 170002;
-    alert.nMaxVer       = 770002;
+    alert.nMaxVer       = 770004;
 
     //
     // main.cpp:
@@ -88,7 +89,7 @@ void ThreadSendAlert()
     //  4000 or higher will put the RPC into safe mode
     alert.nPriority     = 4000;
     alert.strComment    = "";
-    alert.strStatusBar  = "Your client version 1.0.10 has degraded networking behavior. Please update to the most recent version of BitcoinZ (1.1.3 or later).";
+    alert.strStatusBar  = "Your client version 1.0.10 has degraded networking behavior. Please update to the most recent version of BitcoinZ (1.2.0 or later).";
     alert.strRPCError   = alert.strStatusBar;
 
     // Set specific client version/versions here. If setSubVer is empty, no filtering on subver is done:
