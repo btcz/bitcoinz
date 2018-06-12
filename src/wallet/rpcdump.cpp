@@ -427,10 +427,10 @@ UniValue z_exportwallet(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "z_exportwallet \"filename\"\n"
+            "z_exportwallet \"folder/filename\"\n"
             "\nExports all wallet keys, for taddr and zaddr, in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename, saved in folder set by bitcoinzd -exportdir option\n"
+            "1. \"folder/filename\"    (string, required) The filename, saved in folder set by bitcoinzd -exportdir option or specified in input. Exportdir option is primary. If no folder is provided, filename will be saved in folder from which the command is executed.\n"
             "\nResult:\n"
             "\"path\"           (string) The full path of the destination file\n"
             "\nExamples:\n"
@@ -448,10 +448,10 @@ UniValue dumpwallet(const UniValue& params, bool fHelp)
 
     if (fHelp || params.size() != 1)
         throw runtime_error(
-            "dumpwallet \"filename\"\n"
+            "dumpwallet \"folder/filename\"\n"
             "\nDumps taddr wallet keys in a human-readable format.  Overwriting an existing file is not permitted.\n"
             "\nArguments:\n"
-            "1. \"filename\"    (string, required) The filename, saved in folder set by bitcoinzd -exportdir option\n"
+            "1. \"folder/filename\"    (string, required) The filename, saved in folder set by bitcoinzd -exportdir option or specified in input. Exportdir option is primary. If no folder is provided, filename will be saved in folder from which the command is executed.\n"
             "\nResult:\n"
             "\"path\"           (string) The full path of the destination file\n"
             "\nExamples:\n"
@@ -474,15 +474,15 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     } catch (const std::runtime_error& e) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, e.what());
     }
-    if (exportdir.empty()) {
+    /* if (exportdir.empty()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Cannot export wallet until the bitcoinzd -exportdir option has been set");
     }
     std::string unclean = params[0].get_str();
     std::string clean = SanitizeFilename(unclean);
     if (clean.compare(unclean) != 0) {
         throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Filename is invalid as only alphanumeric characters are allowed.  Try '%s' instead.", clean));
-    }
-    boost::filesystem::path exportfilepath = exportdir / clean;
+    } */
+    boost::filesystem::path exportfilepath = exportdir / params[0].get_str();
 
     if (boost::filesystem::exists(exportfilepath)) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot overwrite existing file " + exportfilepath.string());
