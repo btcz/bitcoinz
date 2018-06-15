@@ -61,6 +61,7 @@ public:
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
+        newTimeRule = 159300;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
         eh_epoch_1_endblock = 160010;
