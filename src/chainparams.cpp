@@ -57,7 +57,7 @@ public:
         pchMessageStart[1] = 0xe9;
         pchMessageStart[2] = 0x27;
         pchMessageStart[3] = 0x64;
-        vAlertPubKey = ParseHex("048679fb891b15d0cada9692047fd0ae26ad8bfb83fabddbb50334ee5bc0683294deb410be20513c5af6e7b9cec717ade82b27080ee6ef9a245c36a795ab044bb3");
+        vAlertPubKey = ParseHex("04d5212ed0303c64db1840e799d31953eb362fd71d8e742dccd9aa78c4713d6d26b44974b44e2ac71aa38b06ef60c020207b85d270e4bdf8c797f3216f969960dc");
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
@@ -142,12 +142,14 @@ public:
             ( 84208, uint256S("0x0000000328e5d0346a78aea2d586154ab3145d51ba3936998253593b0ab2980c"))
             ( 105841, uint256S("0x000000010305387fd72bc70ce5cc5b512fe513016e7208b9ee61d601fe212991"))  //Dr Hawking, Rest in peace.
             ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8"))
-            ( 153955, uint256S("0x00000006913d3122f32e60c9d64e87edd8e9a05444447df49713c15fbae6484d")),
+            ( 153955, uint256S("0x00000006913d3122f32e60c9d64e87edd8e9a05444447df49713c15fbae6484d"))
+            ( 160011, uint256S("0x0003a9fbed918bdd83fb5d38016189d5b8fe77495d4a7bd2405d3e8a04a62201"))  //18-06-17  8am UTC Hooray for Zhash!
+            ( 166500, uint256S("0x0000002b640d62dd0c2ab68774b05297d2aa72bd63997d3a73ad959963b148d8")),
 
-            1528292585,     // * UNIX timestamp of last checkpoint block
-            616001,         // * total number of transactions between genesis and last checkpoint
+            1530166456,     // * UNIX timestamp of last checkpoint block
+            662217,         // * total number of transactions between genesis and last checkpoint
                             //   (the tx=... number in the SetBestChain debug.log lines)
-            2304.6771849  // * estimated number of transactions per day after checkpoint
+            2290.912865  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
