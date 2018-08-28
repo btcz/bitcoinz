@@ -173,7 +173,7 @@ bool CWallet::AddKeyPubKey(const CKey& secret, const CPubKey &pubkey)
 bool CWallet::AddCryptedKey(const CPubKey &vchPubKey,
                             const vector<unsigned char> &vchCryptedSecret)
 {
-    
+
     if (!CCryptoKeyStore::AddCryptedKey(vchPubKey, vchCryptedSecret))
         return false;
     if (!fFileBacked)
@@ -513,7 +513,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         } catch (const boost::filesystem::filesystem_error&) {
             // failure is ok (well, not really, but it's not worse than what we started with)
         }
-        
+
         // try again
         if (!bitdb.Open(GetDataDir())) {
             // if it still fails, it probably means we can't even create the database env
@@ -522,14 +522,14 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
             return true;
         }
     }
-    
+
     if (GetBoolArg("-salvagewallet", false))
     {
         // Recover readable keypairs:
         if (!CWalletDB::Recover(bitdb, walletFile, true))
             return false;
     }
-    
+
     if (boost::filesystem::exists(GetDataDir() / walletFile))
     {
         CDBEnv::VerifyResult r = bitdb.Verify(walletFile, CWalletDB::Recover);
@@ -543,7 +543,7 @@ bool CWallet::Verify(const string& walletFile, string& warningString, string& er
         if (r == CDBEnv::RECOVER_FAIL)
             errorString += _("wallet.dat corrupt, salvage failed");
     }
-    
+
     return true;
 }
 
@@ -1439,6 +1439,36 @@ CAmount CWallet::GetChange(const CTxOut& txout) const
     return (IsChange(txout) ? txout.nValue : 0);
 }
 
+ // Return sum of locked coins
+CAmount CWalletTx::GetLockedCredit() const
+{
+    if (pwallet == 0)
+        return 0;
+
+    // Must wait until coinbase is safely deep enough in the chain before valuing it
+    if (IsCoinBase() && GetBlocksToMaturity() > 0)
+        return 0;
+
+    CAmount nCredit = 0;
+    uint256 hashTx = GetHash();
+    for (unsigned int i = 0; i < vout.size(); i++) {
+        const CTxOut& txout = vout[i];
+
+        // Skip spent coins
+        if (pwallet->IsSpent(hashTx, i)) continue;
+
+        // Add locked coins
+        if (pwallet->IsLockedCoin(hashTx, i)) {
+            nCredit += pwallet->GetCredit(txout, ISMINE_SPENDABLE);
+        }
+
+        if (!MoneyRange(nCredit))
+            throw std::runtime_error("CWalletTx::GetLockedCredit() : value out of range");
+    }
+
+    return nCredit;
+}
+
 bool CWallet::IsMine(const CTransaction& tx) const
 {
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
@@ -2145,6 +2175,22 @@ CAmount CWallet::GetBalance() const
             const CWalletTx* pcoin = &(*it).second;
             if (pcoin->IsTrusted())
                 nTotal += pcoin->GetAvailableCredit();
+        }
+    }
+
+    return nTotal;
+}
+
+CAmount CWallet::GetLockedCoins() const
+{
+    CAmount nTotal = 0;
+    {
+        LOCK2(cs_main, cs_wallet);
+        for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it) {
+            const CWalletTx* pcoin = &(*it).second;
+
+            if (pcoin->IsTrusted() && pcoin->GetDepthInMainChain() > 0)
+                nTotal += pcoin->GetLockedCredit();
         }
     }
 
@@ -3033,7 +3079,7 @@ bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
 
 /**
  * Mark old keypool keys as used,
- * and generate all new keys 
+ * and generate all new keys
  */
 bool CWallet::NewKeyPool()
 {

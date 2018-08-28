@@ -259,6 +259,7 @@ static const CRPCCommand vRPCCommands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
     /* Overall control/query calls */
+    { "control",            "getalldata",             &getalldata,             true  },
     { "control",            "getinfo",                &getinfo,                true  }, /* uses wallet if enabled */
     { "control",            "help",                   &help,                   true  },
     { "control",            "stop",                   &stop,                   true  },

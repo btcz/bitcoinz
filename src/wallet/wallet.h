@@ -24,6 +24,7 @@
 #include "zcash/Address.hpp"
 #include "base58.h"
 
+#include <univalue.h>
 #include <algorithm>
 #include <map>
 #include <set>
@@ -144,6 +145,11 @@ static void WriteOrderPos(const int64_t& nOrderPos, mapValue_t& mapValue)
         return;
     mapValue["n"] = i64tostr(nOrderPos);
 }
+
+CAmount getBalanceTaddr(std::string transparentAddress, int minDepth=1, bool ignoreUnspendable=true);
+CAmount getBalanceZaddr(std::string address, int minDepth = 1, bool ignoreUnspendable=true);
+void AcentryToJSON(const CAccountingEntry& acentry, const std::string& strAccount, UniValue& ret);
+void ListTransactions(const CWalletTx& wtx, const std::string& strAccount, int nMinDepth, bool fLong, UniValue& ret, const isminefilter& filter);
 
 struct COutputEntry
 {
@@ -331,7 +337,7 @@ public:
     bool AcceptToMemoryPool(bool fLimitFree=true, bool fRejectAbsurdFee=true);
 };
 
-/** 
+/**
  * A transaction with a bunch of additional info that only the owner cares about.
  * It includes any unrecorded transactions needed to link it back to the block chain.
  */
@@ -494,6 +500,7 @@ public:
     CAmount GetCredit(const isminefilter& filter) const;
     CAmount GetImmatureCredit(bool fUseCache=true) const;
     CAmount GetAvailableCredit(bool fUseCache=true) const;
+    CAmount GetLockedCredit() const;
     CAmount GetImmatureWatchOnlyCredit(const bool& fUseCache=true) const;
     CAmount GetAvailableWatchOnlyCredit(const bool& fUseCache=true) const;
     CAmount GetChange() const;
@@ -651,7 +658,7 @@ private:
 };
 
 
-/** 
+/**
  * A CWallet is an extension of a keystore, which also maintains a set of transactions and balances,
  * and provides the ability to create new transactions.
  */
@@ -960,7 +967,9 @@ public:
     //! Adds a viewing key to the store, without saving it to disk (used by LoadWallet)
     bool LoadViewingKey(const libzcash::ViewingKey &dest);
 
-    /** 
+    CAmount GetLockedCoins() const;
+
+    /**
      * Increment the next transaction order id
      * @return next transaction order id
      */
@@ -1092,8 +1101,8 @@ public:
 
     //! Verify the wallet database and perform salvage if required
     static bool Verify(const std::string& walletFile, std::string& warningString, std::string& errorString);
-    
-    /** 
+
+    /**
      * Address book entry changed.
      * @note called with lock cs_wallet held.
      */
@@ -1102,7 +1111,7 @@ public:
             const std::string &purpose,
             ChangeType status)> NotifyAddressBookChanged;
 
-    /** 
+    /**
      * Wallet transaction added, removed or updated.
      * @note called with lock cs_wallet held.
      */
@@ -1119,14 +1128,14 @@ public:
     bool GetBroadcastTransactions() const { return fBroadcastTransactions; }
     /** Set whether this wallet broadcasts transactions. */
     void SetBroadcastTransactions(bool broadcast) { fBroadcastTransactions = broadcast; }
-    
+
     /* Find notes filtered by payment address, min depth, ability to spend */
     void GetFilteredNotes(std::vector<CNotePlaintextEntry> & outEntries,
                           std::string address,
                           int minDepth=1,
                           bool ignoreSpent=true,
                           bool ignoreUnspendable=true);
-    
+
 };
 
 /** A key allocated from the key pool. */
@@ -1154,7 +1163,7 @@ public:
 };
 
 
-/** 
+/**
  * Account information.
  * Stored in wallet with key "acc"+string account name.
  */
