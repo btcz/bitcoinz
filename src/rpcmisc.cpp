@@ -38,11 +38,15 @@ UniValue getalldata(const UniValue& params, bool fHelp)
             "getalldata\n"
             "Return current blockchain status, wallet balance, address balance and the last 200 transactions.\n"
             "\nArguments:\n"
-            "1. \"infoSelection\"     (integer, optional)\n"
-            "                         Not provided: Return info\n"
-            "                         Value of 0: Return address, balance, transactions and network\n"
-            "                         Value of 1: Return address, balance and network\n"
-            "                         Value of 2: Return transactions and network\n"
+            "1. \"datatype\"     (integer, required) \n"
+            "                    Value of 0: Return address, balance, transactions and blockchain info\n"
+            "                    Value of 1: Return address, balance, blockchain info\n"
+            "                    Value of 2: Return transactions and blockchain info\n"
+            "2. \"transactiontype\"     (integer, optional) \n"
+            "                    Value of 1: Return all transactions in the last 24 hours\n"
+            "                    Value of 2: Return all transactions in the last 7 days\n"
+            "                    Value of 3: Return all transactions in the last 30 days\n"
+            "                    Other number: Return all transactions in the last 24 hours\n"
             "\nResult:\n"
             "{\n"
             "  \"connectionCount\": 8,\n"
@@ -188,9 +192,26 @@ UniValue getalldata(const UniValue& params, bool fHelp)
     UniValue trans(UniValue::VARR);
     if (params.size() > 0 && (params[0].get_int() == 2 || params[0].get_int() == 0))
     {
+        int day = 1;
+        if(params.size() > 1)
+        {
+            if(params[1].get_int() == 1)
+            {
+                day = 1;
+            }
+            else if(params[1].get_int() == 2)
+            {
+                day = 7;
+            }
+            else if(params[1].get_int() == 3)
+            {
+                day = 30;
+            }
+        }
+
         std::list<CAccountingEntry> acentries;
         CWallet::TxItems txOrdered = pwalletMain->OrderedTxItems(acentries, strAccount);
-
+        uint64_t t = GetTime();
         // iterate backwards until we have nCount items to return:
         for (CWallet::TxItems::reverse_iterator it = txOrdered.rbegin(); it != txOrdered.rend(); ++it)
         {
@@ -204,21 +225,8 @@ UniValue getalldata(const UniValue& params, bool fHelp)
             if ((int)trans.size() >= (nCount+nFrom)) break;
         }
 
-        // trans is newest to oldest
-        if (nFrom > (int)trans.size())
-            nFrom = trans.size();
-        if ((nFrom + nCount) > (int)trans.size())
-            nCount = trans.size() - nFrom;
 
         vector<UniValue> arrTmp = trans.getValues();
-
-        vector<UniValue>::iterator first = arrTmp.begin();
-        std::advance(first, nFrom);
-        vector<UniValue>::iterator last = arrTmp.begin();
-        std::advance(last, nFrom+nCount);
-
-        if (last != arrTmp.end()) arrTmp.erase(last, arrTmp.end());
-        if (first != arrTmp.begin()) arrTmp.erase(arrTmp.begin(), first);
 
         std::reverse(arrTmp.begin(), arrTmp.end()); // Return oldest to newest
 
