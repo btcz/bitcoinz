@@ -21,8 +21,38 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
-        READWRITE(authentication_path);
-        READWRITE(index);
+        std::vector<std::vector<unsigned char>> pathBytes;
+        std::vector<unsigned char> indexBytes;
+        if (ser_action.ForRead()) {
+            READWRITE(pathBytes);
+            READWRITE(indexBytes);
+            MerklePath &us = *(const_cast<MerklePath*>(this));
+            us.authentication_path.resize(pathBytes.size());
+            for (size_t i = 0; i < authentication_path.size(); i++) {
+                us.authentication_path[i].resize(pathBytes[i].size() * 8);
+                for (unsigned int p = 0; p < us.authentication_path[i].size(); p++) {
+                    us.authentication_path[i][p] = (pathBytes[i][p / 8] & (1 << (p % 8))) != 0;
+                }
+            }
+            us.index.resize(indexBytes.size() * 8);
+            for (unsigned int p = 0; p < us.index.size(); p++) {
+                us.index[p] = (indexBytes[p / 8] & (1 << (p % 8))) != 0;
+            }
+        } else {
+            pathBytes.resize(authentication_path.size());
+            for (size_t i = 0; i < authentication_path.size(); i++) {
+                pathBytes[i].resize((authentication_path[i].size()+7)/8);
+                for (unsigned int p = 0; p < authentication_path[i].size(); p++) {
+                    pathBytes[i][p / 8] |= authentication_path[i][p] << (p % 8);
+                }
+            }
+            indexBytes.resize((index.size()+7)/8);
+            for (unsigned int p = 0; p < index.size(); p++) {
+                indexBytes[p / 8] |= index[p] << (p % 8);
+            }
+            READWRITE(pathBytes);
+            READWRITE(indexBytes);
+        }
     }
 
     MerklePath() { }
@@ -194,6 +224,8 @@ public:
     static SHA256Compress combine(const SHA256Compress& a, const SHA256Compress& b);
 };
 
+template<size_t Depth, typename Hash>
+EmptyMerkleRoots<Depth, Hash> IncrementalMerkleTree<Depth, Hash>::emptyroots;
 } // end namespace `libzcash`
 
 typedef libzcash::IncrementalMerkleTree<INCREMENTAL_MERKLE_TREE_DEPTH, libzcash::SHA256Compress> ZCIncrementalMerkleTree;

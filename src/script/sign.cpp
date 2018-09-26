@@ -102,6 +102,8 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
     case TX_MULTISIG:
         scriptSigRet << OP_0; // workaround CHECKMULTISIG bug
         return (SignN(vSolutions, creator, scriptPubKey, scriptSigRet));
+	default:
+	    return false;
     }
     return false;
 }
@@ -255,6 +257,8 @@ static CScript CombineSignatures(const CScript& scriptPubKey, const BaseSignatur
         }
     case TX_MULTISIG:
         return CombineMultisig(scriptPubKey, checker, vSolutions, sigs1, sigs2);
+	default:
+		return CScript();
     }
 
     return CScript();
