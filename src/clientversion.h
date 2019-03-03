@@ -1,5 +1,6 @@
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2017-2018 The BitcoinZ Community
 // Copyright (c) 2016-2017 The Zcash developers
+// Copyright (c) 2009-2014 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -27,7 +28,7 @@
  * Copyright year (2009-this)
  * Todo: update this when changing our copyright comments in the source
  */
-#define COPYRIGHT_YEAR 2017
+#define COPYRIGHT_YEAR 2018
 
 #endif //HAVE_CONFIG_H
 
@@ -39,7 +40,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers and The Zcash developers"
+#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " The Bitcoin Core Developers and The BitcoinZ Community"
 
 /**
  * bitcoind-res.rc includes this file, but it cannot cope with real c++ code.

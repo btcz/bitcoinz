@@ -22,11 +22,14 @@ from util import assert_equal, check_json_precision, \
 
 class BitcoinTestFramework(object):
 
+    def __init__(self):
+        self.nodes = []
+
     # These may be over-ridden by subclasses:
     def run_test(self):
         for node in self.nodes:
             assert_equal(node.getblockcount(), 200)
-            assert_equal(node.getbalance(), 25*10)
+            assert_equal(node.getbalance(), 25*12500)
 
     def add_options(self, parser):
         pass

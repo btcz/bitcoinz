@@ -1,0 +1,6 @@
+Makefile
+doc/man/Makefile
+src/Makefile
+Dockerfile
+qa/Dockerfile.test
+qa/docker-run-tests.sh

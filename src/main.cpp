@@ -45,7 +45,7 @@
 using namespace std;
 
 #if defined(NDEBUG)
-# error "Zcash cannot be compiled without assertions."
+# error "BitcoinZ cannot be compiled without assertions."
 #endif
 
 #include "librustzcash.h"
@@ -70,7 +70,7 @@ bool fTxIndex = false;
 bool fHavePruned = false;
 bool fPruneMode = false;
 bool fIsBareMultisigStd = true;
-bool fCheckBlockIndex = false;
+bool fCheckBlockIndex = true;
 bool fCheckpointsEnabled = true;
 bool fCoinbaseEnforcedProtectionEnabled = true;
 size_t nCoinCacheUsage = 5000 * 300;
@@ -105,7 +105,7 @@ static void CheckBlockIndex();
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
 
-const string strMessageMagic = "Zcash Signed Message:\n";
+const string strMessageMagic = "BitcoinZ Signed Message:\n";
 
 // Internal stuff
 namespace {
@@ -1712,9 +1712,11 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
-    if (!(CheckEquihashSolution(&block, Params()) &&
-          CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    if (block.GetHash() != Params().GenesisBlock().GetHash()) {
+        if (!(CheckEquihashSolution(&block, Params()) &&
+            CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
+            return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+    }
 
     return true;
 }
@@ -1731,7 +1733,7 @@ bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex)
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 {
-    CAmount nSubsidy = 12.5 * COIN;
+    CAmount nSubsidy = 12500 * COIN;
 
     // Mining slow start
     // The subsidy is ramped up linearly, skipping the middle payout of
@@ -2420,8 +2422,9 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     auto verifier = libzcash::ProofVerifier::Strict();
     auto disabledVerifier = libzcash::ProofVerifier::Disabled();
 
+    bool fCheckPOW = !fJustCheck && (pindex->nHeight != 0);
     // Check it again to verify JoinSplit proofs, and in case a previous version let a bad block in
-    if (!CheckBlock(block, state, fExpensiveChecks ? verifier : disabledVerifier, !fJustCheck, !fJustCheck))
+    if (!CheckBlock(block, state, fExpensiveChecks ? verifier : disabledVerifier, fCheckPOW, !fJustCheck))
         return false;
 
     // verify that the view's current state corresponds to the previous block
@@ -3471,10 +3474,16 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                          REJECT_INVALID, "high-hash");
 
-    // Check timestamp
-    if (block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+    unsigned int nHeight = chainActive.Height();
+    const CChainParams& chainParams = Params();
+
+    // Check timestamp (old)
+    if (nHeight < chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
+
+    // starting at height 159300, decrease to 30 minute window to decrease effectiveness of timewarp attack.
+    else if (nHeight >= chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 30 * 60)
 
     return true;
 }
@@ -3551,7 +3560,28 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     assert(pindexPrev);
 
-    int nHeight = pindexPrev->nHeight+1;
+    long int nHeight = pindexPrev->nHeight+1;
+
+    //Check EH solution size matches an acceptable N,K
+    size_t nSolSize = block.nSolution.size();
+
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+    int listlength=validEHparameterList(ehparams,nHeight,chainParams);
+    int solutionInvalid=1;
+        for(int i=0; i<listlength; i++){
+        LogPrint("pow", "ContextCheckBlockHeader index %d n:%d k:%d Solsize: %d \n",i, ehparams[i].n, ehparams[i].k , ehparams[i].nSolSize);
+        if(ehparams[i].nSolSize==nSolSize)
+            solutionInvalid=0;
+    }
+
+    //Block will be validated prior to mining, and will have a zero length equihash solution. These need to be let through. Checkequihashsolution will catch them.
+    if(!nSolSize)
+        solutionInvalid=0;
+
+    if(solutionInvalid){
+        return state.DoS(100,error("ContextualCheckBlockHeader: Equihash solution size %d for block %d does not match a valid length",nSolSize, nHeight),
+           REJECT_INVALID,"bad-equihash-solution-size");
+    }
 
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
@@ -3602,10 +3632,10 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     }
 
     // Enforce BIP 34 rule that the coinbase starts with serialized block height.
-    // In Zcash this has been enforced since launch, except that the genesis
-    // block didn't include the height in the coinbase (see Zcash protocol spec
+    // In BitcoinZ this has been enforced since launch, except that the genesis
+    // block didn't include the height in the coinbase (see BitcoinZ protocol spec
     // section '6.8 Bitcoin Improvement Proposals').
-    if (nHeight > 0)
+    if (nHeight > 50)
     {
         CScript expect = CScript() << nHeight;
         if (block.vtx[0].vin[0].scriptSig.size() < expect.size() ||
@@ -3619,22 +3649,22 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, CBlockIn
     // reward block is reached, with exception of the genesis block.
     // The last founders reward block is defined as the block just before the
     // first subsidy halving block, which occurs at halving_interval + slow_start_shift
-    if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
-        bool found = false;
-
-        BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
-            if (output.scriptPubKey == Params().GetFoundersRewardScriptAtHeight(nHeight)) {
-                if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-
-        if (!found) {
-            return state.DoS(100, error("%s: founders reward missing", __func__), REJECT_INVALID, "cb-no-founders-reward");
-        }
-    }
+    // if ((nHeight > 0) && (nHeight <= consensusParams.GetLastFoundersRewardBlockHeight())) {
+    //     bool found = false;
+    //
+    //     BOOST_FOREACH(const CTxOut& output, block.vtx[0].vout) {
+    //         if (output.scriptPubKey == Params().GetFoundersRewardScriptAtHeight(nHeight)) {
+    //             if (output.nValue == (GetBlockSubsidy(nHeight, consensusParams) / 5)) {
+    //                 found = true;
+    //                 break;
+    //             }
+    //         }
+    //     }
+    //
+    //     if (!found) {
+    //         return state.DoS(100, error("%s: founders reward missing", __func__), REJECT_INVALID, "cb-no-founders-reward");
+    //     }
+    // }
 
     return true;
 }
@@ -3716,7 +3746,9 @@ bool AcceptBlock(CBlock& block, CValidationState& state, CBlockIndex** ppindex, 
 
     // See method docstring for why this is always disabled
     auto verifier = libzcash::ProofVerifier::Disabled();
-    if ((!CheckBlock(block, state, verifier)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
+
+    bool fCheckPOW = (pindex->nHeight != 0);
+    if ((!CheckBlock(block, state, verifier, fCheckPOW, true)) || !ContextualCheckBlock(block, state, pindex->pprev)) {
         if (state.IsInvalid() && !state.CorruptionPossible()) {
             pindex->nStatus |= BLOCK_FAILED_VALID;
             setDirtyBlockIndex.insert(pindex);
@@ -4187,7 +4219,7 @@ bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth
         if (!ReadBlockFromDisk(block, pindex))
             return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 1: verify block validity
-        if (nCheckLevel >= 1 && !CheckBlock(block, state, verifier))
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, verifier, (pindex->nHeight > 0), true))
             return error("VerifyDB(): *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex) {

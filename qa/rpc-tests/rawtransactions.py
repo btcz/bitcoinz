@@ -145,7 +145,7 @@ class RawTransactionsTest(BitcoinTestFramework):
         self.sync_all()
         self.nodes[0].generate(1)
         self.sync_all()
-        assert_equal(self.nodes[0].getbalance(), bal+Decimal('10.00000000')+Decimal('2.19900000')) #block reward + tx
+        assert_equal(self.nodes[0].getbalance(), bal+Decimal('12500.00000000')+Decimal('2.19900000')) #block reward + tx
 
         inputs  = [ {'txid' : "1d1d4e24ed99057e84c3f80fd8fbec79ed9e1acee37da269356ecea000000000", 'vout' : 1, 'sequence' : 1000}]
         outputs = { self.nodes[0].getnewaddress() : 1 }
