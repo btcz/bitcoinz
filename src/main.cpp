@@ -3478,13 +3478,15 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     const CChainParams& chainParams = Params();
 
     // Check timestamp (old)
-    if (nHeight < chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60)
+    if (nHeight < chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
 
     // starting at height 159300, decrease to 30 minute window to decrease effectiveness of timewarp attack.
-    else if (nHeight >= chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 30 * 60)
-
+    } else if (nHeight >= chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 30 * 60) {
+        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
+                             REJECT_INVALID, "time-too-new");
+    }
     return true;
 }
 
