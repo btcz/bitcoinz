@@ -79,7 +79,7 @@ public:
         strCurrencyUnits = "BTCZ";
         bip44CoinType = 177; // As registered in https://github.com/satoshilabs/slips/blob/master/slip-0044.md
         consensus.fCoinbaseMustBeProtected = true;
-        consensus.nSubsidySlowStartInterval = 2;
+        consensus.nSubsidySlowStartInterval = 0;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
@@ -214,7 +214,7 @@ public:
         strCurrencyUnits = "TZB";
         bip44CoinType = 1;
         consensus.fCoinbaseMustBeProtected = true;
-        consensus.nSubsidySlowStartInterval = 20000;
+        consensus.nSubsidySlowStartInterval = 0;
         consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
@@ -222,10 +222,10 @@ public:
         consensus.powLimit = uint256S("07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowAveragingWindow = 13;
         assert(maxUint/UintToArith256(consensus.powLimit) >= consensus.nPowAveragingWindow);
-        consensus.nPowMaxAdjustDown = 32; // 32% adjustment down
-        consensus.nPowMaxAdjustUp = 16; // 16% adjustment up
+        consensus.nPowMaxAdjustDown = 34;
+        consensus.nPowMaxAdjustUp = 34;
         consensus.nPowTargetSpacing = 2.5 * 60;
-        consensus.nPowAllowMinDifficultyBlocksAfterHeight = 0;
+        consensus.nPowAllowMinDifficultyBlocksAfterHeight = boost::none;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nProtocolVersion = 170002;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
             Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
