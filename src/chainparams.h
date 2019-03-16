@@ -114,10 +114,12 @@ public:
     const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
-    /** Return the founder's reward address and script for a given block height */
-    std::string GetFoundersRewardAddressAtHeight(int height) const;
-    CScript GetFoundersRewardScriptAtHeight(int height) const;
-    std::string GetFoundersRewardAddressAtIndex(int i) const;
+    /** Return the community fee address and script for a given block height */
+    std::string GetCommunityFeeAddressAtHeight(int height) const;
+    CScript GetCommunityFeeScriptAtHeight(int height) const;
+    std::string GetCommunityFeeAddressAtIndex(int i) const;
+    int GetCommunityFeeStartHeight() const { return vCommunityFeeStartHeight; };
+    int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
     int GetNewTimeRule() const { return newTimeRule; }
@@ -149,7 +151,9 @@ protected:
     bool fMineBlocksOnDemand = false;
     bool fTestnetToBeDeprecatedFieldRPC = false;
     CCheckpointData checkpointData;
-    std::vector<std::string> vFoundersRewardAddress;
+    std::vector<std::string> vCommunityFeeAddress;
+    int vCommunityFeeStartHeight;
+    int vCommunityFeeLastHeight;
     int newTimeRule;
 };
 

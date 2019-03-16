@@ -196,10 +196,12 @@ public:
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
-        // Founders reward script expects a vector of 2-of-3 multisig addresses
-        vFoundersRewardAddress = {
+        // Community Fee script expects a vector of 2-of-3 multisig addresses
+        vCommunityFeeAddress = {
         };
-        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+        vCommunityFeeStartHeight = 999999;
+        vCommunityFeeLastHeight = 2147483647;
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 };
 static CMainParams mainParams;
@@ -309,9 +311,12 @@ public:
         };
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
-        vFoundersRewardAddress = {
+        vCommunityFeeAddress = {
+            "t2CihAq1hbJB49hxWPPifDD7jWRepFoAM2b",
         };
-        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+        vCommunityFeeStartHeight = 2020;
+        vCommunityFeeLastHeight = 2147483647;
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 };
 static CTestNetParams testNetParams;
@@ -413,9 +418,12 @@ public:
         bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-regtest";
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
-        //vFoundersRewardAddress = { "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" };
-        vFoundersRewardAddress = { };
-        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+        vCommunityFeeAddress = {
+            "t2CihAq1hbJB49hxWPPifDD7jWRepFoAM2b",
+        };
+        vCommunityFeeStartHeight = 200;
+        vCommunityFeeLastHeight = 2147483647;
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 
     void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
@@ -467,24 +475,22 @@ bool SelectParamsFromCommandLine()
     return true;
 }
 
-
-// Block height must be >0 and <=last founders reward block height
-// Index variable i ranges from 0 - (vFoundersRewardAddress.size()-1)
-std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
-    int maxHeight = consensus.GetLastFoundersRewardBlockHeight();
+// Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
+std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
+    int maxHeight = GetLastCommunityFeeBlockHeight();
     assert(nHeight > 0 && nHeight <= maxHeight);
 
-    size_t addressChangeInterval = (maxHeight + vFoundersRewardAddress.size()) / vFoundersRewardAddress.size();
+    size_t addressChangeInterval = (maxHeight + vCommunityFeeAddress.size()) / vCommunityFeeAddress.size();
     size_t i = nHeight / addressChangeInterval;
-    return vFoundersRewardAddress[i];
+    return vCommunityFeeAddress[i];
 }
 
 // Block height must be >0 and <=last founders reward block height
 // The founders reward address is expected to be a multisig (P2SH) address
-CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
-    assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
+CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
+    assert(nHeight > 0 && nHeight <= GetLastCommunityFeeBlockHeight());
 
-    CTxDestination address = DecodeDestination(GetFoundersRewardAddressAtHeight(nHeight).c_str());
+    CTxDestination address = DecodeDestination(GetCommunityFeeAddressAtHeight(nHeight).c_str());
     assert(IsValidDestination(address));
     assert(boost::get<CScriptID>(&address) != nullptr);
     CScriptID scriptID = boost::get<CScriptID>(address); // address is a boost variant
@@ -492,9 +498,9 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     return script;
 }
 
-std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
-    assert(i >= 0 && i < vFoundersRewardAddress.size());
-    return vFoundersRewardAddress[i];
+std::string CChainParams::GetCommunityFeeAddressAtIndex(int i) const {
+    assert(i >= 0 && i < vCommunityFeeAddress.size());
+    return vCommunityFeeAddress[i];
 }
 
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)

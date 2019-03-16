@@ -63,7 +63,7 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
     }
     
     // Print out the addresses, 4 on each line.
-    std::string s = "vFoundersRewardAddress = {\n";
+    std::string s = "vCommunityFeeAddress = {\n";
     int i=0;
     int colsPerRow = 4;
     ASSERT_TRUE(numKeys % colsPerRow == 0);
@@ -85,10 +85,10 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 
 // Utility method to check the number of unique addresses from height 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
-    int maxHeight = Params().GetConsensus().GetLastFoundersRewardBlockHeight();
+    int maxHeight = Params().GetLastCommunityFeeBlockHeight();
     std::set<std::string> addresses;
     for (int i = 1; i <= maxHeight; i++) {
-        addresses.insert(Params().GetFoundersRewardAddressAtHeight(i));
+        addresses.insert(Params().GetCommunityFeeAddressAtHeight(i));
     }
     ASSERT_TRUE(addresses.size() == nUnique);
 }
@@ -103,20 +103,20 @@ TEST(founders_reward_test, general) {
     // address = t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy
     // script.ToString() = OP_HASH160 55d64928e69829d9376c776550b6cc710d427153 OP_EQUAL
     // HexStr(script) = a91455d64928e69829d9376c776550b6cc710d42715387
-    EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(1)), "a914ef775f1f997f122a062fff1a2d7443abd1f9c64287");
-    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(1), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");
-    EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(53126)), "a914ac67f4c072668138d88a86ff21b27207b283212f87");
-    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53126), "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2");
-    EXPECT_EQ(HexStr(params.GetFoundersRewardScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
-    EXPECT_EQ(params.GetFoundersRewardAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
+    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(1)), "a914ef775f1f997f122a062fff1a2d7443abd1f9c64287");
+    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(1), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");
+    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53126)), "a914ac67f4c072668138d88a86ff21b27207b283212f87");
+    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53126), "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2");
+    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
+    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();
     
     // If the block height parameter is out of bounds, there is an assert.
-    EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardScriptAtHeight(maxHeight+1), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(0), "nHeight");
-    EXPECT_DEATH(params.GetFoundersRewardAddressAtHeight(maxHeight+1), "nHeight"); 
+    EXPECT_DEATH(params.GetCommunityFeeScriptAtHeight(0), "nHeight");
+    EXPECT_DEATH(params.GetCommunityFeeScriptAtHeight(maxHeight+1), "nHeight");
+    EXPECT_DEATH(params.GetCommunityFeeAddressAtHeight(0), "nHeight");
+    EXPECT_DEATH(params.GetCommunityFeeAddressAtHeight(maxHeight+1), "nHeight"); 
 }
 
 
@@ -145,13 +145,13 @@ TEST(founders_reward_test, regtest) {
 
 
 
-// Test that 10% founders reward is fully rewarded after the first halving and slow start shift.
+// Test that 10% community fee is fully rewarded after the first halving and slow start shift.
 // On Mainnet, this would be 2,100,000 ZEC after 850,000 blocks (840,000 + 10,000).
 TEST(founders_reward_test, slow_start_subsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();    
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();    
     CAmount totalSubsidy = 0;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
@@ -166,17 +166,17 @@ TEST(founders_reward_test, slow_start_subsidy) {
 // Verify the number of rewards each individual address receives.
 void verifyNumberOfRewards() {
     CChainParams params = Params();
-    int maxHeight = params.GetConsensus().GetLastFoundersRewardBlockHeight();
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();
     std::multiset<std::string> ms;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
-        ms.insert(params.GetFoundersRewardAddressAtHeight(nHeight));
+        ms.insert(params.GetCommunityFeeAddressAtHeight(nHeight));
     }
 
-    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(0)) == 17708);
+    ASSERT_TRUE(ms.count(params.GetCommunityFeeAddressAtIndex(0)) == 17708);
     for (int i = 1; i <= 46; i++) {
-        ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(i)) == 17709);
+        ASSERT_TRUE(ms.count(params.GetCommunityFeeAddressAtIndex(i)) == 17709);
     }
-    ASSERT_TRUE(ms.count(params.GetFoundersRewardAddressAtIndex(47)) == 17677);
+    ASSERT_TRUE(ms.count(params.GetCommunityFeeAddressAtIndex(47)) == 17677);
 }
 
 // Verify the number of rewards going to each mainnet address
