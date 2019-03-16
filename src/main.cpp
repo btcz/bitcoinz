@@ -1712,6 +1712,7 @@ bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos)
     }
 
     // Check the header
+    unsigned int nHeight = chainActive.Height();
     if (block.GetHash() != Params().GenesisBlock().GetHash()) {
         if (!(CheckEquihashSolution(&block, Params()) &&
             CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus())))
@@ -3459,6 +3460,9 @@ bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigne
 
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool fCheckPOW)
 {
+    unsigned int nHeight = chainActive.Height();
+    const CChainParams& chainParams = Params();
+ 
     // Check block version
     if (block.nVersion < MIN_BLOCK_VERSION)
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),
@@ -3473,9 +3477,6 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
     if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, Params().GetConsensus()))
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                          REJECT_INVALID, "high-hash");
-
-    unsigned int nHeight = chainActive.Height();
-    const CChainParams& chainParams = Params();
 
     // Check timestamp (old)
     if (nHeight < chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
@@ -3556,33 +3557,23 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 {
     const CChainParams& chainParams = Params();
     const Consensus::Params& consensusParams = chainParams.GetConsensus();
-    uint256 hash = block.GetHash();
+    uint256 hash = block.GetHash(); 
     if (hash == consensusParams.hashGenesisBlock)
         return true;
 
     assert(pindexPrev);
 
-    long int nHeight = pindexPrev->nHeight+1;
+    long int nHeight = pindexPrev->nHeight + 1;
 
-    //Check EH solution size matches an acceptable N,K
+    // Check EH solution size matches an acceptable N,K
     size_t nSolSize = block.nSolution.size();
 
-    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
-    int listlength=validEHparameterList(ehparams,nHeight,chainParams);
-    int solutionInvalid=1;
-        for(int i=0; i<listlength; i++){
-        LogPrint("pow", "ContextCheckBlockHeader index %d n:%d k:%d Solsize: %d \n",i, ehparams[i].n, ehparams[i].k , ehparams[i].nSolSize);
-        if(ehparams[i].nSolSize==nSolSize)
-            solutionInvalid=0;
-    }
-
-    //Block will be validated prior to mining, and will have a zero length equihash solution. These need to be let through. Checkequihashsolution will catch them.
-    if(!nSolSize)
-        solutionInvalid=0;
-
-    if(solutionInvalid){
-        return state.DoS(100,error("ContextualCheckBlockHeader: Equihash solution size %d for block %d does not match a valid length",nSolSize, nHeight),
-           REJECT_INVALID,"bad-equihash-solution-size");
+    // check that solution size matches current height
+    if (!checkEHParamaters(nSolSize, nHeight, chainParams)) {
+        return state.DoS(100,error(
+            "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length", 
+            nSolSize, nHeight),
+                REJECT_INVALID,"bad-equihash-solution-size");
     }
 
     // Check proof of work

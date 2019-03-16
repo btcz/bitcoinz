@@ -506,15 +506,35 @@ int validEHparameterList(EHparameters *ehparams, unsigned long blockheight, cons
     //if in overlap period, there will be two valid solutions, else 1.
     //The upcoming version of EH is preferred so will always be first element
     //returns number of elements in list
-    if(blockheight>=params.eh_epoch_2_start() && blockheight>params.eh_epoch_1_end()){
-        ehparams[0]=params.eh_epoch_2_params();
+    if(blockheight >= params.eh_epoch_2_start() && blockheight > params.eh_epoch_1_end()){
+        ehparams[0] = params.eh_epoch_2_params();
         return 1;
     }
-    if(blockheight<params.eh_epoch_2_start()){
-        ehparams[0]=params.eh_epoch_1_params();
+    if(blockheight < params.eh_epoch_2_start()){
+        ehparams[0] = params.eh_epoch_1_params();
         return 1;
     }
-    ehparams[0]=params.eh_epoch_2_params();
-    ehparams[1]=params.eh_epoch_1_params();
+    ehparams[0] = params.eh_epoch_2_params();
+    ehparams[1] = params.eh_epoch_1_params();
     return 2;
+}
+
+bool checkEHParamaters(int solSize, int height, const CChainParams& params) {
+    // Block will be validated prior to mining, and will have a zero length
+    // equihash solution. These need to be let through.
+    if (height == 0) {
+        return true;
+    }
+
+    //allocate on-stack space for parameters list
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN];
+    int listlength = validEHparameterList(ehparams, height, params);
+    for(int i = 0; i < listlength; i++){
+        LogPrint("pow", "checkEHParamaters height: %d n:%d k:%d solsize: %d \n", 
+            height, ehparams[i].n, ehparams[i].k, ehparams[i].nSolSize);
+        if (ehparams[i].nSolSize == solSize)
+            return true;
+    }
+
+    return false;
 }

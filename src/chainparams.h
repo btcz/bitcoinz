@@ -178,4 +178,6 @@ void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivation
 
 int validEHparameterList(EHparameters *ehparams, unsigned long blockheight, const CChainParams& params);
 
+bool checkEHParamaters(int solSize, int height, const CChainParams& params);
+
 #endif // BITCOIN_CHAINPARAMS_H
