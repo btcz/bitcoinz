@@ -3553,7 +3553,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
     return true;
 }
 
-bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex * const pindexPrev)
+bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, CBlockIndex * const pindexPrev, bool fCheckPOW)
 {
     const CChainParams& chainParams = Params();
     const Consensus::Params& consensusParams = chainParams.GetConsensus();
@@ -3565,11 +3565,9 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
 
     unsigned int nHeight = pindexPrev->nHeight + 1;
 
-    // Check EH solution size matches an acceptable N,K
+    // Check EH solution size matches an acceptable N,K at the specified height
     size_t nSolSize = block.nSolution.size();
-
-    // check that solution size matches current height
-    if (!checkEHParamaters(nSolSize, nHeight, chainParams)) {
+    if (fCheckPOW && !checkEHParamaters(nSolSize, nHeight, chainParams)) {
         return state.DoS(100,error(
             "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length", 
             nSolSize, nHeight),
@@ -3694,7 +3692,7 @@ bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state, CBloc
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
 
-    if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+    if (!ContextualCheckBlockHeader(block, state, pindexPrev, true))
         return false;
 
     if (pindex == NULL)
@@ -3831,7 +3829,7 @@ bool TestBlockValidity(CValidationState &state, const CBlock& block, CBlockIndex
     auto verifier = libzcash::ProofVerifier::Disabled();
 
     // NOTE: CheckBlockHeader is called by CheckBlock
-    if (!ContextualCheckBlockHeader(block, state, pindexPrev))
+    if (!ContextualCheckBlockHeader(block.GetBlockHeader(), state, pindexPrev, fCheckPOW))
         return false;
     if (!CheckBlock(block, state, verifier, fCheckPOW, fCheckMerkleRoot))
         return false;
