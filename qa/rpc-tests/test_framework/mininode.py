@@ -39,7 +39,6 @@ from .equihash import (
     zcash_person,
 )
 
-OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
 SPROUT_PROTO_VERSION = 170002  # past bip-31 for ping/pong
 SAPLING_PROTO_VERSION = 170006

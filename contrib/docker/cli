@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec bitcoinz-cli --datadir=/bitcoinz/data "${@}"

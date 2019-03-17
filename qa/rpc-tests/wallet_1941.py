@@ -14,7 +14,7 @@ from test_framework.util import assert_equal, initialize_chain_clean, \
 
 from decimal import Decimal
 
-starttime = 1388534400
+starttime = 1525760062
 
 class Wallet1941RegressionTest (BitcoinTestFramework):
 
@@ -51,9 +51,9 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         mytaddr = self.nodes[0].getnewaddress()     # where coins were mined
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
 
-        # Send 10 coins to our zaddr.
+        # Send 12500 coins to our zaddr.
         recipients = []
-        recipients.append({"address":myzaddr, "amount":Decimal('10.0') - Decimal('0.0001')})
+        recipients.append({"address":myzaddr, "amount":Decimal('12500.0') - Decimal('0.0001')})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[0].generate(1)
@@ -68,7 +68,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
 
         # Confirm the balance on node 0.
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('10.0') - Decimal('0.0001'))
+        assert_equal(Decimal(resp), Decimal('12500.0') - Decimal('0.0001'))
 
         # Export the key for the zaddr from node 0.
         key = self.nodes[0].z_exportkey(myzaddr)
@@ -95,7 +95,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         # Confirm that the balance on node 1 is valid now (node 1 must
         # have rescanned)
         resp = self.nodes[1].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('10.0') - Decimal('0.0001'))
+        assert_equal(Decimal(resp), Decimal('12500.0') - Decimal('0.0001'))
 
 
 if __name__ == '__main__':

@@ -1,64 +1,109 @@
-Zcash 2.0.3-rc1
-<img align="right" width="120" height="80" src="doc/imgs/logo.png">
-===========
+=======
+# BitcoinZ
+**Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
-What is Zcash?
---------------
+### Ports:
+- RPC port: 1979
+- P2P port: 1989
 
-[Zcash](https://z.cash/) is an implementation of the "Zerocash" protocol.
-Based on Bitcoin's code, it intends to offer a far higher standard of privacy
-through a sophisticated zero-knowledge proving scheme that preserves
-confidentiality of transaction metadata. Technical details are available
-in our [Protocol Specification](https://github.com/zcash/zips/raw/master/protocol/protocol.pdf).
+Install
+-----------------
+### Linux
 
-This software is the Zcash client. It downloads and stores the entire history
-of Zcash transactions; depending on the speed of your computer and network
-connection, the synchronization process could take a day or more once the
-blockchain has reached a significant size.
+### [Quick guide for beginners](https://github.com/bitcoinz-pod/bitcoinz/wiki/Quick-guide-for-beginners)
 
-<p align="center">
-  <img src="doc/imgs/zcashd_screen.gif" height="500">
-</p>
-
-#### :lock: Security Warnings
-
-See important security warnings on the
-[Security Information page](https://z.cash/support/security/).
-
-**Zcash is experimental and a work-in-progress.** Use at your own risk.
-
-####  :ledger: Deprecation Policy
-
-This release is considered deprecated 16 weeks after the release day. There
-is an automatic deprecation shutdown feature which will halt the node some
-time after this 16 week time period. The automatic feature is based on block
-height.
-
-## Getting Started
-
-Please see our [user guide](https://zcash.readthedocs.io/en/latest/rtd_pages/rtd_docs/user_guide.html) for joining the main Zcash network.
-
-### Need Help?
-
-* :blue_book: See the documentation at the [ReadtheDocs](https://zcash.readthedocs.io)
-  for help and more information.
-* :incoming_envelope: Ask for help on the [Zcash](https://forum.z.cash/) forum.
-* :mag: Chat with our support community on [Rocket.Chat](https://chat.zcashcommunity.com/channel/user-support)
-
-Participation in the Zcash project is subject to a
-[Code of Conduct](code_of_conduct.md).
-
-### Building
-
-Build Zcash along with most dependencies from source by running:
-
+Get dependencies
+```{r, engine='bash'}
+sudo apt-get install \
+      build-essential pkg-config libc6-dev m4 g++-multilib \
+      autoconf libtool ncurses-dev unzip git python \
+      zlib1g-dev wget bsdmainutils automake
 ```
+
+Install
+
+```{r, engine='bash'}
+# Clone Bitcoinz Repository
+git clone https://github.com/btcz/bitcoinz
+# Build
+cd bitcoinz/
 ./zcutil/build.sh -j$(nproc)
+# fetch key
+./zcutil/fetch-params.sh
+# Run
+./src/bitcoinzd
+# Test getting information about the network
+cd src/
+./bitcoinz-cli getmininginfo
+# Test creating new transparent address
+./bitcoinz-cli getnewaddress
+# Test creating new private address
+./bitcoinz-cli z_getnewaddress
+# Test checking transparent balance
+./bitcoinz-cli getbalance
+# Test checking total balance 
+./bitcoinz-cli z_gettotalbalance
+# Check all available wallet commands
+./bitcoinz-cli help
+# Get more info about a single wallet command
+./bitcoinz-cli help "The-command-you-want-to-learn-more-about"
+./bitcoinz-cli help "getbalance"
 ```
 
-Currently only Linux is officially supported.
+### Docker
 
-License
--------
+Build
+```
+$ docker build -t btcz/bitcoinz .
+```
 
-For license information see the file [COPYING](COPYING).
+Create a data directory on your local drive and create a bitcoinz.conf config file
+```
+$ mkdir -p /ops/volumes/bitcoinz/data
+$ touch /ops/volumes/bitcoinz/data/bitcoinz.conf
+$ chown -R 999:999 /ops/volumes/bitcoinz/data
+```
+
+Create bitcoinz.conf config file and run the application
+```
+$ docker run -d --name bitcoinz-node \
+  -v bitcoinz.conf:/bitcoinz/data/bitcoinz.conf \
+  -p 1989:1989 -p 127.0.0.1:1979:1979 \
+  btcz/bitcoinz
+```
+
+Verify bitcoinz-node is running
+```
+$ docker ps
+CONTAINER ID        IMAGE                  COMMAND                     CREATED             STATUS              PORTS                                              NAMES
+31868a91456d        btcz/bitcoinz          "bitcoinzd --datadir=..."   2 hours ago         Up 2 hours          127.0.0.1:1979->1979/tcp, 0.0.0.0:1989->1989/tcp   bitcoinz-node
+```
+
+Follow the logs
+```
+docker logs -f bitcoinz-node
+```
+
+The cli command is a wrapper to bitcoinz-cli that works with an already running Docker container
+```
+docker exec -it bitcoinz-node cli help
+```
+
+## Using a Dockerfile
+If you'd like to have a production btc/bitcoinz image with a pre-baked configuration
+file, use of a Dockerfile is recommended:
+
+```
+FROM btcz/bitcoinz
+COPY bitcoinz.conf /bitcoinz/data/bitcoinz.conf
+```
+
+Then, build with `docker build -t my-bitcoinz .` and run.
+
+### Windows
+Windows build is maintained in [bitcoinz-win project](https://github.com/bitcoinz-pod/bitcoinz-win).
+
+Security Warnings
+-----------------
+
+**BitcoinZ is experimental and a work-in-progress.** Use at your own risk.

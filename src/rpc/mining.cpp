@@ -145,7 +145,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or zcash.conf setting gen)\n"
+            "It is set with the command line argument -gen (or bitcoinz.conf setting gen)\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "true|false      (boolean) If the server is set to generate coins or not\n"
@@ -180,7 +180,7 @@ UniValue generate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
         }
 #else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "bitcoinzd compiled without wallet and -mineraddress not set");
 #endif
     }
     if (!Params().MineBlocksOnDemand())
@@ -202,10 +202,19 @@ UniValue generate(const UniValue& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
-    unsigned int n = Params().EquihashN();
-    unsigned int k = Params().EquihashK();
+
+
+
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+    const CChainParams& chainparams = Params();
+
     while (nHeight < nHeightEnd)
     {
+            validEHparameterList(ehparams,nHeight+1,chainparams);
+            unsigned int n = ehparams[0].n;
+            unsigned int k = ehparams[0].k;
+
+
 #ifdef ENABLE_WALLET
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
 #else
@@ -295,7 +304,7 @@ UniValue setgenerate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
         }
 #else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "bitcoinzd compiled without wallet and -mineraddress not set");
 #endif
     }
     if (Params().MineBlocksOnDemand())
@@ -498,7 +507,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
         }
 #else
-        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "zcashd compiled without wallet and -mineraddress not set");
+        throw JSONRPCError(RPC_METHOD_NOT_FOUND, "bitcoinzd compiled without wallet and -mineraddress not set");
 #endif
     }
 
@@ -555,10 +564,10 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
     if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Zcash is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "BitcoinZ is not connected!");
 
     if (IsInitialBlockDownload())
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Zcash is downloading blocks...");
+        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "BitcoinZ is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
 

@@ -121,7 +121,7 @@ def initialize_chain(test_dir):
         # gets 25 mature blocks and 25 immature.
         # blocks are created with timestamps 10 minutes apart, starting
         # at 1 Jan 2014
-        block_time = 1388534400
+        block_time = 1482992659
         for i in range(2):
             for peer in range(4):
                 for j in range(25):
@@ -144,7 +144,7 @@ def initialize_chain(test_dir):
         from_dir = os.path.join("cache", "node"+str(i))
         to_dir = os.path.join(test_dir,  "node"+str(i))
         shutil.copytree(from_dir, to_dir)
-        initialize_datadir(test_dir, i) # Overwrite port/rpcport in zcash.conf
+        initialize_datadir(test_dir, i) # Overwrite port/rpcport in bitcoinz.conf
 
 def initialize_chain_clean(test_dir, num_nodes):
     """
@@ -212,10 +212,6 @@ def start_nodes(num_nodes, dirname, extra_args=None, rpchost=None, binary=None):
 
 def log_filename(dirname, n_node, logname):
     return os.path.join(dirname, "node"+str(n_node), "regtest", logname)
-
-def check_node(i):
-    bitcoind_processes[i].poll()
-    return bitcoind_processes[i].returncode
 
 def stop_node(node, i):
     node.stop()

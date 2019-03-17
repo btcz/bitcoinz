@@ -79,6 +79,7 @@ def parse_args(args):
 def main_logged(release, releaseprev, releasefrom, releaseheight, hotfix):
     verify_tags(releaseprev, releasefrom)
     verify_version(release, releaseprev, hotfix)
+    verify_version(release, releaseprev, hotfix)
     initialize_git(release, hotfix)
     patch_version_in_files(release, releaseprev)
     patch_release_height(releaseheight)
@@ -160,6 +161,26 @@ def verify_tags(releaseprev, releasefrom):
                     releasefrom.vtext,
                 ),
             )
+
+
+@phase('Checking version.')
+def verify_version(release, releaseprev, hotfix):
+    if not hotfix:
+        return
+
+    expected = Version(
+        releaseprev.major,
+        releaseprev.minor,
+        releaseprev.patch,
+        releaseprev.betarc,
+        releaseprev.hotfix + 1 if releaseprev.hotfix else 1,
+    )
+    if release != expected:
+        raise SystemExit(
+            "Expected {!r}, given {!r}".format(
+                expected, release,
+            ),
+        )
 
 
 @phase('Checking version.')
@@ -291,8 +312,8 @@ def gen_release_notes(release, releasefrom):
 
 @phase('Updating debian changelog.')
 def update_debian_changelog(release):
-    os.environ['DEBEMAIL'] = 'team@z.cash'
-    os.environ['DEBFULLNAME'] = 'Zcash Company'
+    os.environ['DEBEMAIL'] = 'bitcoinzcommunity@gmail.com'
+    os.environ['DEBFULLNAME'] = 'The BitcoinZ Community'
     sh_log(
         'debchange',
         '--newversion', release.debversion,

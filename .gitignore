@@ -2,6 +2,10 @@
 *.deb
 *.exe
 src/bitcoin
+src/bitcoinzd
+src/bitcoinz-cli
+src/bitcoinz-gtest
+src/bitcoinz-tx
 src/zcashd
 src/zcash-cli
 src/zcash-gtest
@@ -70,7 +74,9 @@ src/univalue/gen
 *.la
 
 # Compilation
-Makefile
+src/Makefile
+doc/man/Makefile
+/Makefile
 
 # Unit-tests
 Makefile.test
@@ -109,3 +115,6 @@ libzcashconsensus.pc
 
 contrib/debian/files
 contrib/debian/substvars
+
+.idea/
+*.iml

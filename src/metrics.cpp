@@ -218,7 +218,10 @@ int printStats(bool mining)
 
     if (IsInitialBlockDownload()) {
         int netheight = EstimateNetHeight(height, tipmediantime, Params());
-        int downloadPercent = height * 100 / netheight;
+        int downloadPercent = 0;
+        if (netheight > 0) {
+            downloadPercent = height * 100 / netheight;
+        }
         std::cout << "     " << _("Downloading blocks") << " | " << height << " / ~" << netheight << " (" << downloadPercent << "%)" << std::endl;
     } else {
         std::cout << "           " << _("Block height") << " | " << height << std::endl;
@@ -262,7 +265,7 @@ int printMiningStatus(bool mining)
         lines++;
     } else {
         std::cout << _("You are currently not mining.") << std::endl;
-        std::cout << _("To enable mining, add 'gen=1' to your zcash.conf and restart.") << std::endl;
+        std::cout << _("To enable mining, add 'gen=1' to your bitcoinz.conf and restart.") << std::endl;
         lines += 2;
     }
     std::cout << std::endl;
@@ -461,12 +464,8 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
-        std::cout << _("Thank you for running a Zcash node!") << std::endl;
+        std::cout << _("Thank you for running a BitcoinZ node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
-
-        // Privacy notice text
-        std::cout << PrivacyInfo();
-        std::cout << std::endl;
     }
 
     while (true) {

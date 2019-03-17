@@ -121,6 +121,22 @@ TEST_F(DeprecationTest, DeprecatedNodeIgnoredOnTestnet) {
     EXPECT_FALSE(ShutdownRequested());
 }
 
+TEST_F(DeprecationTest, DeprecatedNodeShutsDownIfOldVersionDisabled) {
+    EXPECT_FALSE(ShutdownRequested());
+    mapArgs["-disabledeprecation"] = "1.0.0";
+    EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_ERROR));
+    EnforceNodeDeprecation(DEPRECATION_HEIGHT);
+    EXPECT_TRUE(ShutdownRequested());
+}
+
+TEST_F(DeprecationTest, DeprecatedNodeKeepsRunningIfCurrentVersionDisabled) {
+    EXPECT_FALSE(ShutdownRequested());
+    mapArgs["-disabledeprecation"] = CLIENT_VERSION_STR;
+    EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_ERROR));
+    EnforceNodeDeprecation(DEPRECATION_HEIGHT);
+    EXPECT_FALSE(ShutdownRequested());
+}
+
 TEST_F(DeprecationTest, AlertNotify) {
     boost::filesystem::path temp = GetTempPath() /
         boost::filesystem::unique_path("alertnotify-%%%%.txt");

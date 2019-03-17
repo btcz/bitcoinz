@@ -360,15 +360,15 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         // Set to 0 so expiry height does not apply to coinbase txs
         txNew.nExpiryHeight = 0;
 
-        if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight())) {
-            // Founders reward is 20% of the block subsidy
-            auto vFoundersReward = txNew.vout[0].nValue / 5;
-            // Take some reward away from us
-            txNew.vout[0].nValue -= vFoundersReward;
-
-            // And give it to the founders
-            txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
-        }
+        // if ((nHeight > 0) && (nHeight <= chainparams.GetConsensus().GetLastFoundersRewardBlockHeight())) {
+        //     // Founders reward is 20% of the block subsidy
+        //     auto vFoundersReward = txNew.vout[0].nValue / 5;
+        //     // Take some reward away from us
+        //     txNew.vout[0].nValue -= vFoundersReward;
+        //
+        //     // And give it to the founders
+        //     txNew.vout.push_back(CTxOut(vFoundersReward, chainparams.GetFoundersRewardScriptAtHeight(nHeight)));
+        // }
 
         // Add fees
         txNew.vout[0].nValue += nFees;
@@ -481,7 +481,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != chainActive.Tip()->GetBlockHash())
-            return error("ZcashMiner: generated block is stale");
+            return error("BitcoinZMiner: generated block is stale");
     }
 
 #ifdef ENABLE_WALLET
@@ -500,7 +500,7 @@ static bool ProcessBlockFound(CBlock* pblock)
     // Process this block the same as if we had received it from another node
     CValidationState state;
     if (!ProcessNewBlock(state, NULL, pblock, true, NULL))
-        return error("ZcashMiner: ProcessNewBlock, block not accepted");
+        return error("BitcoinZMiner: ProcessNewBlock, block not accepted");
 
     TrackMinedBlock(pblock->GetHash());
 
@@ -513,9 +513,9 @@ void static BitcoinMiner(CWallet *pwallet)
 void static BitcoinMiner()
 #endif
 {
-    LogPrintf("ZcashMiner started\n");
+    LogPrintf("BitcoinZMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
-    RenameThread("zcash-miner");
+    RenameThread("bitcoinz-miner");
     const CChainParams& chainparams = Params();
 
 #ifdef ENABLE_WALLET
@@ -526,12 +526,8 @@ void static BitcoinMiner()
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
-    unsigned int n = chainparams.EquihashN();
-    unsigned int k = chainparams.EquihashK();
-
     std::string solver = GetArg("-equihashsolver", "default");
     assert(solver == "tromp" || solver == "default");
-    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::mutex m_cs;
     bool cancelSolver = false;
@@ -568,6 +564,21 @@ void static BitcoinMiner()
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
 
+            // Get the height of current tip
+            int nHeight = chainActive.Height();
+            if (nHeight == -1) {
+                LogPrintf("Error in BitcoinZ Miner: chainActive.Height() returned -1\n");
+                return;
+            }
+
+            // Get equihash parameters for the next block to be mined.
+            EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+            validEHparameterList(ehparams, nHeight + 1, chainparams);
+
+            unsigned int n = ehparams[0].n;
+            unsigned int k = ehparams[0].k;
+            LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
+
 #ifdef ENABLE_WALLET
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlockWithKey(reservekey));
 #else
@@ -576,17 +587,17 @@ void static BitcoinMiner()
             if (!pblocktemplate.get())
             {
                 if (GetArg("-mineraddress", "").empty()) {
-                    LogPrintf("Error in ZcashMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
+                    LogPrintf("Error in BitcoinZMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
                 } else {
                     // Should never reach here, because -mineraddress validity is checked in init.cpp
-                    LogPrintf("Error in ZcashMiner: Invalid -mineraddress\n");
+                    LogPrintf("Error in BitcoinZMiner: Invalid -mineraddress\n");
                 }
                 return;
             }
             CBlock *pblock = &pblocktemplate->block;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-            LogPrintf("Running ZcashMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
+            LogPrintf("Running BitcoinZMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
                 ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
             //
@@ -637,7 +648,7 @@ void static BitcoinMiner()
 
                     // Found a solution
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                    LogPrintf("ZcashMiner:\n");
+                    LogPrintf("BitcoinZMiner:\n");
                     LogPrintf("proof-of-work found  \n  hash: %s  \ntarget: %s\n", pblock->GetHash().GetHex(), hashTarget.GetHex());
 #ifdef ENABLE_WALLET
                     if (ProcessBlockFound(pblock, *pwallet, reservekey))
@@ -740,14 +751,14 @@ void static BitcoinMiner()
     {
         miningTimer.stop();
         c.disconnect();
-        LogPrintf("ZcashMiner terminated\n");
+        LogPrintf("BitcoinZMiner terminated\n");
         throw;
     }
     catch (const std::runtime_error &e)
     {
         miningTimer.stop();
         c.disconnect();
-        LogPrintf("ZcashMiner runtime error: %s\n", e.what());
+        LogPrintf("BitcoinZMiner runtime error: %s\n", e.what());
         return;
     }
     miningTimer.stop();

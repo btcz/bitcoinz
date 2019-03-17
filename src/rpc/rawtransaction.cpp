@@ -552,7 +552,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     for (const std::string& name_ : addrList) {
         CTxDestination destination = DecodeDestination(name_);
         if (!IsValidDestination(destination)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid Zcash address: ") + name_);
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid BitcoinZ address: ") + name_);
         }
 
         if (!destinations.insert(destination).second) {
