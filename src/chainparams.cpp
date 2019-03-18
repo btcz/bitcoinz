@@ -196,10 +196,12 @@ public:
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
-        // Founders reward script expects a vector of 2-of-3 multisig addresses
-        vFoundersRewardAddress = {
+        // Community Fee script expects a vector of 2-of-3 multisig addresses
+        vCommunityFeeAddress = {
         };
-        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+        vCommunityFeeStartHeight = 999999;
+        vCommunityFeeLastHeight = 1400000;
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 };
 static CMainParams mainParams;
@@ -233,11 +235,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_TESTDUMMY].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nProtocolVersion = 770006;
-        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 1500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 770006;
-        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
-            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 1500;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000005000");
@@ -309,9 +309,111 @@ public:
         };
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
-        vFoundersRewardAddress = {
+        vCommunityFeeAddress = {
+            "t2FpKCWt95LAPVRed61YbBny9yz5nqexLGN",
+            "t2RqJNenxiDjC5NiVo84xgfHcYuwsPcpCie",
+            "t2MsHkAug2oEiqj4L5ZGZH1vHmdogTSb9km",
+            "t2EwBFfC96DCiCAcJuEqGUbUes8rTNmaD6Q",
+            "t2JqYXRoTsKb9r1rTLLwDs5jMXzsRBV317k",
+            "t2RocidGU4ReKPK2uTPYfNFgeZEWDCd3jsj",
+            "t2Mu8ToNiVow92PfETBk5Z6HWuAEG7RVXVD",
+            "t2MSLT1n4eQ87QC2FAxMvuTZ84zDzEj7FhQ",
+            "t2JZNFrWv1c4RqkCmDN9iRkPsG8xAZFdyGS",
+            "t2AyjEVUCf5jthGHZjwfbztDBHQbztkJB5v",
+            "t2Gs6dTYCzaFdHSeT91zaFLKmYzyqYY3NnP",
+            "t2FXfNK7iQhTdMFcGUyrizqXQE5qbmPK6zc",
+            "t2UqLwQ85pR1fdFMoUzXadXRB97JxP6vTWY",
+            "t2BocGBq7iBXQP8UQiousNVwU8M6AqUtaRx",
+            "t2VGGdXhspjF3iQvbWZW2zPNSDRSYauBcM3",
+            "t2HTNHicoeEXxsX1wVhsqsX3LgzRq2pYgWH",
+            "t2UiVSyM1vuvs6xP3157ytuYMKN6MuqmgJE",
+            "t2UmPyNoWSVUgyPzEXzFGN5GS96jMH2kreW",
+            "t2MQWZJHxZF5zSw6LbZ3S7jqoLX1y6SWLHQ",
+            "t2VUR1c1aFaTUo93uhi7rfFVRRZaT1aQYbv",
+            "t2NgLU6QCJhCKgBsR5uX6R4ds82jymzMoMJ",
+            "t2RorFwMUEb7NamvXFi3jCXitAdRoQtU1Hs",
+            "t2FFtmwePBnYaRVRVg1wsoBPxDzGMLrz3Jv",
+            "t2GH3734fKEhPo3NvvAZQazsFf3V51oR4c2",
+            "t2Ev3twAmUmono3gM2Q6RsfhRiryy7TnX5E",
+            "t2EmhhAjh6cLpyw6Yc9QEXvsjm7qdKpgFQP",
+            "t2Gy5N7DYbEZmiHqm3m8Re25a8Bxu7e36ju",
+            "t2LVSaxizciFWfc5gr1xccHXT115RSnQ13r",
+            "t28zy3Qiq3FtMeB2PCEysF7R5TgW5UfZN1N",
+            "t2FcN7o26gRCc8ZuSZcc7X7APPRqWQ5a3W2",
+            "t27QTHP9qoi5HkiTqx4JV86MGG37aikK51s",
+            "t2CwQ6H9GPT77nqRwkHCuVcyGvtbhxWHfAk",
+            "t2HLUDaoimaaSpQhHnvbqpKg6Fi37rAo6cx",
+            "t2Ebuq1FX7Qzi3ur1FnwsDMvfNBFjqVqDGX",
+            "t2Bca3HbSbwgQp1ZhzheNvGfpwBoU6Syt8G",
+            "t2EurfAqyJMsCyx6ujYecQSxrPPY7xxTqcB",
+            "t2R1kJGeNhLpKx1dKNCnBUq1BkxBVJjQdcp",
+            "t2M3x9koBJWJS1F9bGtWXTsVfr5pesWSTbR",
+            "t2La4mEMruVTtBqhndS7zRvmi2WsqWUjPQz",
+            "t29GwTHLXxYgF5k7SSj7XFaHB7JsocM9bDU",
+            "t2Awpdv7yG2QFeHeq17J1qCSXRw1AM3mfmz",
+            "t2BfotpLdNhhewRp9nXpBBYViBaq4y1Lnj5",
+            "t2F4CH89prySyGZHUiPYJUjnZk9UPXgLBbf",
+            "t2DNx1KzP8a2S3kZgAPngso9ptva5gE7Jbn",
+            "t2Eb7orwhjGcu4wYwHBzN5BoXzroPGq3CoM",
+            "t2BXYmM21WCdHiC1KiwQVHxaTvLQJpqXTvH",
+            "t27Y6774dwAcCFvYrhDKTXgaxtUewAdZdtz",
+            "t2JvmRjZnViBZXJJBekDygdvGTCRNWgFEK2",
+            "t2PL5W7qy1DKNRPWECbaZ6gV9GEzMn8h97Z",
+            "t2S1JaefdSNwaUexdr6ZtNJhqZS8uDGSNFg",
+            "t2BTunj4VB44Q22crWpT1ykoBvNGFKMnD7N",
+            "t2G7DkSoEUJGaEBH6erKsXemoHFqqTRaSiZ",
+            "t2Ldg8Bc6AWDuESqPgUoumWfCYw3zqKF8s9",
+            "t2Ft4QMMiJfKXVbhyGBrkwjnfn5ua73VuLo",
+            "t26xLxd4Fabbotkc9gfFwpCVHoZG1W9rmN7",
+            "t2DyghJMpK6rRKPEAL3DBKmCntUcj8bUiHg",
+            "t2RSYhCsgw2AdBiUUyXBCkFf2xE9ddwyESD",
+            "t26fv5NLiFYXMmfQnvqcJXcYnt5NY41eqrv",
+            "t2Ppht55eXKC1BX7pfusJxZqbHnkp9oWbBW",
+            "t2P4AWJ5C4ySU3KzfehAeppH2BV4Y87w34z",
+            "t28zjDUH2Gkvt8Ytb8UrW7L6G5U1QMwJFM3",
+            "t2JXDd9pumryTAXqDD98vDLS2ZLSQCNQrYZ",
+            "t2BNuNGnGq49MZzr7SH8WtEE7sSwZ9n3bsz",
+            "t2QumKdHZhkFD6ntrzJ9zJAga2QemEgqc9r",
+            "t2UKz2L7V3C6GTeBPDXmQnwMyqKEbgMpuXg",
+            "t2CyVugoafiDYpeSNd9DGZEng6Bpr4tqa3d",
+            "t2GR9eEen8KUDjhQG1opC1aFt27zxdtufnF",
+            "t2JKYuSRNupdHdTR91tqR4xsaU6friVJJgv",
+            "t2D2yMZEM3K8ap6iLo3FX2g1Ch9coPSVq2R",
+            "t2SeFu34eiE2rCPFpxrN8im6ZvcwMpdKnit",
+            "t2KH46EXQy5wnZHDGVDA7Q13FdRkdQ3LUou",
+            "t2UsTpuVqP6ZubtN8tQGPnh7Cqjjf1hoefd",
+            "t2Dd119xiqDbF9QzWwYfnYWUPfqgnL1CNFu",
+            "t29PjecMhv6EygD8W6smcMHAB8MSHQY3YnQ",
+            "t2BDZpxgcMRzqgKbDBiXRXrvL3VwD7G8cLc",
+            "t2MwiKqfCMdy7o96bXvbZ5aGCrRmVfVWVfA",
+            "t2Vhkny4jNjy6ZD53jeQzsdgZiZyejwRsgY",
+            "t2K3ouBrLAbYwZv6beoHjzfsE1AbYVa6PuE",
+            "t2DskMSpWs8i9vK2PhNpi9Mu2qJSvEDi8UZ",
+            "t2JB2Uz3eVWrxFhas1B1cSXLP22JHbRNYtL",
+            "t2ArYKW1L8hRoCDK9odNmD4piRwFheErWL1",
+            "t2K1zKGHrkibiFoYJ5GtfHe5xJecJPEvFwQ",
+            "t2VnABknMprtMk8y5AdDCBr2R9QZnMhfqSm",
+            "t2FbjEsP9eeQr5PmP7yC3fopPTuYS9E9VgN",
+            "t2Sn2XUPZEnFcggB77jvxBqX6LcjdCzcJUs",
+            "t2SEK3Tw5FYYUaeZcF5QemfeG3tiorrxNKp",
+            "t2D78THpHVodnhiREjF22A3KRznor5pPnR1",
+            "t2GyqFdkf6FoQTShEhLGsNrTxAWqmeq4pui",
+            "t2HnNgFLznEqaokYq8PBV44uzRwAmJXQeKd",
+            "t2PpHVStdHvWkzXsyuyPYQQq96ZRQu7ALpE",
+            "t2FHbHM9rKKHZe74HRBNozwNdRsExug8tCw",
+            "t29tM6DkMPSVp9R3g7UjZjvsobKhsbsRqFL",
+            "t2K2KixLVJo19phPJMv9ApSiFmxQCSQUvc9",
+            "t2AWJcGVUMWFC8A9KC3PL7qoCb1vxSzxbJP",
+            "t26p8FyjHmhqZ6duzhRFLCQcExh1TuCD1sC",
+            "t27x5n41uRNF3tJkb3Lg1CMomUjTNZwtUfm",
+            "t2VhRQJ9xeVkVVk7ic21CtDePKmHnrDyF8Z",
+            "t27hL1iAsTHBPWrdc1qYGSSTc3pTyBqohd4",
+            "t2RqLYWG8Eo4hopDsn1m8GUoAWtjZQEPE9s",
+            "t2V1osVDkcwYFL4PF9qG8t9Ez1XRVMAkAb6"
         };
-        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+        vCommunityFeeStartHeight = 1500;
+        vCommunityFeeLastHeight = 1400000;
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 };
 static CTestNetParams testNetParams;
@@ -413,9 +515,111 @@ public:
         bech32HRPs[SAPLING_EXTENDED_SPEND_KEY]   = "secret-extended-key-regtest";
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
-        //vFoundersRewardAddress = { "t2FwcEhFdNXuFMv1tcYwaBJtYVtMj8b1uTg" };
-        vFoundersRewardAddress = { };
-        assert(vFoundersRewardAddress.size() <= consensus.GetLastFoundersRewardBlockHeight());
+        vCommunityFeeAddress = {
+            "t2FpKCWt95LAPVRed61YbBny9yz5nqexLGN",
+            "t2RqJNenxiDjC5NiVo84xgfHcYuwsPcpCie",
+            "t2MsHkAug2oEiqj4L5ZGZH1vHmdogTSb9km",
+            "t2EwBFfC96DCiCAcJuEqGUbUes8rTNmaD6Q",
+            "t2JqYXRoTsKb9r1rTLLwDs5jMXzsRBV317k",
+            "t2RocidGU4ReKPK2uTPYfNFgeZEWDCd3jsj",
+            "t2Mu8ToNiVow92PfETBk5Z6HWuAEG7RVXVD",
+            "t2MSLT1n4eQ87QC2FAxMvuTZ84zDzEj7FhQ",
+            "t2JZNFrWv1c4RqkCmDN9iRkPsG8xAZFdyGS",
+            "t2AyjEVUCf5jthGHZjwfbztDBHQbztkJB5v",
+            "t2Gs6dTYCzaFdHSeT91zaFLKmYzyqYY3NnP",
+            "t2FXfNK7iQhTdMFcGUyrizqXQE5qbmPK6zc",
+            "t2UqLwQ85pR1fdFMoUzXadXRB97JxP6vTWY",
+            "t2BocGBq7iBXQP8UQiousNVwU8M6AqUtaRx",
+            "t2VGGdXhspjF3iQvbWZW2zPNSDRSYauBcM3",
+            "t2HTNHicoeEXxsX1wVhsqsX3LgzRq2pYgWH",
+            "t2UiVSyM1vuvs6xP3157ytuYMKN6MuqmgJE",
+            "t2UmPyNoWSVUgyPzEXzFGN5GS96jMH2kreW",
+            "t2MQWZJHxZF5zSw6LbZ3S7jqoLX1y6SWLHQ",
+            "t2VUR1c1aFaTUo93uhi7rfFVRRZaT1aQYbv",
+            "t2NgLU6QCJhCKgBsR5uX6R4ds82jymzMoMJ",
+            "t2RorFwMUEb7NamvXFi3jCXitAdRoQtU1Hs",
+            "t2FFtmwePBnYaRVRVg1wsoBPxDzGMLrz3Jv",
+            "t2GH3734fKEhPo3NvvAZQazsFf3V51oR4c2",
+            "t2Ev3twAmUmono3gM2Q6RsfhRiryy7TnX5E",
+            "t2EmhhAjh6cLpyw6Yc9QEXvsjm7qdKpgFQP",
+            "t2Gy5N7DYbEZmiHqm3m8Re25a8Bxu7e36ju",
+            "t2LVSaxizciFWfc5gr1xccHXT115RSnQ13r",
+            "t28zy3Qiq3FtMeB2PCEysF7R5TgW5UfZN1N",
+            "t2FcN7o26gRCc8ZuSZcc7X7APPRqWQ5a3W2",
+            "t27QTHP9qoi5HkiTqx4JV86MGG37aikK51s",
+            "t2CwQ6H9GPT77nqRwkHCuVcyGvtbhxWHfAk",
+            "t2HLUDaoimaaSpQhHnvbqpKg6Fi37rAo6cx",
+            "t2Ebuq1FX7Qzi3ur1FnwsDMvfNBFjqVqDGX",
+            "t2Bca3HbSbwgQp1ZhzheNvGfpwBoU6Syt8G",
+            "t2EurfAqyJMsCyx6ujYecQSxrPPY7xxTqcB",
+            "t2R1kJGeNhLpKx1dKNCnBUq1BkxBVJjQdcp",
+            "t2M3x9koBJWJS1F9bGtWXTsVfr5pesWSTbR",
+            "t2La4mEMruVTtBqhndS7zRvmi2WsqWUjPQz",
+            "t29GwTHLXxYgF5k7SSj7XFaHB7JsocM9bDU",
+            "t2Awpdv7yG2QFeHeq17J1qCSXRw1AM3mfmz",
+            "t2BfotpLdNhhewRp9nXpBBYViBaq4y1Lnj5",
+            "t2F4CH89prySyGZHUiPYJUjnZk9UPXgLBbf",
+            "t2DNx1KzP8a2S3kZgAPngso9ptva5gE7Jbn",
+            "t2Eb7orwhjGcu4wYwHBzN5BoXzroPGq3CoM",
+            "t2BXYmM21WCdHiC1KiwQVHxaTvLQJpqXTvH",
+            "t27Y6774dwAcCFvYrhDKTXgaxtUewAdZdtz",
+            "t2JvmRjZnViBZXJJBekDygdvGTCRNWgFEK2",
+            "t2PL5W7qy1DKNRPWECbaZ6gV9GEzMn8h97Z",
+            "t2S1JaefdSNwaUexdr6ZtNJhqZS8uDGSNFg",
+            "t2BTunj4VB44Q22crWpT1ykoBvNGFKMnD7N",
+            "t2G7DkSoEUJGaEBH6erKsXemoHFqqTRaSiZ",
+            "t2Ldg8Bc6AWDuESqPgUoumWfCYw3zqKF8s9",
+            "t2Ft4QMMiJfKXVbhyGBrkwjnfn5ua73VuLo",
+            "t26xLxd4Fabbotkc9gfFwpCVHoZG1W9rmN7",
+            "t2DyghJMpK6rRKPEAL3DBKmCntUcj8bUiHg",
+            "t2RSYhCsgw2AdBiUUyXBCkFf2xE9ddwyESD",
+            "t26fv5NLiFYXMmfQnvqcJXcYnt5NY41eqrv",
+            "t2Ppht55eXKC1BX7pfusJxZqbHnkp9oWbBW",
+            "t2P4AWJ5C4ySU3KzfehAeppH2BV4Y87w34z",
+            "t28zjDUH2Gkvt8Ytb8UrW7L6G5U1QMwJFM3",
+            "t2JXDd9pumryTAXqDD98vDLS2ZLSQCNQrYZ",
+            "t2BNuNGnGq49MZzr7SH8WtEE7sSwZ9n3bsz",
+            "t2QumKdHZhkFD6ntrzJ9zJAga2QemEgqc9r",
+            "t2UKz2L7V3C6GTeBPDXmQnwMyqKEbgMpuXg",
+            "t2CyVugoafiDYpeSNd9DGZEng6Bpr4tqa3d",
+            "t2GR9eEen8KUDjhQG1opC1aFt27zxdtufnF",
+            "t2JKYuSRNupdHdTR91tqR4xsaU6friVJJgv",
+            "t2D2yMZEM3K8ap6iLo3FX2g1Ch9coPSVq2R",
+            "t2SeFu34eiE2rCPFpxrN8im6ZvcwMpdKnit",
+            "t2KH46EXQy5wnZHDGVDA7Q13FdRkdQ3LUou",
+            "t2UsTpuVqP6ZubtN8tQGPnh7Cqjjf1hoefd",
+            "t2Dd119xiqDbF9QzWwYfnYWUPfqgnL1CNFu",
+            "t29PjecMhv6EygD8W6smcMHAB8MSHQY3YnQ",
+            "t2BDZpxgcMRzqgKbDBiXRXrvL3VwD7G8cLc",
+            "t2MwiKqfCMdy7o96bXvbZ5aGCrRmVfVWVfA",
+            "t2Vhkny4jNjy6ZD53jeQzsdgZiZyejwRsgY",
+            "t2K3ouBrLAbYwZv6beoHjzfsE1AbYVa6PuE",
+            "t2DskMSpWs8i9vK2PhNpi9Mu2qJSvEDi8UZ",
+            "t2JB2Uz3eVWrxFhas1B1cSXLP22JHbRNYtL",
+            "t2ArYKW1L8hRoCDK9odNmD4piRwFheErWL1",
+            "t2K1zKGHrkibiFoYJ5GtfHe5xJecJPEvFwQ",
+            "t2VnABknMprtMk8y5AdDCBr2R9QZnMhfqSm",
+            "t2FbjEsP9eeQr5PmP7yC3fopPTuYS9E9VgN",
+            "t2Sn2XUPZEnFcggB77jvxBqX6LcjdCzcJUs",
+            "t2SEK3Tw5FYYUaeZcF5QemfeG3tiorrxNKp",
+            "t2D78THpHVodnhiREjF22A3KRznor5pPnR1",
+            "t2GyqFdkf6FoQTShEhLGsNrTxAWqmeq4pui",
+            "t2HnNgFLznEqaokYq8PBV44uzRwAmJXQeKd",
+            "t2PpHVStdHvWkzXsyuyPYQQq96ZRQu7ALpE",
+            "t2FHbHM9rKKHZe74HRBNozwNdRsExug8tCw",
+            "t29tM6DkMPSVp9R3g7UjZjvsobKhsbsRqFL",
+            "t2K2KixLVJo19phPJMv9ApSiFmxQCSQUvc9",
+            "t2AWJcGVUMWFC8A9KC3PL7qoCb1vxSzxbJP",
+            "t26p8FyjHmhqZ6duzhRFLCQcExh1TuCD1sC",
+            "t27x5n41uRNF3tJkb3Lg1CMomUjTNZwtUfm",
+            "t2VhRQJ9xeVkVVk7ic21CtDePKmHnrDyF8Z",
+            "t27hL1iAsTHBPWrdc1qYGSSTc3pTyBqohd4",
+            "t2RqLYWG8Eo4hopDsn1m8GUoAWtjZQEPE9s",
+            "t2V1osVDkcwYFL4PF9qG8t9Ez1XRVMAkAb6"
+        };
+        vCommunityFeeStartHeight = 200;
+        vCommunityFeeLastHeight = 1400000;
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 
     void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
@@ -467,24 +671,22 @@ bool SelectParamsFromCommandLine()
     return true;
 }
 
-
-// Block height must be >0 and <=last founders reward block height
-// Index variable i ranges from 0 - (vFoundersRewardAddress.size()-1)
-std::string CChainParams::GetFoundersRewardAddressAtHeight(int nHeight) const {
-    int maxHeight = consensus.GetLastFoundersRewardBlockHeight();
+// Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
+std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
+    int maxHeight = GetLastCommunityFeeBlockHeight();
     assert(nHeight > 0 && nHeight <= maxHeight);
 
-    size_t addressChangeInterval = (maxHeight + vFoundersRewardAddress.size()) / vFoundersRewardAddress.size();
+    size_t addressChangeInterval = (maxHeight + vCommunityFeeAddress.size()) / vCommunityFeeAddress.size();
     size_t i = nHeight / addressChangeInterval;
-    return vFoundersRewardAddress[i];
+    return vCommunityFeeAddress[i];
 }
 
 // Block height must be >0 and <=last founders reward block height
 // The founders reward address is expected to be a multisig (P2SH) address
-CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
-    assert(nHeight > 0 && nHeight <= consensus.GetLastFoundersRewardBlockHeight());
+CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
+    assert(nHeight > 0 && nHeight <= GetLastCommunityFeeBlockHeight());
 
-    CTxDestination address = DecodeDestination(GetFoundersRewardAddressAtHeight(nHeight).c_str());
+    CTxDestination address = DecodeDestination(GetCommunityFeeAddressAtHeight(nHeight).c_str());
     assert(IsValidDestination(address));
     assert(boost::get<CScriptID>(&address) != nullptr);
     CScriptID scriptID = boost::get<CScriptID>(address); // address is a boost variant
@@ -492,9 +694,9 @@ CScript CChainParams::GetFoundersRewardScriptAtHeight(int nHeight) const {
     return script;
 }
 
-std::string CChainParams::GetFoundersRewardAddressAtIndex(int i) const {
-    assert(i >= 0 && i < vFoundersRewardAddress.size());
-    return vFoundersRewardAddress[i];
+std::string CChainParams::GetCommunityFeeAddressAtIndex(int i) const {
+    assert(i >= 0 && i < vCommunityFeeAddress.size());
+    return vCommunityFeeAddress[i];
 }
 
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
