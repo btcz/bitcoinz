@@ -12,7 +12,7 @@ Install
 
 ### [Quick guide for beginners](https://github.com/bitcoinz-pod/bitcoinz/wiki/Quick-guide-for-beginners)
 
-Get dependencies
+Install required dependencies:
 ```{r, engine='bash'}
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
@@ -20,8 +20,7 @@ sudo apt-get install \
       zlib1g-dev wget bsdmainutils automake
 ```
 
-Install
-
+Execute the build command:
 ```{r, engine='bash'}
 # Clone Bitcoinz Repository
 git clone https://github.com/btcz/bitcoinz
@@ -30,6 +29,10 @@ cd bitcoinz/
 ./zcutil/build.sh -j$(nproc)
 # fetch key
 ./zcutil/fetch-params.sh
+```
+
+Usage:
+```{r, engine='bash'}
 # Run
 ./src/bitcoinzd
 # Test getting information about the network
@@ -48,6 +51,23 @@ cd src/
 # Get more info about a single wallet command
 ./bitcoinz-cli help "The-command-you-want-to-learn-more-about"
 ./bitcoinz-cli help "getbalance"
+```
+
+### Windows
+The BitcoinZ Windows Command Line Wallet can only be built from ubuntu for now.
+
+Install required dependencies:
+```
+apt-get update \
+&& apt-get install -y \
+    curl build-essential pkg-config libc6-dev m4 g++-multilib autoconf \
+    libtool ncurses-dev unzip git python zlib1g-dev wget bsdmainutils \
+    automake p7zip-full pwgen mingw-w64 cmake
+```
+
+Execute the build command:
+```
+./zcutil/build-win.sh -j$(nproc)
 ```
 
 ### Docker
