@@ -525,7 +525,6 @@ void static BitcoinMiner(const CChainParams& chainparams)
     LogPrintf("BitcoinZMiner started\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
     RenameThread("bitcoinz-miner");
-    const CChainParams& chainparams = Params();
 
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
