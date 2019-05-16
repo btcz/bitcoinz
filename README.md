@@ -1,4 +1,3 @@
-=======
 # BitcoinZ
 **Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
@@ -10,7 +9,7 @@ Install
 -----------------
 ### Linux
 
-### [Quick guide for beginners](https://github.com/bitcoinz-pod/bitcoinz/wiki/Quick-guide-for-beginners)
+### [Quick guide for beginners](https://github.com/btcz/bitcoinz/wiki/Quick-guide-for-beginners)
 
 Install required dependencies:
 ```{r, engine='bash'}

@@ -101,6 +101,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 328500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 770006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 328500;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 770009;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         // consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000a95cc5099213e3");
@@ -193,6 +196,14 @@ public:
             2290.912865  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
+
+        // Hardcoded fallback value for the Sprout shielded value pool balance
+        // for nodes that have not reindexed since the introduction of monitoring
+        // in #2795.
+        // nSproutValuePoolCheckpointHeight = 520633;
+        // nSproutValuePoolCheckpointBalance = 22145062442933;
+        fZIP209Enabled = true;
+        // hashSproutValuePoolCheckpointBlock = uint256S("0000000000c7b46b6bc04b4cbf87d8bb08722aebd51232619b214f7273f8460e");
 
         // Community Fee script expects a vector of 2-of-3 multisig addresses
         vCommunityFeeAddress = {
@@ -336,6 +347,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 1500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 770006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 1500;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 770008;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000005000");
@@ -405,6 +419,14 @@ public:
             0,
             0
         };
+
+        // Hardcoded fallback value for the Sprout shielded value pool balance
+        // for nodes that have not reindexed since the introduction of monitoring
+        // in #2795.
+        // nSproutValuePoolCheckpointHeight = 440329;
+        // nSproutValuePoolCheckpointBalance = 40000029096803;
+        fZIP209Enabled = true;
+        // hashSproutValuePoolCheckpointBlock = uint256S("000a95d08ba5dcbabe881fc6471d11807bcca7df5f1795c99f3ec4580db4279b");
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vCommunityFeeAddress = {
@@ -549,6 +571,9 @@ public:
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 170008;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
@@ -725,6 +750,10 @@ public:
         assert(idx > Consensus::BASE_SPROUT && idx < Consensus::MAX_NETWORK_UPGRADES);
         consensus.vUpgrades[idx].nActivationHeight = nActivationHeight;
     }
+
+    void SetRegTestZIP209Enabled() {
+        fZIP209Enabled = true;
+    }
 };
 static CRegTestParams regTestParams;
 
@@ -756,6 +785,11 @@ void SelectParams(CBaseChainParams::Network network) {
     // Some python qa rpc tests need to enforce the coinbase consensus rule
     if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestprotectcoinbase")) {
         regTestParams.SetRegTestCoinbaseMustBeProtected();
+    }
+
+    // When a developer is debugging turnstile violations in regtest mode, enable ZIP209
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-developersetpoolsizezero")) {
+        regTestParams.SetRegTestZIP209Enabled();
     }
 }
 
