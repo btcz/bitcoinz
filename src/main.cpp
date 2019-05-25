@@ -3733,16 +3733,12 @@ bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, bool f
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                          REJECT_INVALID, "high-hash");
 
-    // Check timestamp (old)
-    if (nHeight < chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 2 * 60 * 60) {
+    // Check timestamp is within the allowed window to help decrease effectiveness of timewarp attacks
+    int futureBlockTimeWindow = Params().GetFutureBlockTimeWindow(nHeight);
+    if (block.GetBlockTime() > GetAdjustedTime() + futureBlockTimeWindow)
         return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
                              REJECT_INVALID, "time-too-new");
 
-    // starting at height 159300, decrease to 30 minute window to decrease effectiveness of timewarp attack.
-    } else if (nHeight >= chainParams.GetNewTimeRule() && block.GetBlockTime() > GetAdjustedTime() + 30 * 60) {
-        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
-                             REJECT_INVALID, "time-too-new");
-    }
     return true;
 }
 

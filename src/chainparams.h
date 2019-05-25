@@ -24,6 +24,7 @@ struct SeedSpec6 {
 };
 
 typedef std::map<int, uint256> MapCheckpoints;
+typedef std::map<int, int> MapFutureBlockTimeWindows;
 
 struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
@@ -127,7 +128,7 @@ public:
     int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
-    int GetNewTimeRule() const { return newTimeRule; }
+    int GetFutureBlockTimeWindow(int height) const;
 protected:
     CChainParams() {}
 
@@ -159,7 +160,7 @@ protected:
     std::vector<std::string> vCommunityFeeAddress;
     int vCommunityFeeStartHeight;
     int vCommunityFeeLastHeight;
-    int newTimeRule;
+    MapFutureBlockTimeWindows futureBlockTimeWindows;
     CAmount nSproutValuePoolCheckpointHeight = 0;
     CAmount nSproutValuePoolCheckpointBalance = 0;
     uint256 hashSproutValuePoolCheckpointBlock;

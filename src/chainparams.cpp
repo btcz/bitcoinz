@@ -119,11 +119,15 @@ public:
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        newTimeRule = 159300;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
         eh_epoch_1_endblock = 160010;
         eh_epoch_2_startblock = 160000;
+
+        futureBlockTimeWindows = boost::assign::map_list_of
+            ( 0, 2 * 60 ) // originally 2 hours
+            ( 159300, 30 ) // 30 minutes
+            ( 999999, 5 ); // 5 minutes
 
         genesis = CreateGenesisBlock(
             1478403829,
@@ -362,11 +366,15 @@ public:
         nDefaultPort = 11989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 1000;
-        newTimeRule = 159300;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
         eh_epoch_1_endblock = 1210;
         eh_epoch_2_startblock = 1200;
+
+        futureBlockTimeWindows = boost::assign::map_list_of
+            ( 0, 2 * 60 ) // originally 2 hours
+            ( 13999, 30 ) // 30 minutes
+            ( 14000, 5 ); // 5 minutes
 
         genesis = CreateGenesisBlock(
             1479443947,
@@ -587,11 +595,15 @@ public:
         nMaxTipAge = 24 * 60 * 60;
         //assert(consensus.hashGenesisBlock == uint256S("0x0575f78ee8dc057deee78ef691876e3be29833aaee5e189bb0459c087451305a"));
         nPruneAfterHeight = 1000;
-        newTimeRule = 159300;
         eh_epoch_1 = eh48_5;
         eh_epoch_2 = eh48_5;
         eh_epoch_1_endblock = 1;
         eh_epoch_2_startblock = 1;
+
+        futureBlockTimeWindows = boost::assign::map_list_of
+            ( 0, 2 * 60 ) // originally 2 hours
+            ( 159300, 30 ) // 30 minutes
+            ( 999999, 5 ); // 5 minutes
 
         genesis = CreateGenesisBlock(
             1482971059,
@@ -871,4 +883,14 @@ bool checkEHParamaters(int solSize, int height, const CChainParams& params) {
     }
 
     return false;
+}
+
+int CChainParams::GetFutureBlockTimeWindow(int height) const {
+    BOOST_REVERSE_FOREACH(const MapFutureBlockTimeWindows::value_type& i, futureBlockTimeWindows)
+    {
+        if (i.first <= height) {
+            return i.second * 60;
+        }
+    }
+    return 2 * 60 * 60;
 }
