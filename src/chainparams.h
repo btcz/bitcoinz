@@ -129,6 +129,7 @@ public:
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
     int GetFutureBlockTimeWindow(int height) const;
+    int GetRollingCheckpointStartHeight() const { return vRollingCheckpointStartHeight; }
 protected:
     CChainParams() {}
 
@@ -165,6 +166,7 @@ protected:
     CAmount nSproutValuePoolCheckpointBalance = 0;
     uint256 hashSproutValuePoolCheckpointBlock;
     bool fZIP209Enabled = false;
+    int vRollingCheckpointStartHeight;
 };
 
 /**

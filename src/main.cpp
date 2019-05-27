@@ -3173,6 +3173,7 @@ bool static ConnectTip(CValidationState &state, CBlockIndex *pindexNew, CBlock *
 static CBlockIndex* FindMostWorkChain() {
     do {
         CBlockIndex *pindexNew = NULL;
+        CBlockIndex *pindexOldTip = chainActive.Tip();
 
         // Find the best candidate header.
         {
@@ -3195,14 +3196,48 @@ static CBlockIndex* FindMostWorkChain() {
             // to a chain unless we have all the non-active-chain parent blocks.
             bool fFailedChain = pindexTest->nStatus & BLOCK_FAILED_MASK;
             bool fMissingData = !(pindexTest->nStatus & BLOCK_HAVE_DATA);
-            if (fFailedChain || fMissingData) {
+
+            bool fInvalidChain = false;
+
+            // check last few blocks for reorg
+            const CChainParams& chainParams = Params();
+            if(pindexOldTip != NULL && pindexOldTip->nHeight > chainParams.GetRollingCheckpointStartHeight() && 
+                GetBoolArg("-reorgprotection", false))
+            {
+                // check some last hash
+                // CHECK_REORG
+                int heightCheck = pindexOldTip->nHeight - DEFAULT_REORG_CHECK;
+                const CBlockIndex *pindexOldTipCheck = FindBlockAtHeight(heightCheck, (const CBlockIndex*)pindexOldTip);
+                const CBlockIndex *pindexTestCheck = FindBlockAtHeight(heightCheck, (const CBlockIndex*)pindexTest);
+                if(pindexOldTipCheck->phashBlock != pindexTestCheck->phashBlock)
+                {
+                    auto msg = strprintf(
+                    "Invalid block hash"
+                      "\n\n") +
+                    _("Block details") + ":\n" +
+                    "- " + strprintf(_("Current tip: %s, height %d"),
+                        pindexOldTipCheck->phashBlock->GetHex(), pindexOldTipCheck->nHeight) + "\n" +
+                    "- " + strprintf(_("New tip:     %s, height %d"),
+                        pindexTestCheck->phashBlock->GetHex(), pindexTestCheck->nHeight) + "\n";
+                    LogPrintf("*** %s\n", msg);
+                    fInvalidChain = true;
+                }
+                else
+                {
+                    LogPrintf("Block hash is correct %s, height %d\n", pindexOldTipCheck->phashBlock->GetHex(), pindexOldTipCheck->nHeight);
+                    fInvalidChain = false;
+                }
+            }
+
+            if (fFailedChain || fMissingData || fInvalidChain) {
                 // Candidate chain is not usable (either invalid or missing data)
-                if (fFailedChain && (pindexBestInvalid == NULL || pindexNew->nChainWork > pindexBestInvalid->nChainWork))
+                if ((fFailedChain || fInvalidChain) 
+                    && (pindexBestInvalid == NULL || pindexNew->nChainWork > pindexBestInvalid->nChainWork))
                     pindexBestInvalid = pindexNew;
                 CBlockIndex *pindexFailed = pindexNew;
                 // Remove the entire chain from the set.
                 while (pindexTest != pindexFailed) {
-                    if (fFailedChain) {
+                    if (fFailedChain || fInvalidChain) {
                         pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
                     } else if (fMissingData) {
                         // If we're missing data, then add back to mapBlocksUnlinked,
@@ -3234,6 +3269,13 @@ static void PruneBlockIndexCandidates() {
     }
     // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
     assert(!setBlockIndexCandidates.empty());
+}
+
+const CBlockIndex* FindBlockAtHeight(int nHeight, const CBlockIndex* pIndex) {
+    while (pIndex && pIndex->nHeight > nHeight) {
+        pIndex = pIndex->pprev;
+    }
+    return pIndex;
 }
 
 /**
