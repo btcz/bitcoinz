@@ -3201,8 +3201,7 @@ static CBlockIndex* FindMostWorkChain() {
 
             // check last few blocks for reorg
             const CChainParams& chainParams = Params();
-            if(pindexOldTip != NULL && pindexOldTip->nHeight > chainParams.GetRollingCheckpointStartHeight() && 
-                GetBoolArg("-reorgprotection", false))
+            if(pindexOldTip != NULL && pindexOldTip->nHeight > chainParams.GetRollingCheckpointStartHeight())
             {
                 // check some last hash
                 // CHECK_REORG
