@@ -194,7 +194,12 @@ public:
             ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8"))
             ( 153955, uint256S("0x00000006913d3122f32e60c9d64e87edd8e9a05444447df49713c15fbae6484d"))
             ( 160011, uint256S("0x0003a9fbed918bdd83fb5d38016189d5b8fe77495d4a7bd2405d3e8a04a62201"))  //18-06-17  8am UTC Hooray for Zhash!
-            ( 166500, uint256S("0x0000002b640d62dd0c2ab68774b05297d2aa72bd63997d3a73ad959963b148d8")),
+            ( 166500, uint256S("0x0000002b640d62dd0c2ab68774b05297d2aa72bd63997d3a73ad959963b148d8"))
+            ( 352440, uint256S("0x000000188d7e36ac236d2a1b549f14fe6fff287b80b4c68a832b6c80b8810fa2"))
+            ( 352540, uint256S("0x00000006838b961606dad5a3da08b595a69cb8fc78684d9a4d3d3727bc96eb2b"))
+            ( 352640, uint256S("0x000000c4a4a131d358a4b5419171c627cfb219367a810ca1780ef3119f634b6b"))
+            ( 352740, uint256S("0x0000006bcc7d38424a1cf996b3b4ee61c44f941523af16c26c22c2708151a977"))
+            ( 357600, uint256S("0x0000003b302a1ecfa6555b64981b1950853f49e022c923e98f94535225c6c54a")),
 
             1530166456,     // * UNIX timestamp of last checkpoint block
             662217,         // * total number of transactions between genesis and last checkpoint
