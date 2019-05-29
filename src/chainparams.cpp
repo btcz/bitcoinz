@@ -127,9 +127,9 @@ public:
         futureBlockTimeWindows = boost::assign::map_list_of
             ( 0, 2 * 60 ) // originally 2 hours
             ( 159300, 30 ) // 30 minutes
-            ( 999999, 5 ); // 5 minutes
+            ( 364400, 5 ); // 5 minutes
 
-        vRollingCheckpointStartHeight = 356000;
+        vRollingCheckpointStartHeight = 364400;
 
         genesis = CreateGenesisBlock(
             1478403829,
@@ -612,9 +612,9 @@ public:
         futureBlockTimeWindows = boost::assign::map_list_of
             ( 0, 2 * 60 ) // originally 2 hours
             ( 159300, 30 ) // 30 minutes
-            ( 999999, 5 ); // 5 minutes
+            ( 364400, 5 ); // 5 minutes
 
-        vRollingCheckpointStartHeight = 999999;
+        vRollingCheckpointStartHeight = 364400;
 
         genesis = CreateGenesisBlock(
             1482971059,
