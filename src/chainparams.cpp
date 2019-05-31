@@ -101,6 +101,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 328500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 770006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 328500;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 770009;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         // consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000000000a95cc5099213e3");
@@ -116,11 +119,17 @@ public:
         nDefaultPort = 1989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 100000;
-        newTimeRule = 159300;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
         eh_epoch_1_endblock = 160010;
         eh_epoch_2_startblock = 160000;
+
+        futureBlockTimeWindows = boost::assign::map_list_of
+            ( 0, 2 * 60 ) // originally 2 hours
+            ( 159300, 30 ) // 30 minutes
+            ( 364400, 5 ); // 5 minutes
+
+        vRollingCheckpointStartHeight = 364400;
 
         genesis = CreateGenesisBlock(
             1478403829,
@@ -185,7 +194,12 @@ public:
             ( 140000, uint256S("0x0000000155f89d1ededf519c6445d41c9240ee4daa721c91c19eea0faa2f02c8"))
             ( 153955, uint256S("0x00000006913d3122f32e60c9d64e87edd8e9a05444447df49713c15fbae6484d"))
             ( 160011, uint256S("0x0003a9fbed918bdd83fb5d38016189d5b8fe77495d4a7bd2405d3e8a04a62201"))  //18-06-17  8am UTC Hooray for Zhash!
-            ( 166500, uint256S("0x0000002b640d62dd0c2ab68774b05297d2aa72bd63997d3a73ad959963b148d8")),
+            ( 166500, uint256S("0x0000002b640d62dd0c2ab68774b05297d2aa72bd63997d3a73ad959963b148d8"))
+            ( 352440, uint256S("0x000000188d7e36ac236d2a1b549f14fe6fff287b80b4c68a832b6c80b8810fa2"))
+            ( 352540, uint256S("0x00000006838b961606dad5a3da08b595a69cb8fc78684d9a4d3d3727bc96eb2b"))
+            ( 352640, uint256S("0x000000c4a4a131d358a4b5419171c627cfb219367a810ca1780ef3119f634b6b"))
+            ( 352740, uint256S("0x0000006bcc7d38424a1cf996b3b4ee61c44f941523af16c26c22c2708151a977"))
+            ( 357600, uint256S("0x0000003b302a1ecfa6555b64981b1950853f49e022c923e98f94535225c6c54a")),
 
             1530166456,     // * UNIX timestamp of last checkpoint block
             662217,         // * total number of transactions between genesis and last checkpoint
@@ -193,6 +207,14 @@ public:
             2290.912865  // * estimated number of transactions per day after checkpoint
                             //   total number of tx / (checkpoint block height / (24 * 24))
         };
+
+        // Hardcoded fallback value for the Sprout shielded value pool balance
+        // for nodes that have not reindexed since the introduction of monitoring
+        // in #2795.
+        // nSproutValuePoolCheckpointHeight = 520633;
+        // nSproutValuePoolCheckpointBalance = 22145062442933;
+        fZIP209Enabled = true;
+        // hashSproutValuePoolCheckpointBlock = uint256S("0000000000c7b46b6bc04b4cbf87d8bb08722aebd51232619b214f7273f8460e");
 
         // Community Fee script expects a vector of 2-of-3 multisig addresses
         vCommunityFeeAddress = {
@@ -336,6 +358,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_OVERWINTER].nActivationHeight = 1500;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 770006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 1500;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 770008;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000005000");
@@ -348,11 +373,17 @@ public:
         nDefaultPort = 11989;
         nMaxTipAge = 24 * 60 * 60;
         nPruneAfterHeight = 1000;
-        newTimeRule = 159300;
         eh_epoch_1 = eh200_9;
         eh_epoch_2 = eh144_5;
         eh_epoch_1_endblock = 1210;
         eh_epoch_2_startblock = 1200;
+
+        futureBlockTimeWindows = boost::assign::map_list_of
+            ( 0, 2 * 60 ) // originally 2 hours
+            ( 13999, 30 ) // 30 minutes
+            ( 14000, 5 ); // 5 minutes
+
+        vRollingCheckpointStartHeight = 14000;
 
         genesis = CreateGenesisBlock(
             1479443947,
@@ -405,6 +436,14 @@ public:
             0,
             0
         };
+
+        // Hardcoded fallback value for the Sprout shielded value pool balance
+        // for nodes that have not reindexed since the introduction of monitoring
+        // in #2795.
+        // nSproutValuePoolCheckpointHeight = 440329;
+        // nSproutValuePoolCheckpointBalance = 40000029096803;
+        fZIP209Enabled = true;
+        // hashSproutValuePoolCheckpointBlock = uint256S("000a95d08ba5dcbabe881fc6471d11807bcca7df5f1795c99f3ec4580db4279b");
 
         // Founders reward script expects a vector of 2-of-3 multisig addresses
         vCommunityFeeAddress = {
@@ -550,6 +589,9 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 170006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight =
             Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 170008;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
@@ -562,11 +604,17 @@ public:
         nMaxTipAge = 24 * 60 * 60;
         //assert(consensus.hashGenesisBlock == uint256S("0x0575f78ee8dc057deee78ef691876e3be29833aaee5e189bb0459c087451305a"));
         nPruneAfterHeight = 1000;
-        newTimeRule = 159300;
         eh_epoch_1 = eh48_5;
         eh_epoch_2 = eh48_5;
         eh_epoch_1_endblock = 1;
         eh_epoch_2_startblock = 1;
+
+        futureBlockTimeWindows = boost::assign::map_list_of
+            ( 0, 2 * 60 ) // originally 2 hours
+            ( 159300, 30 ) // 30 minutes
+            ( 364400, 5 ); // 5 minutes
+
+        vRollingCheckpointStartHeight = 364400;
 
         genesis = CreateGenesisBlock(
             1482971059,
@@ -725,6 +773,10 @@ public:
         assert(idx > Consensus::BASE_SPROUT && idx < Consensus::MAX_NETWORK_UPGRADES);
         consensus.vUpgrades[idx].nActivationHeight = nActivationHeight;
     }
+
+    void SetRegTestZIP209Enabled() {
+        fZIP209Enabled = true;
+    }
 };
 static CRegTestParams regTestParams;
 
@@ -756,6 +808,11 @@ void SelectParams(CBaseChainParams::Network network) {
     // Some python qa rpc tests need to enforce the coinbase consensus rule
     if (network == CBaseChainParams::REGTEST && mapArgs.count("-regtestprotectcoinbase")) {
         regTestParams.SetRegTestCoinbaseMustBeProtected();
+    }
+
+    // When a developer is debugging turnstile violations in regtest mode, enable ZIP209
+    if (network == CBaseChainParams::REGTEST && mapArgs.count("-developersetpoolsizezero")) {
+        regTestParams.SetRegTestZIP209Enabled();
     }
 }
 
@@ -837,4 +894,14 @@ bool checkEHParamaters(int solSize, int height, const CChainParams& params) {
     }
 
     return false;
+}
+
+int CChainParams::GetFutureBlockTimeWindow(int height) const {
+    BOOST_REVERSE_FOREACH(const MapFutureBlockTimeWindows::value_type& i, futureBlockTimeWindows)
+    {
+        if (i.first <= height) {
+            return i.second * 60;
+        }
+    }
+    return 2 * 60 * 60;
 }

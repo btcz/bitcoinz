@@ -381,8 +381,9 @@ def assert_raises(exc, fun, *args, **kwds):
 def fail(message=""):
     raise AssertionError(message)
 
-# Returns txid if operation was a success or None
-def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
+
+# Returns an async operation result
+def wait_and_assert_operationid_status_result(node, myopid, in_status='success', in_errormsg=None, timeout=300):
     print('waiting for async operation {}'.format(myopid))
     result = None
     for _ in xrange(1, timeout):
@@ -395,23 +396,42 @@ def wait_and_assert_operationid_status(node, myopid, in_status='success', in_err
     assert_true(result is not None, "timeout occured")
     status = result['status']
 
-    txid = None
+    debug = os.getenv("PYTHON_DEBUG", "")
+    if debug:
+        print('...returned status: {}'.format(status))
+
     errormsg = None
     if status == "failed":
         errormsg = result['error']['message']
-    elif status == "success":
-        txid = result['result']['txid']
-
-    if os.getenv("PYTHON_DEBUG", ""):
-        print('...returned status: {}'.format(status))
-        if errormsg is not None:
+        if debug:
             print('...returned error: {}'.format(errormsg))
-    
+        assert_equal(in_errormsg, errormsg)
+
     assert_equal(in_status, status, "Operation returned mismatched status. Error Message: {}".format(errormsg))
 
-    if errormsg is not None:
-        assert_true(in_errormsg is not None, "No error retured. Expected: {}".format(errormsg))
-        assert_true(in_errormsg in errormsg, "Error returned: {}. Error expected: {}".format(errormsg, in_errormsg))
-        return result # if there was an error return the result
+    return result
+
+
+# Returns txid if operation was a success or None
+def wait_and_assert_operationid_status(node, myopid, in_status='success', in_errormsg=None, timeout=300):
+    result = wait_and_assert_operationid_status_result(node, myopid, in_status, in_errormsg, timeout)
+    if result['status'] == "success":
+        return result['result']['txid']
     else:
-        return txid # otherwise return the txid
+        return None
+
+# Find a coinbase address on the node, filtering by the number of UTXOs it has.
+# If no filter is provided, returns the coinbase address on the node containing
+# the greatest number of spendable UTXOs.
+# The default cached chain has one address per coinbase output.
+def get_coinbase_address(node, expected_utxos=None):
+    addrs = [utxo['address'] for utxo in node.listunspent() if utxo['generated']]
+    assert(len(set(addrs)) > 0)
+
+    if expected_utxos is None:
+        addrs = [(addrs.count(a), a) for a in set(addrs)]
+        return sorted(addrs, reverse=True)[0][1]
+
+    addrs = [a for a in set(addrs) if addrs.count(a) == expected_utxos]
+    assert(len(addrs) > 0)
+    return addrs[0]

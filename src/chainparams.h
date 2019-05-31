@@ -24,6 +24,7 @@ struct SeedSpec6 {
 };
 
 typedef std::map<int, uint256> MapCheckpoints;
+typedef std::map<int, int> MapFutureBlockTimeWindows;
 
 struct CCheckpointData {
     MapCheckpoints mapCheckpoints;
@@ -86,6 +87,11 @@ public:
     const std::vector<unsigned char>& AlertKey() const { return vAlertPubKey; }
     int GetDefaultPort() const { return nDefaultPort; }
 
+    CAmount SproutValuePoolCheckpointHeight() const { return nSproutValuePoolCheckpointHeight; }
+    CAmount SproutValuePoolCheckpointBalance() const { return nSproutValuePoolCheckpointBalance; }
+    uint256 SproutValuePoolCheckpointBlockHash() const { return hashSproutValuePoolCheckpointBlock; }
+    bool ZIP209Enabled() const { return fZIP209Enabled; }
+
     const CBlock& GenesisBlock() const { return genesis; }
     /** Make miner wait to have peers to avoid wasting work */
     bool MiningRequiresPeers() const { return fMiningRequiresPeers; }
@@ -122,7 +128,8 @@ public:
     int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
-    int GetNewTimeRule() const { return newTimeRule; }
+    int GetFutureBlockTimeWindow(int height) const;
+    int GetRollingCheckpointStartHeight() const { return vRollingCheckpointStartHeight; }
 protected:
     CChainParams() {}
 
@@ -154,7 +161,12 @@ protected:
     std::vector<std::string> vCommunityFeeAddress;
     int vCommunityFeeStartHeight;
     int vCommunityFeeLastHeight;
-    int newTimeRule;
+    MapFutureBlockTimeWindows futureBlockTimeWindows;
+    CAmount nSproutValuePoolCheckpointHeight = 0;
+    CAmount nSproutValuePoolCheckpointBalance = 0;
+    uint256 hashSproutValuePoolCheckpointBlock;
+    bool fZIP209Enabled = false;
+    int vRollingCheckpointStartHeight;
 };
 
 /**

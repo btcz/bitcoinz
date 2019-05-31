@@ -20,6 +20,7 @@
 #include "wallet/asyncrpcoperation_shieldcoinbase.h"
 
 #include "init.h"
+#include "utiltest.h"
 
 #include <array>
 #include <chrono>
@@ -295,6 +296,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_NO_THROW(CallRPC("getblock 0 2"));
     BOOST_CHECK_THROW(CallRPC("getblock 0 -1"), runtime_error); // bad verbosity
     BOOST_CHECK_THROW(CallRPC("getblock 0 3"), runtime_error); // bad verbosity
+
+    /*
+     * migration (sprout to sapling)
+     */
+    BOOST_CHECK_NO_THROW(CallRPC("z_setmigration true"));
+    BOOST_CHECK_NO_THROW(CallRPC("z_setmigration false"));
+    BOOST_CHECK_THROW(CallRPC("z_setmigration"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_setmigration nonboolean"), runtime_error);
+    BOOST_CHECK_THROW(CallRPC("z_setmigration 1"), runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
@@ -562,9 +572,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importexport)
     pwalletMain->GetSaplingPaymentAddresses(saplingAddrs);
     BOOST_CHECK(saplingAddrs.empty());
 
-    std::vector<unsigned char, secure_allocator<unsigned char>> rawSeed(32);
-    HDSeed seed(rawSeed);
-    auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
+    auto m = GetTestMasterSaplingSpendingKey();
 
     // verify import and export key
     for (int i = 0; i < n1; i++) {
@@ -1250,9 +1258,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
 
 BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 {
-    SelectParams(CBaseChainParams::REGTEST);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+    RegtestActivateSapling();
 
     LOCK(pwalletMain->cs_wallet);
 
@@ -1296,7 +1302,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     pwalletMain->AddToWallet(wtx, true, NULL);
 
     // Context that z_sendmany requires
-    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
+    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, expiryDelta, pwalletMain);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 1 * COIN, "ABCD") };
@@ -1345,8 +1351,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     mapArgs.erase("-experimentalfeatures");
 
     // Revert to default
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_SAPLING, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
+    RegtestDeactivateSapling();
 }
 
 
