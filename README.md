@@ -43,7 +43,7 @@ cd src/
 ./bitcoinz-cli z_getnewaddress
 # Test checking transparent balance
 ./bitcoinz-cli getbalance
-# Test checking total balance 
+# Test checking total balance
 ./bitcoinz-cli z_gettotalbalance
 # Check all available wallet commands
 ./bitcoinz-cli help
@@ -118,9 +118,6 @@ COPY bitcoinz.conf /bitcoinz/data/bitcoinz.conf
 ```
 
 Then, build with `docker build -t my-bitcoinz .` and run.
-
-### Windows
-Windows build is maintained in [bitcoinz-win project](https://github.com/bitcoinz-pod/bitcoinz-win).
 
 Security Warnings
 -----------------
