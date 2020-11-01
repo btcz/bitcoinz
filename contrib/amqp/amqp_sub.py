@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
-# Copyright (c) 2017 The Zcash developers
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# Copyright (c) 2017-2020 The BitcoinZ Community
+# Copyright (c) 2017-2019 The Zcash developers
+# Distributed under the MIT software license, see the accompanying	# Distributed under the MIT software license, see the accompanying
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .	# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 # Requirements:
 #  pip install python-qpid-proton
@@ -45,4 +46,3 @@ try:
     Container(Server("127.0.0.1:%i" % port)).run()
 except KeyboardInterrupt:
     pass
-

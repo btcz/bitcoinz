@@ -18,15 +18,15 @@ Possible options:
 
 ```
 -h, --help       show this help message and exit
-  --nocleanup      Leave zcashds and test.* datadir on exit or error
+  --nocleanup      Leave bitcoinzds and test.* datadir on exit or error
   --noshutdown     Don't stop bitcoinds after the test execution
-  --srcdir=SRCDIR  Source directory containing zcashd/zcash-cli (default:
+  --srcdir=SRCDIR  Source directory containing bitcoinzd/bitcoinz-cli (default:
                    ../../src)
   --tmpdir=TMPDIR  Root directory for datadirs
   --tracerpc       Print out all RPC calls as they are made
 ```
 
-If you set the environment variable `PYTHON_DEBUG=1` you will get some debug output (example: `PYTHON_DEBUG=1 qa/pull-tester/rpc-tests.sh wallet`). 
+If you set the environment variable `PYTHON_DEBUG=1` you will get some debug output (example: `PYTHON_DEBUG=1 qa/pull-tester/rpc-tests.sh wallet`).
 
 A 200-block -regtest blockchain and wallets for four nodes
 is created the first time a regression test is run and
@@ -42,5 +42,5 @@ to recover with:
 
 ```bash
 rm -rf cache
-killall zcashd
+killall bitcoinzd
 ```
