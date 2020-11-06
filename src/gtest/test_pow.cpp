@@ -6,8 +6,8 @@
 #include "random.h"
 #include "utiltest.h"
 
-
-void TestDifficultyAveragingImpl(const Consensus::Params& params) {
+void TestDifficultyAveragingImpl(const Consensus::Params& params)
+{
     size_t lastBlk = 2*params.nPowAveragingWindow;
     size_t firstBlk = lastBlk - params.nPowAveragingWindow;
 
@@ -94,14 +94,14 @@ TEST(PoW, MinDifficultyRules) {
     for (int i = 0; i <= lastBlk; i++) {
         blocks[i].pprev = i ? &blocks[i - 1] : nullptr;
         blocks[i].nHeight = params.nPowAllowMinDifficultyBlocksAfterHeight.get() + i;
-        next.nTime = blocks[lastBlk].nTime + params.PoWTargetSpacing(blocks[lastBlk].nHeight + 1);
+        blocks[i].nTime = i ? blocks[i - 1].nTime + params.PoWTargetSpacing(i) : 1269211443;
         blocks[i].nBits = 0x1e7fffff; /* target 0x007fffff000... */
         blocks[i].nChainWork = i ? blocks[i - 1].nChainWork + GetBlockProof(blocks[i - 1]) : arith_uint256(0);
     }
 
     // Create a new block at the target spacing
     CBlockHeader next;
-    next.nTime = blocks[lastBlk].nTime + params.nPowTargetSpacing;
+    next.nTime = blocks[lastBlk].nTime + params.PoWTargetSpacing(blocks[lastBlk].nHeight + 1);
 
     // Result should be unchanged, modulo integer division precision loss
     arith_uint256 bnRes;

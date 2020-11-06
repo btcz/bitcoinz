@@ -85,7 +85,7 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 4000;
-        const size_t N = 200, K = 9;
+        const size_t N = 144, K = 5;
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         consensus.nEquihashN = N;
         consensus.nEquihashK = K;
@@ -348,7 +348,7 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 400;
-        const size_t N = 200, K = 9;
+        const size_t N = 144, K = 5;
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         consensus.nEquihashN = N;
         consensus.nEquihashK = K;
@@ -582,7 +582,7 @@ public:
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
-        const size_t N = 48, K = 5;
+        const size_t N = 144, K = 5;
         BOOST_STATIC_ASSERT(equihash_parameters_acceptable(N, K));
         consensus.nEquihashN = N;
         consensus.nEquihashK = K;
@@ -850,24 +850,14 @@ bool SelectParamsFromCommandLine()
     return true;
 }
 
-// Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
-std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
-    int maxHeight = GetLastCommunityFeeBlockHeight();
-    assert(nHeight > 0 && nHeight <= maxHeight);
-
-    size_t addressChangeInterval = (maxHeight + vCommunityFeeAddress.size()) / vCommunityFeeAddress.size();
-    size_t i = nHeight / addressChangeInterval;
-    return vCommunityFeeAddress[i];
-}
-
 // Block height must be >0 and <=last founders reward block height	// Block height must be >0 and <=last founders reward block height
 // Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
-std::string CChainParams::GetCommunityFeeAddressAtIndex(int i) const {
+std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
   int preBlossomMaxHeight = consensus.GetLastCommunityFeeBlockHeight(0);
-  assert(nHeight > 0 && nHeight <= maxHeight);	    // zip208
+  // zip208
 
   // FounderAddressAdjustedHeight(height) :=
-  size_t addressChangeInterval = (maxHeight + vCommunityFeeAddress.size()) / vCommunityFeeAddress.size();	    // height, if not IsBlossomActivated(height)
+  // height, if not IsBlossomActivated(height)
   // BlossomActivationHeight + floor((height - BlossomActivationHeight) / BlossomPoWTargetSpacingRatio), otherwise
   bool blossomActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
   if (blossomActive) {
@@ -893,7 +883,10 @@ CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
     return script;
 }
 
-
+std::string CChainParams::GetCommunityFeeAddressAtIndex(int i) const {
+    assert(i >= 0 && i < vCommunityFeeAddress.size());
+    return vCommunityFeeAddress[i];
+}
 
 void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
 {

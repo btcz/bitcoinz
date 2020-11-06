@@ -1156,7 +1156,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
         BOOST_CHECK_EQUAL(out.nValue, amount);
 
         amount = AmountFromValue(ValueFromString("1.111"));
-        proxy.add_taddr_change_output_to_tx(amount);
+        proxy.add_taddr_change_output_to_tx(keyChange, amount);
         tx = proxy.getTx();
         BOOST_CHECK(tx.vout.size() == 2);
         out = tx.vout[1];
@@ -1284,7 +1284,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     pwalletMain->AddToWallet(wtx, true, NULL);
 
     // Context that z_sendmany requires
-    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, expiryDelta, pwalletMain);
+    auto builder = TransactionBuilder(consensusParams, nextBlockHeight, pwalletMain);
     mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
 
     std::vector<SendManyRecipient> recipients = { SendManyRecipient(zaddr1, 1 * COIN, "ABCD") };

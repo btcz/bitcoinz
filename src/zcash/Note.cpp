@@ -205,7 +205,7 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     // Deserialize from the plaintext
     SaplingNotePlaintext ret;
     try {
-        DataStream ss(SER_NETWORK, PROTOCOL_VERSION);
+        CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << pt.get();
         ss >> ret;
         assert(ss.size() == 0);

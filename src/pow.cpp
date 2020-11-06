@@ -96,7 +96,7 @@ unsigned int CalculateNextWorkRequired(arith_uint256 bnAvg,
     bnNew /= averagingWindowTimespan;
     bnNew *= nActualTimespan;
 
-    if (bnNew > bnPowLimit) {}
+    if (bnNew > bnPowLimit) {
         bnNew = bnPowLimit;
     }
 

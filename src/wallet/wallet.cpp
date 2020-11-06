@@ -581,7 +581,7 @@ void CWallet::ChainTip(const CBlockIndex *pindex,
         ChainTipAdded(pindex, pblock, sproutTree, saplingTree);
         // Prevent migration transactions from being created when node is syncing after launch,
         // and also when node wakes up from suspension/hibernation and incoming blocks are old.
-        if (!IsInitialBlockDownload() &&
+        if (!IsInitialBlockDownload(Params()) &&
             pblock->GetBlockTime() > GetAdjustedTime() - 3 * 60 * 60)
         {
             RunSaplingMigration(pindex->nHeight);
@@ -4562,7 +4562,7 @@ void CWallet::GetFilteredNotes(
 
                 sproutEntries.push_back(SproutNoteEntry {
                     jsop, pa, plaintext.note(pa), plaintext.memo(), wtx.GetDepthInMainChain() });
-                    
+
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
                 throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", EncodePaymentAddress(pa)));

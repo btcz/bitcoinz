@@ -916,7 +916,7 @@ bool ContextualCheckTransaction(
 
         // Reject transactions with non-Sapling version group ID
         if (tx.fOverwintered && tx.nVersionGroupId != SAPLING_VERSION_GROUP_ID) {
-            return state.DoS(isInitBlockDownload() ? 0 : dosLevel,
+            return state.DoS(isInitBlockDownload(chainparams) ? 0 : dosLevel,
                     error("CheckTransaction(): invalid Sapling tx version"),
                     REJECT_INVALID, "bad-sapling-tx-version-group-id");
         }
@@ -1833,8 +1833,6 @@ CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams)
 
 bool IsInitialBlockDownload(const CChainParams& chainParams)
 {
-    const CChainParams& chainParams = Params();
-
     // Once this function has returned false, it must remain false.
     static std::atomic<bool> latchToFalse{false};
     // Optimization: pre-test latch before taking the lock.
@@ -1990,7 +1988,7 @@ void static InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state
         pindex->nStatus |= BLOCK_FAILED_VALID;
         setDirtyBlockIndex.insert(pindex);
         setBlockIndexCandidates.erase(pindex);
-        InvalidChainFound(pindex, chainParams));
+        InvalidChainFound(pindex, chainParams);
     }
 }
 
@@ -3164,7 +3162,7 @@ bool static ConnectTip(CValidationState& state, const CChainParams& chainparams,
     int64_t nTime1 = GetTimeMicros();
     CBlock block;
     if (!pblock) {
-        if (!ReadBlockFromDisk(block, pindexNew))
+        if (!ReadBlockFromDisk(block, pindexNew, chainparams.GetConsensus()))
             return AbortNode(state, "Failed to read block");
         pblock = &block;
     }
@@ -3430,7 +3428,7 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
 
     // Callbacks/notifications for a new best chain.
     if (fInvalidFound)
-        CheckForkWarningConditionsOnNewFork(vpindexToConnect.back());
+        CheckForkWarningConditionsOnNewFork(vpindexToConnect.back(), chainparams);
     else
         CheckForkWarningConditions(chainparams);
 
@@ -3650,7 +3648,6 @@ bool ReceivedBlockTransactions(
     CBlockIndex *pindexNew,
     const CDiskBlockPos& pos)
 {
-    const CChainParams& chainparams = Params();
     pindexNew->nTx = block.vtx.size();
     pindexNew->nChainTx = 0;
     CAmount sproutValue = 0;
@@ -3861,7 +3858,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
 
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(block, state, fCheckPOW))
+    if (!CheckBlockHeader(block, state, chainparams, fCheckPOW))
         return false;
 
     // Check the merkle root.
@@ -3929,13 +3926,13 @@ bool ContextualCheckBlockHeader(
     unsigned int nHeight = pindexPrev->nHeight + 1;
 
     // Check EH solution size matches an acceptable N,K at the specified height
-    size_t nSolSize = block.nSolution.size();
-    if (fCheckPOW && !checkEHParamaters(nSolSize, nHeight, chainParams)) {
-        return state.DoS(100,error(
-            "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length",
-            nSolSize, nHeight),
-                REJECT_INVALID,"bad-equihash-solution-size");
-    }
+    //size_t nSolSize = block.nSolution.size();
+    //if (fCheckPOW && !checkEHParamaters(nSolSize, nHeight, chainParams)) {
+    //    return state.DoS(100,error(
+    //        "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length",
+    //        nSolSize, nHeight),
+    //            REJECT_INVALID,"bad-equihash-solution-size");
+    //}
 
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
@@ -4052,7 +4049,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
 
-    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, true))
+    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
         return false;
 
     if (pindex == NULL)
@@ -4195,7 +4192,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     auto verifier = libzcash::ProofVerifier::Disabled();
 
     // NOTE: CheckBlockHeader is called by CheckBlock
-    if (!ContextualCheckBlockHeader(block.GetBlockHeader(), state, chainparams, pindexPrev, fCheckPOW))
+    if (!ContextualCheckBlockHeader(block.GetBlockHeader(), state, chainparams, pindexPrev))
         return false;
     if (!CheckBlock(block, state, chainparams, verifier, fCheckPOW, fCheckMerkleRoot))
         return false;
@@ -4384,7 +4381,7 @@ bool static LoadBlockIndexDB()
 {
     const CChainParams& chainparams = Params();
 
-    if (!pblocktree->LoadBlockIndexGuts())
+    if (!pblocktree->LoadBlockIndexGuts(InsertBlockIndex))
         return false;
 
     boost::this_thread::interruption_point();
@@ -4565,7 +4562,7 @@ CVerifyDB::~CVerifyDB()
     uiInterface.ShowProgress("", 100);
 }
 
-bool CVerifyDB::VerifyDB(CCoinsView *coinsview, int nCheckLevel, int nCheckDepth)
+bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth)
 {
     LOCK(cs_main);
     if (chainActive.Tip() == NULL || chainActive.Tip()->pprev == NULL)
@@ -5002,7 +4999,6 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
 
 void static CheckBlockIndex(const Consensus::Params& consensusParams)
 {
-    const Consensus::Params& consensusParams = Params().GetConsensus();
     if (!fCheckBlockIndex) {
         return;
     }
@@ -6749,12 +6745,7 @@ public:
 
 
 // Set default values of new CMutableTransaction based on consensus rules at given height.
-CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight)
-{
-    return CreateNewContextualCMutableTransaction(consensusParams, nHeight, expiryDelta);
-}
-
-CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight, int nExpiryDelta) {
+CMutableTransaction CreateNewContextualCMutableTransaction(const Consensus::Params& consensusParams, int nHeight) {
     CMutableTransaction mtx;
     bool isOverwintered = consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_OVERWINTER);
     if (isOverwintered) {

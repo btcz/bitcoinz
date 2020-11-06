@@ -91,7 +91,7 @@ void TrackMinedBlock(uint256 hash)
 {
     LOCK(cs_metrics);
     minedBlocks.increment();
-    trackedBlocks->push_back(hash);2
+    trackedBlocks->push_back(hash);
 }
 
 void MarkStartTime()

@@ -116,7 +116,7 @@ TEST(founders_reward_test, general) {
     EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
     EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
-    iint maxHeight = GetLastCommunityFeeHeight(params.GetConsensus());
+    int maxHeight = GetLastCommunityFeeHeight(params.GetConsensus());
 
     // If the block height parameter is out of bounds, there is an assert.
     EXPECT_DEATH(params.GetCommunityFeeScriptAtHeight(0), "nHeight");

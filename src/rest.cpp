@@ -353,7 +353,7 @@ static bool rest_tx(HTTPRequest* req, const std::string& strURIPart)
     uint256 hash;
     if (!ParseHashStr(hashStr, hash))
         return RESTERR(req, HTTP_BAD_REQUEST, "Invalid hash: " + hashStr);
-if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true))
+
     CTransaction tx;
     uint256 hashBlock = uint256();
     if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true))

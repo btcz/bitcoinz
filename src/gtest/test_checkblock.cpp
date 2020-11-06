@@ -135,7 +135,7 @@ protected:
         // We now expect this to be an invalid block, for the given reason.
         MockCValidationState state;
         EXPECT_CALL(state, DoS(level, false, REJECT_INVALID, reason, false)).Times(1);
-        EXPECT_FALSE(EXPECT_TRUE(ContextualCheckBlock(block, state, Params(), &indexPrev));
+        EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev));
     }
 
 };
@@ -152,7 +152,7 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
 
     // Treating block as genesis should pass
     MockCValidationState state;
-    EXPECT_TRUE(EXPECT_TRUE(ContextualCheckBlock(block, state, Params(), NULL));
+    EXPECT_TRUE(ContextualCheckBlock(block, state, Params(), NULL));
 
     // Give the transaction a Founder's Reward vout
     mtx.vout.push_back(CTxOut(
@@ -166,14 +166,14 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     CBlockIndex indexPrev {prev};
     indexPrev.nHeight = 0;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
-    EXPECT_FALSE(EXPECT_TRUE(ContextualCheckBlock(block, state, Params(), &indexPrev));
+    EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev));
 
     // Setting to an incorrect height should fail
     mtx.vin[0].scriptSig = CScript() << 2 << OP_0;
     CTransaction tx3 {mtx};
     block.vtx[0] = tx3;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
-    EXPECT_FALSE(EXPECT_TRUE(ContextualCheckBlock(block, state, Params(), &indexPrev));
+    EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev));
 
     // After correcting the scriptSig, should pass
     mtx.vin[0].scriptSig = CScript() << 1 << OP_0;

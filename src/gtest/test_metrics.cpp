@@ -103,7 +103,7 @@ TEST(Metrics, EstimateNetHeight) {
   SetMockTime(blockTimes[399]);
   for (int i = 0; i < 400; i++) {
     // Check that we are within 1 of the correct height
-    EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2)
+    EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2);
   }
   RegtestDeactivateBlossom();
 }

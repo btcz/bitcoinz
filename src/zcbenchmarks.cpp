@@ -173,8 +173,8 @@ double benchmark_solve_equihash()
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
     ss << I;
     auto params = Params(CBaseChainParams::MAIN).GetConsensus();
-    unsigned int n = 200; // unsigned int n = params.nEquihashN;
-    unsigned int k = 9;   // unsigned int k = params.nEquihashK;
+    unsigned int n = 144; // unsigned int n = params.nEquihashN;
+    unsigned int k = 5;   // unsigned int k = params.nEquihashK;
     crypto_generichash_blake2b_state eh_state;
     EhInitialiseState(n, k, eh_state);
     crypto_generichash_blake2b_update(&eh_state, (unsigned char*)&ss[0], ss.size());

@@ -95,13 +95,13 @@ public:
     TransactionBuilder(
         const Consensus::Params& consensusParams,
         int nHeight,
-        int nExpiryDelta,
         CKeyStore* keyStore = nullptr,
         ZCJoinSplit* sproutParams = nullptr,
         CCoinsViewCache* coinsView = nullptr,
         CCriticalSection* cs_coinsView = nullptr);
 
     void SetExpiryHeight(uint32_t nExpiryHeight);
+
     void SetFee(CAmount fee);
 
     // Throws if the anchor does not match the anchor used by

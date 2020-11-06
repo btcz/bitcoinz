@@ -243,8 +243,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             } else {
                 entry.push_back(Pair("height", -1));
                 entry.push_back(Pair("confirmations", 0));
-        }
-    }
+          }
+      }
+  }
 }
 
 UniValue getrawtransaction(const UniValue& params, bool fHelp)

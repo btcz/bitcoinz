@@ -33,9 +33,9 @@ namespace Consensus {
         }
     }
 
-     int Params::GetLastFoundersRewardBlockHeight(int nHeight) const {
+     int Params::GetLastCommunityFeeBlockHeight(int nHeight) const {
         // zip208
-        // FoundersRewardLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })
+        // CommunityFeeLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })
         // Halving(h) is defined as floor(f(h)) where f is a strictly increasing rational
         // function, so it's sufficient to solve for f(height) = 1 in the rationals and
         // then take ceiling(height - 1).

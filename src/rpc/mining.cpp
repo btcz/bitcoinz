@@ -195,17 +195,18 @@ UniValue generate(const UniValue& params, bool fHelp)
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
+    unsigned int n = Params().GetConsensus().nEquihashN;
+    unsigned int k = Params().GetConsensus().nEquihashK;
 
 
-
-    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
-    const CChainParams& chainparams = Params();
+    //EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+    //const CChainParams& chainparams = Params();
 
     while (nHeight < nHeightEnd)
     {
-            validEHparameterList(ehparams,nHeight+1,chainparams);
-            unsigned int n = ehparams[0].n;
-            unsigned int k = ehparams[0].k;
+            //validEHparameterList(ehparams,nHeight+1,chainparams);
+            //unsigned int n = ehparams[0].n;
+            //unsigned int k = ehparams[0].k;
 
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), coinbaseScript->reserveScript));
         if (!pblocktemplate.get())
@@ -893,7 +894,8 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     CAmount nReward = GetBlockSubsidy(nextBlockHeight, Params().GetConsensus());
     CAmount nCommunityFee = 0;
-    if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastCommunityFeeBlockHeight(nHeight))) {
+    //if ((nHeight > 0) && (nHeight <= Params().GetConsensus().GetLastCommunityFeeBlockHeight(nHeight))) {
+    if (nextBlockHeight >= Params().GetCommunityFeeStartHeight()) {
         nCommunityFee = nReward * 0.05;
         nReward -= nCommunityFee;
     }
