@@ -440,7 +440,7 @@ bool enableVTMode()
 void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
-    RenameThread("zcash-metrics-screen");
+    RenameThread("bitcoinz-metrics-screen");
 
     // Determine whether we should render a persistent UI or rolling metrics
     bool isTTY = isatty(STDOUT_FILENO);
@@ -460,6 +460,7 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
+        std::cout << _("BTCZ Node Version 2.0.7 (MagicBeanZ) - Protocol 770008") << std::endl;
         std::cout << _("Thank you for running a BitcoinZ node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     }
@@ -509,7 +510,7 @@ void ThreadShowMetricsScreen()
             // Explain how to exit
             std::cout << "[";
 #ifdef WIN32
-            std::cout << _("'zcash-cli.exe stop' to exit");
+            std::cout << _("'bitcoinz-cli.exe stop' to exit");
 #else
             std::cout << _("Press Ctrl+C to exit");
 #endif

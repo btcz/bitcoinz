@@ -74,7 +74,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Check the tx has joinsplits
-        assert( len(self.nodes[0].getrawtransaction("" + txid, 1)["vjoinsplit"]) > 0 )
+        assert( len(self.nodes[0].getrawtransaction("" + txid, 1)["vJoinSplit"]) > 0 )
 
         # Sync mempools
         self.sync_all()

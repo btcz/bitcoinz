@@ -279,8 +279,8 @@ class WalletTest (BitcoinTestFramework):
         assert_equal(mybalance, Decimal('12500.0'))
 
         mytxdetails = self.nodes[2].gettransaction(mytxid)
-        myvjoinsplits = mytxdetails["vjoinsplit"]
-        assert_equal(0, len(myvjoinsplits))
+        myvJoinSplits = mytxdetails["vJoinSplit"]
+        assert_equal(0, len(myvJoinSplits))
 
         # z_sendmany is expected to fail if tx size breaks limit
         myzaddr = self.nodes[0].z_getnewaddress('sprout')
@@ -375,11 +375,11 @@ class WalletTest (BitcoinTestFramework):
 
         # there should be at least one joinsplit
         mytxdetails = self.nodes[2].gettransaction(mytxid)
-        myvjoinsplits = mytxdetails["vjoinsplit"]
-        assert_greater_than(len(myvjoinsplits), 0)
+        myvJoinSplits = mytxdetails["vJoinSplit"]
+        assert_greater_than(len(myvJoinSplits), 0)
 
         # the first (probably only) joinsplit should take in all the public value
-        myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vjoinsplit"][0]
+        myjoinsplit = self.nodes[2].getrawtransaction(mytxid, 1)["vJoinSplit"][0]
         assert_equal(myjoinsplit["vpub_old"], zsendmanynotevalue)
         assert_equal(myjoinsplit["vpub_new"], 0)
         assert("onetimePubKey" in myjoinsplit.keys())
