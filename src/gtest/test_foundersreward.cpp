@@ -86,17 +86,19 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 static int GetLastCommunityFeeHeight(const Consensus::Params& params) {
     int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
     bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-    return params.GetLastCommunityFeeBlockHeight(blossom ? blossomActivationHeight : 0);
+    //return params.GetLastCommunityFeeBlockHeight(blossom ? blossomActivationHeight : 0);
+    return Params().GetLastCommunityFeeBlockHeight();
 }
 
 // Utility method to check the number of unique addresses from height 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
     int maxHeight = Params().GetLastCommunityFeeBlockHeight();
     std::set<std::string> addresses;
-    for (int i = 1; i <= GetLastCommunityFeeHeight(Params().GetConsensus()); i++) {
+    for (int i = 1; i <= maxHeight; i++) {
         addresses.insert(Params().GetCommunityFeeAddressAtHeight(i));
     }
-    EXPECT_EQ(addresses.size(), nUnique);
+    //EXPECT_EQ(addresses.size(), nUnique);
+    ASSERT_TRUE(addresses.size() == nUnique);
 }
 
 
@@ -116,7 +118,7 @@ TEST(founders_reward_test, general) {
     EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
     EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
 
-    int maxHeight = GetLastCommunityFeeHeight(params.GetConsensus());
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();
 
     // If the block height parameter is out of bounds, there is an assert.
     EXPECT_DEATH(params.GetCommunityFeeScriptAtHeight(0), "nHeight");
@@ -128,7 +130,7 @@ TEST(founders_reward_test, general) {
 TEST(founders_reward_test, regtest_get_last_block_blossom) {
     int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
     auto params = RegtestActivateBlossom(false, blossomActivationHeight);
-    int lastFRHeight = params.GetLastCommunityFeeBlockHeight(blossomActivationHeight);
+    int lastFRHeight = Params().GetLastCommunityFeeBlockHeight();
     EXPECT_EQ(0, params.Halving(lastFRHeight));
     EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
     RegtestDeactivateBlossom();
@@ -173,8 +175,9 @@ TEST(founders_reward_test, slow_start_subsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();
     CAmount totalSubsidy = 0;
-    for (int nHeight = 1; nHeight <= GetLastCommunityFeeHeight(Params().GetConsensus()); nHeight++) {
+    for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
         CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
         totalSubsidy += nSubsidy;
     }
@@ -187,7 +190,7 @@ TEST(founders_reward_test, slow_start_subsidy) {
 // Verify the number of rewards each individual address receives.
 void verifyNumberOfRewards() {
     CChainParams params = Params();
-    int maxHeight = GetLastCommunityFeeHeight(params.GetConsensus());
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();
     std::map<std::string, CAmount> ms;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
       std::string addr = params.GetCommunityFeeAddressAtHeight(nHeight);

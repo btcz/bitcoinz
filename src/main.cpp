@@ -3926,13 +3926,13 @@ bool ContextualCheckBlockHeader(
     unsigned int nHeight = pindexPrev->nHeight + 1;
 
     // Check EH solution size matches an acceptable N,K at the specified height
-    //size_t nSolSize = block.nSolution.size();
-    //if (fCheckPOW && !checkEHParamaters(nSolSize, nHeight, chainParams)) {
-    //    return state.DoS(100,error(
-    //        "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length",
-    //        nSolSize, nHeight),
-    //            REJECT_INVALID,"bad-equihash-solution-size");
-    //}
+    size_t nSolSize = block.nSolution.size();
+    if (!checkEHParamaters(nSolSize, nHeight, chainParams)) {
+        return state.DoS(100,error(
+            "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length",
+            nSolSize, nHeight),
+                REJECT_INVALID,"bad-equihash-solution-size");
+    }
 
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))

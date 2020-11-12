@@ -82,7 +82,7 @@ public:
         consensus.nSubsidySlowStartInterval = 0;
         consensus.nPreBlossomSubsidyHalvingInterval = Consensus::PRE_BLOSSOM_HALVING_INTERVAL;
         consensus.nPostBlossomSubsidyHalvingInterval = Consensus::POST_BLOSSOM_HALVING_INTERVAL;
-        consensus.nSubsidyHalvingInterval = 840000;
+        //consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 4000;
@@ -325,7 +325,7 @@ public:
         };
         vCommunityFeeStartHeight = 328500;
         vCommunityFeeLastHeight = 1400000;
-        assert(vCommunityFeeAddress.size() <= consensus.GetLastCommunityFeeBlockHeight(0));
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 };
 static CMainParams mainParams;
@@ -343,7 +343,7 @@ public:
         consensus.nSubsidySlowStartInterval = 0;
         consensus.nPreBlossomSubsidyHalvingInterval = Consensus::PRE_BLOSSOM_HALVING_INTERVAL;
         consensus.nPostBlossomSubsidyHalvingInterval = Consensus::POST_BLOSSOM_HALVING_INTERVAL;
-        consensus.nSubsidyHalvingInterval = 840000;
+        //consensus.nSubsidyHalvingInterval = 840000;
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
         consensus.nMajorityWindow = 400;
@@ -557,7 +557,7 @@ public:
         };
         vCommunityFeeStartHeight = 1500;
         vCommunityFeeLastHeight = 1400000;
-        assert(vCommunityFeeAddress.size() <= consensus.GetLastCommunityFeeBlockHeight(0));
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 };
 static CTestNetParams testNetParams;
@@ -575,7 +575,7 @@ public:
         consensus.nSubsidySlowStartInterval = 0;
         consensus.nPreBlossomSubsidyHalvingInterval = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL;
         consensus.nPostBlossomSubsidyHalvingInterval = Consensus::POST_BLOSSOM_REGTEST_HALVING_INTERVAL;
-        consensus.nSubsidyHalvingInterval = 150;
+        //consensus.nSubsidyHalvingInterval = 150;
         consensus.nMajorityEnforceBlockUpgrade = 750;
         consensus.nMajorityRejectBlockOutdated = 950;
         consensus.nMajorityWindow = 1000;
@@ -776,7 +776,7 @@ public:
         };
         vCommunityFeeStartHeight = 200;
         vCommunityFeeLastHeight = 1400000;
-        assert(vCommunityFeeAddress.size() <= consensus.GetLastCommunityFeeBlockHeight(0));
+        assert(vCommunityFeeAddress.size() <= GetLastCommunityFeeBlockHeight());
     }
 
     void UpdateNetworkUpgradeParameters(Consensus::UpgradeIndex idx, int nActivationHeight)
@@ -847,7 +847,7 @@ bool SelectParamsFromCommandLine()
 // Block height must be >0 and <=last founders reward block height	// Block height must be >0 and <=last founders reward block height
 // Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
 std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
-  int preBlossomMaxHeight = consensus.GetLastCommunityFeeBlockHeight(0);
+  int preBlossomMaxHeight = GetLastCommunityFeeBlockHeight();
   // zip208
 
   // FounderAddressAdjustedHeight(height) :=
@@ -867,7 +867,7 @@ std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
 // Block height must be >0 and <=last founders reward block height
 // The founders reward address is expected to be a multisig (P2SH) address
 CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
-    assert(nHeight > 0 && nHeight <= consensus.GetLastCommunityFeeBlockHeight(nHeight));
+    assert(nHeight > 0 && nHeight <= GetLastCommunityFeeBlockHeight());
 
     CTxDestination address = DecodeDestination(GetCommunityFeeAddressAtHeight(nHeight).c_str());
     assert(IsValidDestination(address));
