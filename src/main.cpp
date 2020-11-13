@@ -3914,7 +3914,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
 
 bool ContextualCheckBlockHeader(
   const CBlockHeader& block, CValidationState& state,
-  const CChainParams& chainParams, CBlockIndex * const pindexPrev)
+  const CChainParams& chainParams, CBlockIndex * const pindexPrev, bool fCheckPOW)
 {
     const Consensus::Params& consensusParams = chainParams.GetConsensus();
     uint256 hash = block.GetHash();
@@ -3927,7 +3927,7 @@ bool ContextualCheckBlockHeader(
 
     // Check EH solution size matches an acceptable N,K at the specified height
     size_t nSolSize = block.nSolution.size();
-    if (!checkEHParamaters(nSolSize, nHeight, chainParams)) {
+    if (fCheckPOW && !checkEHParamaters(nSolSize, nHeight, chainParams)) {
         return state.DoS(100,error(
             "ContextualCheckBlockHeader: Equihash solution size %d for height %d does not match a valid length",
             nSolSize, nHeight),
@@ -4049,7 +4049,7 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
             return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
     }
 
-    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev))
+    if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, true))
         return false;
 
     if (pindex == NULL)
@@ -4192,7 +4192,7 @@ bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams,
     auto verifier = libzcash::ProofVerifier::Disabled();
 
     // NOTE: CheckBlockHeader is called by CheckBlock
-    if (!ContextualCheckBlockHeader(block.GetBlockHeader(), state, chainparams, pindexPrev))
+    if (!ContextualCheckBlockHeader(block.GetBlockHeader(), state, chainparams, pindexPrev, fCheckPOW))
         return false;
     if (!CheckBlock(block, state, chainparams, verifier, fCheckPOW, fCheckMerkleRoot))
         return false;

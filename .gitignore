@@ -11,6 +11,7 @@ src/zcash-cli
 src/zcash-gtest
 src/zcash-tx
 src/test/test_bitcoin
+src/BitcoinZWallet.jar
 
 *zcashTest.pk
 *zcashTest.vk

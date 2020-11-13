@@ -471,7 +471,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
  *  By "context", we mean only the previous block headers, but not the UTXO
  *  set; UTXO-related validity checks are done in ConnectBlock(). */
  bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state,
-                                 const CChainParams& chainparams, CBlockIndex *pindexPrev);
+                                 const CChainParams& chainparams, CBlockIndex *pindexPrev, bool fCheckPOW = true);
  bool ContextualCheckBlock(const CBlock& block, CValidationState& state,
                            const CChainParams& chainparams, CBlockIndex *pindexPrev);
 
