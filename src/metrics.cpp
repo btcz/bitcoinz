@@ -1,3 +1,4 @@
+// Copyright (c) 2020 The BitcoinZ community
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -460,7 +461,7 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
-        std::cout << _("BTCZ Node Version 2.0.7 (MagicBeanZ) - Protocol 770008") << std::endl;
+        std::cout << _("BTCZ Node Version 2.0.7 (YODA) - Protocol 770008") << std::endl;
         std::cout << _("Thank you for running a BitcoinZ node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     }

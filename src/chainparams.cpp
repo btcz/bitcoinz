@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2020 The BitcoinZ community
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -148,12 +149,11 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
-        vSeeds.push_back(CDNSSeedData("b8491e7ea3502b8fcda9106923e68b92ef43c331dbf9cfb3c94af473bfbf308b.BTCZ", "btcz.kovach.biz"));
-        vSeeds.push_back(CDNSSeedData("67f534b87f9a2412f845e39102f184e3a48798ed6e2a64d98b915aa12b625e9c.BTCZ", "seed.btcz.life"));
-        vSeeds.push_back(CDNSSeedData("acdd520508bbfa96029867cf64b824fa5e41ebe47918bd4b7855d7a186ed795c.BTCZ", "bzseed.secnode.tk"));
+
+        vSeeds.push_back(CDNSSeedData("5051c0f9dfb6e29421647ea34bc3c693c2ba2222af3a867519e4cdd6f1b86c2b.BTCZ", "btzseed2.blockhub.info"));
         vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
-        vSeeds.push_back(CDNSSeedData("0416c4d89c3c4078f7127b7b482c5c242328306f1706fe2edcdb7c94e2fdad45.BTCZ", "seed.btcz.biz"));
-        vSeeds.push_back(CDNSSeedData("e3dca99ba0e7b1d24cca73458f1d67f4014a60565bcf05e5748271922ce897a0.BTCZ", "btczseed.1ds.us"));
+        vSeeds.push_back(CDNSSeedData("d3f8adfdab612a8a41329e4d013d3ee0396289c8afb8c3951aa6deabf13f1ccb.BTCZ", "seed.btcz.app"));
+
 
 
         // guarantees the first 2 characters, when base58 encoded, are "t1"
@@ -367,7 +367,8 @@ public:
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nProtocolVersion = 770006;
         consensus.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight = 1500;
         consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nProtocolVersion = 770008;
-        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = 984000;
+        consensus.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight =
+            Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000005000");
@@ -403,7 +404,7 @@ public:
 
         vFixedSeeds.clear();
         vSeeds.clear();
-        vSeeds.push_back(CDNSSeedData("978b674532d58328c4da63ab138c476ffa2f8a8b2b5a023a668fd3a97eb7c48b.TZB", "testnetseed.btcz.biz"));
+        vSeeds.push_back(CDNSSeedData("6be074a62041bb2bee54f8c48ef41bac55c44b0e1f49aef7c319d992844667c2.TZB", "test.seed.btcz.app"));
         //vSeeds.push_back(CDNSSeedData("rotorproject.org", "test-dnsseed.rotorproject.org")); // Zclassic
 
         // guarantees the first 2 characters, when base58 encoded, are "tm"
@@ -638,7 +639,7 @@ public:
 
         vFixedSeeds.clear();  //!< Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();       //!< Regtest mode doesn't have any DNS seeds.
-        vSeeds.push_back(CDNSSeedData("978b674532d58328c4da63ab138c476ffa2f8a8b2b5a023a668fd3a97eb7c48b.TZB", "testnetseed.btcz.biz"));
+        vSeeds.push_back(CDNSSeedData("6be074a62041bb2bee54f8c48ef41bac55c44b0e1f49aef7c319d992844667c2.TZB", "test.seed.btcz.app"));
         //vSeeds.push_back(CDNSSeedData("rotorproject.org", "test-dnsseed.rotorproject.org")); // Zclassic
 
         fMiningRequiresPeers = false;

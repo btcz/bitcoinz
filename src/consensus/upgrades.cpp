@@ -1,3 +1,4 @@
+// Copyright (c) 2020 The BitcoinZ community
 // Copyright (c) 2018 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -12,7 +13,7 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
     {
         /*.nBranchId =*/ 0,
         /*.strName =*/ "Sprout",
-        /*.strInfo =*/ "The Zcash network at launch",
+        /*.strInfo =*/ "The BitcoinZ network at launch",
     },
     {
         /*.nBranchId =*/ 0x74736554,

@@ -1,4 +1,4 @@
-*** Warning: This document has not been updated for Zcash and may be inaccurate. ***
+*** Warning: This document has not been updated for BitcoinZ and may be inaccurate. ***
 
 Sample init scripts and service configuration for bitcoind
 ==========================================================
@@ -99,4 +99,3 @@ setting the BITCOIND and FLAGS environment variables in the file
 
 Auto respawning is currently only configured for Upstart and systemd.
 Reasonable defaults have been chosen but YMMV.
-
