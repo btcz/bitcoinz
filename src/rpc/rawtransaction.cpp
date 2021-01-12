@@ -1,7 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
@@ -60,13 +60,15 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
 
 UniValue TxJoinSplitToJSON(const CTransaction& tx) {
     bool useGroth = tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION;
-    UniValue vjoinsplit(UniValue::VARR);
-    for (unsigned int i = 0; i < tx.vjoinsplit.size(); i++) {
-        const JSDescription& jsdescription = tx.vjoinsplit[i];
+    UniValue vJoinSplit(UniValue::VARR);
+    for (unsigned int i = 0; i < tx.vJoinSplit.size(); i++) {
+        const JSDescription& jsdescription = tx.vJoinSplit[i];
         UniValue joinsplit(UniValue::VOBJ);
 
         joinsplit.push_back(Pair("vpub_old", ValueFromAmount(jsdescription.vpub_old)));
+        joinsplit.push_back(Pair("vpub_oldZat", jsdescription.vpub_old));
         joinsplit.push_back(Pair("vpub_new", ValueFromAmount(jsdescription.vpub_new)));
+        joinsplit.push_back(Pair("vpub_newZat", jsdescription.vpub_new));
 
         joinsplit.push_back(Pair("anchor", jsdescription.anchor.GetHex()));
 
@@ -110,9 +112,9 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
             joinsplit.push_back(Pair("ciphertexts", ciphertexts));
         }
 
-        vjoinsplit.push_back(joinsplit);
+        vJoinSplit.push_back(joinsplit);
     }
-    return vjoinsplit;
+    return vJoinSplit;
 }
 
 UniValue TxShieldedSpendsToJSON(const CTransaction& tx) {
@@ -147,7 +149,8 @@ UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
 
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 {
-    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    const uint256 txid = tx.GetHash();
+    entry.push_back(Pair("txid", txid.GetHex()));
     entry.push_back(Pair("overwintered", tx.fOverwintered));
     entry.push_back(Pair("version", tx.nVersion));
     if (tx.fOverwintered) {
@@ -169,6 +172,20 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             o.push_back(Pair("asm", ScriptToAsmStr(txin.scriptSig, true)));
             o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
             in.push_back(Pair("scriptSig", o));
+
+            // Add address and value info if spentindex enabled
+            CSpentIndexValue spentInfo;
+            CSpentIndexKey spentKey(txin.prevout.hash, txin.prevout.n);
+            if (fSpentIndex && GetSpentIndex(spentKey, spentInfo)) {
+                in.push_back(Pair("value", ValueFromAmount(spentInfo.satoshis)));
+                in.push_back(Pair("valueSat", spentInfo.satoshis));
+
+                CTxDestination dest =
+                    DestFromAddressHash(spentInfo.addressType, spentInfo.addressHash);
+                if (IsValidDestination(dest)) {
+                    in.push_back(Pair("address", EncodeDestination(dest)));
+                }
+            }
         }
         in.push_back(Pair("sequence", (int64_t)txin.nSequence));
         vin.push_back(in);
@@ -180,19 +197,30 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         UniValue out(UniValue::VOBJ);
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         out.push_back(Pair("valueZat", txout.nValue));
+        out.push_back(Pair("valueSat", txout.nValue));
         out.push_back(Pair("n", (int64_t)i));
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
         out.push_back(Pair("scriptPubKey", o));
+
+        // Add spent information if spentindex is enabled
+        CSpentIndexValue spentInfo;
+        CSpentIndexKey spentKey(txid, i);
+        if (fSpentIndex && GetSpentIndex(spentKey, spentInfo)) {
+            out.push_back(Pair("spentTxId", spentInfo.txid.GetHex()));
+            out.push_back(Pair("spentIndex", (int)spentInfo.inputIndex));
+            out.push_back(Pair("spentHeight", spentInfo.blockHeight));
+        }
         vout.push_back(out);
     }
     entry.push_back(Pair("vout", vout));
 
-    UniValue vjoinsplit = TxJoinSplitToJSON(tx);
-    entry.push_back(Pair("vjoinsplit", vjoinsplit));
+    UniValue vJoinSplit = TxJoinSplitToJSON(tx);
+    entry.push_back(Pair("vJoinSplit", vJoinSplit));
 
     if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
         entry.push_back(Pair("valueBalance", ValueFromAmount(tx.valueBalance)));
+        entry.push_back(Pair("valueBalanceZat", tx.valueBalance));
         UniValue vspenddesc = TxShieldedSpendsToJSON(tx);
         entry.push_back(Pair("vShieldedSpend", vspenddesc));
         UniValue voutputdesc = TxShieldedOutputsToJSON(tx);
@@ -208,14 +236,16 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         if (mi != mapBlockIndex.end() && (*mi).second) {
             CBlockIndex* pindex = (*mi).second;
             if (chainActive.Contains(pindex)) {
+                entry.push_back(Pair("height", pindex->nHeight));
                 entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
                 entry.push_back(Pair("time", pindex->GetBlockTime()));
                 entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
-            }
-            else
+            } else {
+                entry.push_back(Pair("height", -1));
                 entry.push_back(Pair("confirmations", 0));
-        }
-    }
+          }
+      }
+  }
 }
 
 UniValue getrawtransaction(const UniValue& params, bool fHelp)
@@ -266,7 +296,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"zcashaddress\"          (string) Zcash address\n"
+            "           \"zcashaddress\"          (string) BitcoinZ address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -312,7 +342,6 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getrawtransaction", "\"mytxid\", 1")
         );
 
-    LOCK(cs_main);
 
     uint256 hash = ParseHashV(params[0], "parameter 1");
 
@@ -320,9 +349,11 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
     if (params.size() > 1)
         fVerbose = (params[1].get_int() != 0);
 
+    LOCK(cs_main);
+
     CTransaction tx;
     uint256 hashBlock;
-    if (!GetTransaction(hash, tx, hashBlock, true))
+    if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about transaction");
 
     string strHex = EncodeHexTx(tx);
@@ -392,7 +423,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     if (pblockindex == NULL)
     {
         CTransaction tx;
-        if (!GetTransaction(oneTxid, tx, hashBlock, false) || hashBlock.IsNull())
+        if (!GetTransaction(oneTxid, tx, Params().GetConsensus(), hashBlock, false) || hashBlock.IsNull())
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Transaction not yet in block");
         if (!mapBlockIndex.count(hashBlock))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Transaction index corrupt");
@@ -400,7 +431,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
     }
 
     CBlock block;
-    if(!ReadBlockFromDisk(block, pblockindex))
+    if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     unsigned int ntxFound = 0;
@@ -472,11 +503,13 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "     ]\n"
             "2. \"addresses\"           (string, required) a json object with addresses as keys and amounts as values\n"
             "    {\n"
-            "      \"address\": x.xxx   (numeric, required) The key is the Zcash address, the value is the " + CURRENCY_UNIT + " amount\n"
+            "      \"address\": x.xxx   (numeric, required) The key is the BitcoinZ address, the value is the " + CURRENCY_UNIT + " amount\n"
             "      ,...\n"
             "    }\n"
             "3. locktime              (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs\n"
-            "4. expiryheight          (numeric, optional, default=nextblockheight+" + strprintf("%d", DEFAULT_TX_EXPIRY_DELTA) + ") Expiry height of transaction (if Overwinter is active)\n"
+            "4. expiryheight          (numeric, optional, default="
+                + strprintf("nextblockheight+%d (pre-Blossom) or nextblockheight+%d (post-Blossom)", DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA) + ") "
+                "Expiry height of transaction (if Overwinter is active)\n"
             "\nResult:\n"
             "\"transaction\"            (string) hex string of the transaction\n"
 
@@ -503,9 +536,9 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, locktime out of range");
         rawTx.nLockTime = nLockTime;
     }
-    
+
     if (params.size() > 3 && !params[3].isNull()) {
-        if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER)) {
             int64_t nExpiryHeight = params[3].get_int64();
             if (nExpiryHeight < 0 || nExpiryHeight >= TX_EXPIRY_HEIGHT_THRESHOLD) {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, strprintf("Invalid parameter, expiryheight must be nonnegative and less than %d.", TX_EXPIRY_HEIGHT_THRESHOLD));
@@ -609,7 +642,7 @@ UniValue decoderawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"t12tvKAXCxZjSmdNbao16dKXC8tRWfcF5oc\"   (string) zcash address\n"
+            "           \"t12tvKAXCxZjSmdNbao16dKXC8tRWfcF5oc\"   (string) BitcoinZ address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -679,7 +712,7 @@ UniValue decodescript(const UniValue& params, bool fHelp)
             "  \"type\":\"type\", (string) The output type\n"
             "  \"reqSigs\": n,    (numeric) The required signatures\n"
             "  \"addresses\": [   (json array of string)\n"
-            "     \"address\"     (string) Zcash address\n"
+            "     \"address\"     (string) BitcoinZ address\n"
             "     ,...\n"
             "  ],\n"
             "  \"p2sh\",\"address\" (string) script address\n"
@@ -922,7 +955,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
     }
 
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
-    // Use the approximate release height if it is greater so offline nodes 
+    // Use the approximate release height if it is greater so offline nodes
     // have a better estimation of the current height and will be more likely to
     // determine the correct consensus branch ID.  Regtest mode ignores release height.
     int chainHeight = chainActive.Height() + 1;
@@ -937,8 +970,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         if (!IsConsensusBranchId(consensusBranchId)) {
             throw runtime_error(params[4].get_str() + " is not a valid consensus branch id");
         }
-    } 
-    
+    }
+
     // Script verification errors
     UniValue vErrors(UniValue::VARR);
 
@@ -1020,7 +1053,7 @@ UniValue sendrawtransaction(const UniValue& params, bool fHelp)
     // DoS mitigation: reject transactions expiring soon
     if (tx.nExpiryHeight > 0) {
         int nextBlockHeight = chainActive.Height() + 1;
-        if (NetworkUpgradeActive(nextBlockHeight, Params().GetConsensus(), Consensus::UPGRADE_OVERWINTER)) {
+        if (Params().GetConsensus().NetworkUpgradeActive(nextBlockHeight, Consensus::UPGRADE_OVERWINTER)) {
             if (nextBlockHeight + TX_EXPIRING_SOON_THRESHOLD > tx.nExpiryHeight) {
                 throw JSONRPCError(RPC_TRANSACTION_REJECTED,
                     strprintf("tx-expiring-soon: expiryheight is %d but should be at least %d to avoid transaction expiring soon",

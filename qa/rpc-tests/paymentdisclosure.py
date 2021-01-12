@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Copyright (c) 2017 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
@@ -74,7 +74,7 @@ class PaymentDisclosureTest (BitcoinTestFramework):
         txid = wait_and_assert_operationid_status(self.nodes[0], myopid)
 
         # Check the tx has joinsplits
-        assert( len(self.nodes[0].getrawtransaction("" + txid, 1)["vjoinsplit"]) > 0 )
+        assert( len(self.nodes[0].getrawtransaction("" + txid, 1)["vJoinSplit"]) > 0 )
 
         # Sync mempools
         self.sync_all()

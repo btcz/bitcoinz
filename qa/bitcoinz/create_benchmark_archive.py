@@ -165,7 +165,7 @@ def create_benchmark_archive(blk_hash):
     txs = [json.loads(subprocess.check_output([BITCOINZ_CLI, 'getrawtransaction', tx, '1'])
                      ) for tx in blk['tx']]
 
-    js_txs = len([tx for tx in txs if len(tx['vjoinsplit']) > 0])
+    js_txs = len([tx for tx in txs if len(tx['vJoinSplit']) > 0])
     if js_txs:
         print 'Block contains %d JoinSplit-containing transactions' % js_txs
         return
