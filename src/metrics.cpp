@@ -1,12 +1,14 @@
+// Copyright (c) 2020 The BitcoinZ community
 // Copyright (c) 2016 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "metrics.h"
 
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "main.h"
+#include "timedata.h"
 #include "ui_interface.h"
 #include "util.h"
 #include "utiltime.h"
@@ -108,34 +110,29 @@ double GetLocalSolPS()
     return miningTimer.rate(solutionTargetChecks);
 }
 
-int EstimateNetHeightInner(int height, int64_t tipmediantime,
-                           int heightLastCheckpoint, int64_t timeLastCheckpoint,
-                           int64_t genesisTime, int64_t targetSpacing)
+int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight, int64_t currentHeadersTime)
 {
-    // We average the target spacing with the observed spacing to the last
-    // checkpoint (either from below or above depending on the current height),
-    // and use that to estimate the current network height.
-    int medianHeight = height > CBlockIndex::nMedianTimeSpan ?
-            height - (1 + ((CBlockIndex::nMedianTimeSpan - 1) / 2)) :
-            height / 2;
-    double checkpointSpacing = medianHeight > heightLastCheckpoint ?
-            (double (tipmediantime - timeLastCheckpoint)) / (medianHeight - heightLastCheckpoint) :
-            (double (timeLastCheckpoint - genesisTime)) / heightLastCheckpoint;
-    double averageSpacing = (targetSpacing + checkpointSpacing) / 2;
-    int netheight = medianHeight + ((GetTime() - tipmediantime) / averageSpacing);
-    // Round to nearest ten to reduce noise
-    return ((netheight + 5) / 10) * 10;
-}
+    int64_t now = GetAdjustedTime();
+    if (currentHeadersTime >= now) {
+      return currentHeadersHeight;
+    }
 
-int EstimateNetHeight(int height, int64_t tipmediantime, CChainParams chainParams)
-{
-    auto checkpointData = chainParams.Checkpoints();
-    return EstimateNetHeightInner(
-        height, tipmediantime,
-        Checkpoints::GetTotalBlocksEstimate(checkpointData),
-        checkpointData.nTimeLastCheckpoint,
-        chainParams.GenesisBlock().nTime,
-        chainParams.GetConsensus().nPowTargetSpacing);
+    int estimatedHeight = currentHeadersHeight + (now - currentHeadersTime) / params.PoWTargetSpacing(currentHeadersHeight);
+
+    int blossomActivationHeight = params.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    if (currentHeadersHeight >= blossomActivationHeight || estimatedHeight <= blossomActivationHeight) {
+      return ((estimatedHeight + 5) / 10) * 10;
+    }
+
+    int numPreBlossomBlocks = blossomActivationHeight - currentHeadersHeight;
+    int64_t preBlossomTime = numPreBlossomBlocks * params.PoWTargetSpacing(blossomActivationHeight - 1);
+    int64_t blossomActivationTime = currentHeadersTime + preBlossomTime;
+    if (blossomActivationTime >= now) {
+        return blossomActivationHeight;
+    }
+
+    int netheight =  blossomActivationHeight + (now - blossomActivationTime) / params.PoWTargetSpacing(blossomActivationHeight);
+    return ((netheight + 5) / 10) * 10;
 }
 
 void TriggerRefresh()
@@ -187,7 +184,6 @@ static void metrics_InitMessage(const std::string& message)
 {
     *initMessage = message;
 }
-
 void ConnectMetricsScreen()
 {
     uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
@@ -197,27 +193,28 @@ void ConnectMetricsScreen()
     uiInterface.InitMessage.disconnect_all_slots();
     uiInterface.InitMessage.connect(metrics_InitMessage);
 }
-
 int printStats(bool mining)
 {
     // Number of lines that are always displayed
     int lines = 4;
-
     int height;
-    int64_t tipmediantime;
+    int64_t currentHeadersHeight;
+    int64_t currentHeadersTime;
     size_t connections;
     int64_t netsolps;
     {
         LOCK2(cs_main, cs_vNodes);
         height = chainActive.Height();
-        tipmediantime = chainActive.Tip()->GetMedianTimePast();
+        currentHeadersHeight = pindexBestHeader ? pindexBestHeader->nHeight: -1;
+        currentHeadersTime = pindexBestHeader ? pindexBestHeader->nTime : 0;
         connections = vNodes.size();
         netsolps = GetNetworkHashPS(120, -1);
     }
     auto localsolps = GetLocalSolPS();
 
-    if (IsInitialBlockDownload()) {
-        int netheight = EstimateNetHeight(height, tipmediantime, Params());
+    if (IsInitialBlockDownload(Params())) {
+        int netheight = currentHeadersHeight == -1 || currentHeadersTime == 0 ?
+            0 : EstimateNetHeight(Params().GetConsensus(), currentHeadersHeight, currentHeadersTime);
         int downloadPercent = 0;
         if (netheight > 0) {
             downloadPercent = height * 100 / netheight;
@@ -256,7 +253,7 @@ int printMiningStatus(bool mining)
             }
             if (fvNodesEmpty) {
                 std::cout << _("Mining is paused while waiting for connections.") << std::endl;
-            } else if (IsInitialBlockDownload()) {
+            } else if (IsInitialBlockDownload(Params())) {
                 std::cout << _("Mining is paused while downloading blocks.") << std::endl;
             } else {
                 std::cout << _("Mining is paused (a JoinSplit may be in progress).") << std::endl;
@@ -444,7 +441,7 @@ bool enableVTMode()
 void ThreadShowMetricsScreen()
 {
     // Make this thread recognisable as the metrics screen thread
-    RenameThread("zcash-metrics-screen");
+    RenameThread("bitcoinz-metrics-screen");
 
     // Determine whether we should render a persistent UI or rolling metrics
     bool isTTY = isatty(STDOUT_FILENO);
@@ -464,6 +461,7 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
+        std::cout << _("BTCZ Node Version 2.0.7 (YODA) - Protocol 770008") << std::endl;
         std::cout << _("Thank you for running a BitcoinZ node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     }
@@ -513,7 +511,7 @@ void ThreadShowMetricsScreen()
             // Explain how to exit
             std::cout << "[";
 #ifdef WIN32
-            std::cout << _("'zcash-cli.exe stop' to exit");
+            std::cout << _("'bitcoinz-cli.exe stop' to exit");
 #else
             std::cout << _("Press Ctrl+C to exit");
 #endif

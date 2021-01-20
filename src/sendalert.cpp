@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019 The BitcoinZ Community
+// Copyright (c) 2018-2020 The BitcoinZ Community
 // Copyright (c) 2016-2018 The Zcash developers
 // Original code from: https://gist.github.com/laanwj/0e689cfa37b52bcbbb44
 
@@ -80,8 +80,9 @@ void ThreadSendAlert()
     // 170002 : 1.0.0
     // 170006 : 1.1.2
     // 170007 : 2.0.0
+    // 170008 : 2.0.7
     alert.nMinVer       = 170002;
-    alert.nMaxVer       = 770007;
+    alert.nMaxVer       = 770008;
 
     //
     // main.cpp:
