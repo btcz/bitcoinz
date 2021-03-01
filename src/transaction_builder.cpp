@@ -694,8 +694,8 @@ void TransactionBuilder::CreateJSDescription(
     uint256 esk; // payment disclosure - secret
 
     // Generate the proof, this can take over a minute.
+    assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
     JSDescription jsdesc = JSDescription::Randomized(
-            mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION),
             *sproutParams,
             mtx.joinSplitPubKey,
             vjsin[0].witness.root(),

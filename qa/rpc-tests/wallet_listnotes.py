@@ -9,7 +9,6 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import (
     assert_equal,
     get_coinbase_address,
-    start_nodes,
     wait_and_assert_operationid_status,
 )
 
@@ -18,42 +17,34 @@ from decimal import Decimal
 # Test wallet z_listunspent behaviour across network upgrades
 class WalletListNotes(BitcoinTestFramework):
 
-    def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
-            '-nuparams=5ba81b19:202', # Overwinter
-            '-nuparams=76b809bb:214', # Sapling
-        ]] * 4)
-
     def run_test(self):
-        # Current height = 200 -> Sprout
+        # Current height = 200
         assert_equal(200, self.nodes[0].getblockcount())
         sproutzaddr = self.nodes[0].z_getnewaddress('sprout')
-
-        # test that we can create a sapling zaddr before sapling activates
         saplingzaddr = self.nodes[0].z_getnewaddress('sapling')
 
         # we've got lots of coinbase (taddr) but no shielded funds yet
         assert_equal(0, Decimal(self.nodes[0].z_gettotalbalance()['private']))
-        
-        # Set current height to 201 -> Sprout
+
+        # Set current height to 201
         self.nodes[0].generate(1)
         self.sync_all()
         assert_equal(201, self.nodes[0].getblockcount())
 
-        # Shield coinbase funds (must be a multiple of 10, no change allowed pre-sapling)
+        # Shield coinbase funds (must be a multiple of 10, no change allowed)
         receive_amount_10 = Decimal('10.0') - Decimal('0.0001')
         recipients = [{"address":sproutzaddr, "amount":receive_amount_10}]
         myopid = self.nodes[0].z_sendmany(get_coinbase_address(self.nodes[0]), recipients)
         txid_1 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
-        
+
         # No funds (with (default) one or more confirmations) in sproutzaddr yet
         assert_equal(0, len(self.nodes[0].z_listunspent()))
         assert_equal(0, len(self.nodes[0].z_listunspent(1)))
-        
+
         # no private balance because no confirmations yet
         assert_equal(0, Decimal(self.nodes[0].z_gettotalbalance()['private']))
-        
+
         # list private unspent, this time allowing 0 confirmations
         unspent_cb = self.nodes[0].z_listunspent(0)
         assert_equal(1, len(unspent_cb))
@@ -66,12 +57,12 @@ class WalletListNotes(BitcoinTestFramework):
         # list unspent, filtering by address, should produce same result
         unspent_cb_filter = self.nodes[0].z_listunspent(0, 9999, False, [sproutzaddr])
         assert_equal(unspent_cb, unspent_cb_filter)
-        
+
         # Generate a block to confirm shield coinbase tx
         self.nodes[0].generate(1)
         self.sync_all()
-        
-        # Current height = 202 -> Overwinter. Default address type remains Sprout
+
+        # Current height = 202
         assert_equal(202, self.nodes[0].getblockcount())
 
         # Send 1.0 (actually 0.9999) from sproutzaddr to a new zaddr
@@ -83,7 +74,7 @@ class WalletListNotes(BitcoinTestFramework):
         myopid = self.nodes[0].z_sendmany(sproutzaddr, recipients)
         txid_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.sync_all()
-        
+
         # list unspent, allowing 0conf txs
         unspent_tx = self.nodes[0].z_listunspent(0)
         assert_equal(len(unspent_tx), 2)
@@ -108,12 +99,7 @@ class WalletListNotes(BitcoinTestFramework):
         unspent_tx_filter = self.nodes[0].z_listunspent(0, 9999, False, [sproutzaddr])
         assert_equal(1, len(unspent_tx_filter))
         assert_equal(unspent_tx[1], unspent_tx_filter[0])
-        
-        # Set current height to 204 -> Sapling
-        self.nodes[0].generate(12)
-        self.sync_all()
-        assert_equal(214, self.nodes[0].getblockcount())
-        
+
         # No funds in saplingzaddr yet
         assert_equal(0, len(self.nodes[0].z_listunspent(0, 9999, False, [saplingzaddr])))
 

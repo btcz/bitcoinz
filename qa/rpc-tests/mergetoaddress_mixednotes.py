@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2020 The BitcoinZ Community
+# Copyright (c) 2021 The BitcoinZ Community
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
@@ -16,8 +16,6 @@ from mergetoaddress_helper import assert_mergetoaddress_exception
 class MergeToAddressMixedNotes(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir, [[
-            '-nuparams=5ba81b19:100',  # Overwinter
-            '-nuparams=76b809bb:100',  # Sapling
             '-experimentalfeatures', '-zmergetoaddress'
         ]] * 4)
 

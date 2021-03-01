@@ -1,7 +1,7 @@
 Copyright (c) 2016-2019 The Zcash developers
 Copyright (c) 2009-2019 The Bitcoin Core developers
 Copyright (c) 2009-2019 Bitcoin Developers
-Copyright (c) 2018-2020 The BitcoinZ Community
+Copyright (c) 2018-2021 The BitcoinZ Community
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 
-The MIT software license (http://www.opensource.org/licenses/mit-license.php)
+The MIT software license (https://www.opensource.org/licenses/mit-license.php)
 above applies to the code directly included in this source distribution.
 Dependencies downloaded as part of the build process may be covered by other
 open-source licenses. For further details see 'contrib/debian/copyright'.
@@ -33,7 +33,16 @@ OpenSSL Toolkit (https://www.openssl.org/). This product includes cryptographic
 software written by Eric Young (eay@cryptsoft.com).
 
 
-Although almost all of the Zcash code is licensed under "permissive" open source
+Although almost all of the BitcoinZ code is licensed under "permissive" open source
 licenses, users and distributors should note that when built using the default
-build options, Zcash depends on Oracle Berkeley DB 6.2.x, which is licensed
+build options, BitcoinZ depends on Oracle Berkeley DB 6.2.x, which is licensed
 under the GNU Affero General Public License.
+
+
+Contributors should understand licensing implications before modifying the
+following files in build-aux/m4 (see https://github.com/zcash/zcash/issues/2827):
+
+ * ax_check_compile_flag.m4
+ * ax_check_link_flag.m4
+ * ax_check_preproc_flag.m4
+ * ax_pthread.m4

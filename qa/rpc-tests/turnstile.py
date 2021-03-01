@@ -40,8 +40,6 @@ from test_framework.util import (
 )
 from decimal import Decimal
 
-NUPARAMS_ARGS = ['-nuparams=5ba81b19:100', # Overwinter
-                 '-nuparams=76b809bb:101'] # Sapling
 TURNSTILE_ARGS = ['-experimentalfeatures',
                   '-developersetpoolsizezero']
 
@@ -52,8 +50,7 @@ class TurnstileTest (BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 3)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir,
-            extra_args=[NUPARAMS_ARGS] * 3)
+        self.nodes = start_nodes(3, self.options.tmpdir)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         self.is_network_split=False
@@ -70,7 +67,7 @@ class TurnstileTest (BitcoinTestFramework):
 
     # Helper method to start a single node with extra args and sync to the network
     def start_and_sync_node(self, index, args=[]):
-        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=NUPARAMS_ARGS + args)
+        self.nodes[index] = start_node(index, self.options.tmpdir, extra_args=args)
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -156,7 +153,7 @@ class TurnstileTest (BitcoinTestFramework):
         self.nodes[1].generate(1)
         newhash = self.nodes[1].getbestblockhash()
 
-        # Verify block contains the unshielding transaction 
+        # Verify block contains the unshielding transaction
         assert(mytxid in self.nodes[1].getblock(newhash)["tx"])
 
         # Verify nodes 1 and 2 have accepted the block as valid

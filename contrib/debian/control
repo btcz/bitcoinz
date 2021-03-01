@@ -11,7 +11,7 @@ Vcs-Git: https://github.com/btcz/bitcoinz.git
 Vcs-Browser: https://github.com/btcz
 
 Package: bitcoinz
-Version: 1.4.0
+Version: 2.1.0
 Depends: ${shlibs:Depends}
-Architecture: all
+Architecture: amd64
 Description: BitcoinZ is a decentralized community project based on the Bitcoin and Zcash codebase.
