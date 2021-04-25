@@ -81,6 +81,14 @@ We would like to take a moment to thank the `libsnark` authors and contributors.
 It was vital to the success of Zcash and BitcoinZ, and the development of zero-knowledge
 proofs in general, to have this code available and usable.
 
+Blossom advertising
+---------------------------
+
+This version already advertises protocol 770009 for the Blossom upgrade at block # 865600.  
+This upgrade will be proceeded over 3 version; v2.1.0 - v2.1.2.  
+The block time remains unchanged, at an average of 150 seconds.
+
+
 Changelog
 =========
 
