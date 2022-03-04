@@ -583,20 +583,36 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     std::set<CTxDestination> destinations;
     vector<string> addrList = sendTo.getKeys();
     for (const std::string& name_ : addrList) {
-        CTxDestination destination = DecodeDestination(name_);
-        if (!IsValidDestination(destination)) {
-            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid BitcoinZ address: ") + name_);
-        }
 
-        if (!destinations.insert(destination).second) {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
-        }
 
-        CScript scriptPubKey = GetScriptForDestination(destination);
-        CAmount nAmount = AmountFromValue(sendTo[name_]);
 
-        CTxOut out(nAmount, scriptPubKey);
+
+      if (name_ == "data") {
+        std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
+
+        CTxOut out(0, CScript() << OP_RETURN << data);
         rawTx.vout.push_back(out);
+      } else {
+          CTxDestination destination = DecodeDestination(name_);
+          if (!IsValidDestination(destination)) {
+              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid BitcoinZ address: ") + name_);
+          }
+
+          if (!destinations.insert(destination).second) {
+              throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
+          }
+
+          CScript scriptPubKey = GetScriptForDestination(destination);
+          CAmount nAmount = AmountFromValue(sendTo[name_]);
+
+          CTxOut out(nAmount, scriptPubKey);
+          rawTx.vout.push_back(out);
+      }
+
+
+
+
+
     }
 
     return EncodeHexTx(rawTx);

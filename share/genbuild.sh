@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2017-2020 The BitcoinZ Community
+# Copyright (c) 2017-2022 The BitcoinZ community
 # Copyright (c) 2016-2019 The Zcash developers
 # Copyright (c) 2012-2019 The Bitcoin Core developers
 # Copyright (c) 2012-2019 Bitcoin Developers
