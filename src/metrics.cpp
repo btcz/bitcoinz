@@ -478,7 +478,7 @@ void ThreadShowMetricsScreen()
         "\n          |~xxxxx~| ||        | -< | | || \\_| \\/ | | | ' |/ /  "
         "\n          |_  #  _| ||        |__/_|_|_|_\\__/\\__/|_|_|\\__|___| "
         "\n     .------`-#-'-----.     "
-        "\n    (___|\\_________/|_.`.     BTCZ Node Version 2.1.0 (MANDO) | RC1"
+        "\n    (___|\\_________/|_.`.     BTCZ Node Version 2.1.0 RC1 (MANDO)"
         "\n     /  | _________ | | |     Protocol 770009"
         "\n    /   |/   _|_   \\| | |     Network: %s "
         "\n"
