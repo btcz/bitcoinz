@@ -461,7 +461,7 @@ void ThreadShowMetricsScreen()
         std::cout << std::endl;
 
         // Thank you text
-        std::cout << _("BTCZ Node Version 2.0.7-u1 (YODA) - Protocol 770008") << std::endl;
+        std::cout << _("BTCZ Node Version 2.0.7-10 (YODA) - Protocol 770008") << std::endl;
         std::cout << _("Thank you for running a BitcoinZ node!") << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     }
