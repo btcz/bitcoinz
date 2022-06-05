@@ -487,6 +487,7 @@ void ThreadShowMetricsScreen()
         "\n\n"
         ), WhichNetwork()) << std::endl;
         //std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
+
     }
 
     while (true) {

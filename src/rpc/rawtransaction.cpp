@@ -296,7 +296,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"zcashaddress\"          (string) BitcoinZ address\n"
+            "           \"btczaddress\"          (string) BitcoinZ address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -503,8 +503,9 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "     ]\n"
             "2. \"addresses\"           (string, required) a json object with addresses as keys and amounts as values\n"
             "    {\n"
-            "      \"address\": x.xxx   (numeric, required) The key is the BitcoinZ address, the value is the " + CURRENCY_UNIT + " amount\n"
-            "      ,...\n"
+            "      \"address\": x.xxx   (numeric, required, optional if data used) The key is the BitcoinZ address, the value is the " + CURRENCY_UNIT + " amount\n"
+            "      ,...               (other optional address)\n"
+            "      ,\"data\": \"hex\",    (string, optional) A key-value pair. The key must be \"data\", the value is hex-encoded data\n"
             "    }\n"
             "3. locktime              (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs\n"
             "4. expiryheight          (numeric, optional, default="
@@ -585,8 +586,6 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
     for (const std::string& name_ : addrList) {
 
 
-
-
       if (name_ == "data") {
         std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
 
@@ -608,9 +607,6 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
           CTxOut out(nAmount, scriptPubKey);
           rawTx.vout.push_back(out);
       }
-
-
-
 
 
     }
