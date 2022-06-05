@@ -12,6 +12,7 @@
 #include "crypto/equihash.h"
 #endif
 #include "init.h"
+#include "key_io.h"
 #include "main.h"
 #include "metrics.h"
 #include "miner.h"
@@ -674,6 +675,20 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             if (pblock->vtx[0].vout.size() > 1) {
                 // Correct this if GetBlockTemplate changes the order
                 entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
+
+                // GITHUB issue #66 - Add founderaddress to gbt
+                const CScript & scriptPublicKey = tx.vout[1].scriptPubKey  ;
+                std::vector<CTxDestination> addresses;
+                txnouttype whichType;
+                int nRequired;
+
+                ExtractDestinations(scriptPublicKey, whichType, addresses, nRequired);
+                //entry.push_back(Pair("script", GetTxnOutputType(whichType)));
+                //entry.push_back(Pair("hex", HexStr(scriptPublicKey.begin(), scriptPublicKey.end())));
+                UniValue a(UniValue::VARR);
+                for (const CTxDestination& addr : addresses) {a.push_back(EncodeDestination(addr));}
+                entry.push_back(Pair("foundersraddress", a));
+
             }
             entry.push_back(Pair("required", true));
             txCoinbase = entry;
