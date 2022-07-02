@@ -187,4 +187,11 @@ std::string JSONRPCExecBatch(const UniValue& vReq);
 
 extern std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::string& enableArg);
 
+
+
+extern int interpretHeightArg(int nHeight, int currentHeight);
+extern int parseHeightArg(const std::string& strHeight, int currentHeight);
+
+
+
 #endif // BITCOIN_RPCSERVER_H
