@@ -6,21 +6,28 @@
 #include "keystore.h"
 
 #include "key.h"
+#include "pubkey.h"
 #include "util.h"
 
 #include <boost/foreach.hpp>
 
-bool CKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
-{
-    CKey key;
-    if (!GetKey(address, key))
-        return false;
-    vchPubKeyOut = key.GetPubKey();
-    return true;
-}
-
 bool CKeyStore::AddKey(const CKey &key) {
     return AddKeyPubKey(key, key.GetPubKey());
+}
+
+bool CBasicKeyStore::GetPubKey(const CKeyID &address, CPubKey &vchPubKeyOut) const
+{
+    CKey key;
+    if (!GetKey(address, key)) {
+        WatchKeyMap::const_iterator it = mapWatchKeys.find(address);
+        if (it != mapWatchKeys.end()) {
+            vchPubKeyOut = it->second;
+            return true;
+        }
+        return false;
+    }
+    vchPubKeyOut = key.GetPubKey();
+    return true;
 }
 
 bool CBasicKeyStore::SetHDSeed(const HDSeed& seed)
@@ -87,10 +94,29 @@ bool CBasicKeyStore::GetCScript(const CScriptID &hash, CScript& redeemScriptOut)
     return false;
 }
 
+static bool ExtractPubKey(const CScript &dest, CPubKey& pubKeyOut)
+{
+    //TODO: Use Solver to extract this?
+    CScript::const_iterator pc = dest.begin();
+    opcodetype opcode;
+    std::vector<unsigned char> vch;
+    if (!dest.GetOp(pc, opcode, vch) || vch.size() < 33 || vch.size() > 65)
+        return false;
+    pubKeyOut = CPubKey(vch);
+    if (!pubKeyOut.IsFullyValid())
+        return false;
+    if (!dest.GetOp(pc, opcode, vch) || opcode != OP_CHECKSIG || dest.GetOp(pc, opcode, vch))
+        return false;
+    return true;
+}
+
 bool CBasicKeyStore::AddWatchOnly(const CScript &dest)
 {
     LOCK(cs_KeyStore);
     setWatchOnly.insert(dest);
+    CPubKey pubKey;
+    if (ExtractPubKey(dest, pubKey))
+        mapWatchKeys[pubKey.GetID()] = pubKey;
     return true;
 }
 
@@ -98,6 +124,9 @@ bool CBasicKeyStore::RemoveWatchOnly(const CScript &dest)
 {
     LOCK(cs_KeyStore);
     setWatchOnly.erase(dest);
+    CPubKey pubKey;
+    if (ExtractPubKey(dest, pubKey))
+        mapWatchKeys.erase(pubKey.GetID());
     return true;
 }
 
@@ -122,7 +151,7 @@ bool CBasicKeyStore::AddSproutSpendingKey(const libzcash::SproutSpendingKey &sk)
     return true;
 }
 
-//! Sapling 
+//! Sapling
 bool CBasicKeyStore::AddSaplingSpendingKey(
     const libzcash::SaplingExtendedSpendingKey &sk,
     const libzcash::SaplingPaymentAddress &defaultAddr)
@@ -160,7 +189,7 @@ bool CBasicKeyStore::AddSaplingFullViewingKey(
     return CBasicKeyStore::AddSaplingIncomingViewingKey(ivk, defaultAddr);
 }
 
-// This function updates the wallet's internal address->ivk map. 
+// This function updates the wallet's internal address->ivk map.
 // If we add an address that is already in the map, the map will
 // remain unchanged as each address only has one ivk.
 bool CBasicKeyStore::AddSaplingIncomingViewingKey(
@@ -237,7 +266,7 @@ bool CBasicKeyStore::GetSaplingIncomingViewingKey(const libzcash::SaplingPayment
     return false;
 }
 
-bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr, 
+bool CBasicKeyStore::GetSaplingExtendedSpendingKey(const libzcash::SaplingPaymentAddress &addr,
                                     libzcash::SaplingExtendedSpendingKey &extskOut) const {
     libzcash::SaplingIncomingViewingKey ivk;
     libzcash::SaplingFullViewingKey fvk;
