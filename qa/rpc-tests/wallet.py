@@ -32,7 +32,8 @@ class WalletTest (BitcoinTestFramework):
         print "Mining blocks..."
 
         self.nodes[0].generate(4)
-
+        self.sync_all()
+        
         walletinfo = self.nodes[0].getwalletinfo()
         assert_equal(walletinfo['immature_balance'], 50000)
         assert_equal(walletinfo['balance'], 0)
@@ -393,7 +394,7 @@ class WalletTest (BitcoinTestFramework):
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})
         recipients.append({"address":self.nodes[2].getnewaddress(), "amount":1.0})
-        
+
         wait_and_assert_operationid_status(self.nodes[2], self.nodes[2].z_sendmany(myzaddr, recipients))
 
         self.sync_all()

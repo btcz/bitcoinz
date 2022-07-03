@@ -663,20 +663,22 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     }
 }
 
-void ThreadNotifyRecentlyAdded()
+bool InitExperimentalMode()
 {
-    while (true) {
-        // Run the notifier on an integer second in the steady clock.
-        auto now = std::chrono::steady_clock::now().time_since_epoch();
-        auto nextFire = std::chrono::duration_cast<std::chrono::seconds>(
-            now + std::chrono::seconds(1));
-        std::this_thread::sleep_until(
-            std::chrono::time_point<std::chrono::steady_clock>(nextFire));
-
-        boost::this_thread::interruption_point();
-
-        mempool.NotifyRecentlyAdded();
+    fExperimentalMode = GetBoolArg("-experimentalfeatures", false);
+    // Fail if user has set experimental options without the global flag
+    if (!fExperimentalMode) {
+        if (mapArgs.count("-developerencryptwallet")) {
+            return InitError(_("Wallet encryption requires -experimentalfeatures."));
+        } else if (mapArgs.count("-developersetpoolsizezero")) {
+            return InitError(_("Setting the size of shielded pools to zero requires -experimentalfeatures."));
+        } else if (mapArgs.count("-paymentdisclosure")) {
+            return InitError(_("Payment disclosure requires -experimentalfeatures."));
+        } else if (mapArgs.count("-insightexplorer")) {
+            return InitError(_("Insight explorer requires -experimentalfeatures."));
+        }
     }
+    return true;
 }
 
 /** Sanity checks
@@ -1887,7 +1889,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     // Start the thread that notifies listeners of transactions that have been
     // recently added to the mempool.
-    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyRecentlyAdded));
+    // recently added to the mempool, or have been added to or removed from the
+    // chain.
+    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "txnotify", &ThreadNotifyWallets));
 
     if (GetBoolArg("-listenonion", DEFAULT_LISTEN_ONION))
         StartTorControl(threadGroup, scheduler);
