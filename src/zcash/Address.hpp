@@ -101,7 +101,7 @@ public:
     SproutPaymentAddress address() const;
 };
 
-//! Sapling functions. 
+//! Sapling functions.
 class SaplingPaymentAddress {
 public:
     diversifier_t d;
@@ -117,7 +117,7 @@ public:
         READWRITE(d);
         READWRITE(pk_d);
     }
-    
+
     //! Get the 256-bit SHA256d hash of this payment address.
     uint256 GetHash() const;
 
@@ -134,17 +134,17 @@ class SaplingIncomingViewingKey : public uint256 {
 public:
     SaplingIncomingViewingKey() : uint256() { }
     SaplingIncomingViewingKey(uint256 ivk) : uint256(ivk) { }
-    
+
     // Can pass in diversifier for Sapling addr
     boost::optional<SaplingPaymentAddress> address(diversifier_t d) const;
 };
 
 class SaplingFullViewingKey {
-public: 
+public:
     uint256 ak;
     uint256 nk;
-    uint256 ovk; 
-    
+    uint256 ovk;
+
     SaplingFullViewingKey() : ak(), nk(), ovk() { }
     SaplingFullViewingKey(uint256 ak, uint256 nk, uint256 ovk) : ak(ak), nk(nk), ovk(ovk) { }
 
@@ -167,22 +167,22 @@ public:
         return a.ak == b.ak && a.nk == b.nk && a.ovk == b.ovk;
     }
     friend inline bool operator<(const SaplingFullViewingKey& a, const SaplingFullViewingKey& b) {
-        return (a.ak < b.ak || 
-            (a.ak == b.ak && a.nk < b.nk) || 
+        return (a.ak < b.ak ||
+            (a.ak == b.ak && a.nk < b.nk) ||
             (a.ak == b.ak && a.nk == b.nk && a.ovk < b.ovk));
     }
 };
 
 
 class SaplingExpandedSpendingKey {
-public: 
+public:
     uint256 ask;
     uint256 nsk;
     uint256 ovk;
-    
+
     SaplingExpandedSpendingKey() : ask(), nsk(), ovk() { }
     SaplingExpandedSpendingKey(uint256 ask, uint256 nsk, uint256 ovk) : ask(ask), nsk(nsk), ovk(ovk) { }
-    
+
     ADD_SERIALIZE_METHODS;
 
     template <typename Stream, typename Operation>
@@ -191,15 +191,15 @@ public:
         READWRITE(nsk);
         READWRITE(ovk);
     }
-    
+
     SaplingFullViewingKey full_viewing_key() const;
-    
+
     friend inline bool operator==(const SaplingExpandedSpendingKey& a, const SaplingExpandedSpendingKey& b) {
         return a.ask == b.ask && a.nsk == b.nsk && a.ovk == b.ovk;
     }
     friend inline bool operator<(const SaplingExpandedSpendingKey& a, const SaplingExpandedSpendingKey& b) {
-        return (a.ask < b.ask || 
-            (a.ask == b.ask && a.nsk < b.nsk) || 
+        return (a.ask < b.ask ||
+            (a.ask == b.ask && a.nsk < b.nsk) ||
             (a.ask == b.ask && a.nsk == b.nsk && a.ovk < b.ovk));
     }
 };
@@ -213,13 +213,20 @@ public:
 
     SaplingExpandedSpendingKey expanded_spending_key() const;
     SaplingFullViewingKey full_viewing_key() const;
-    
-    // Can derive Sapling addr from default diversifier 
+
+    // Can derive Sapling addr from default diversifier
     SaplingPaymentAddress default_address() const;
 };
 
 typedef boost::variant<InvalidEncoding, SproutPaymentAddress, SaplingPaymentAddress> PaymentAddress;
 typedef boost::variant<InvalidEncoding, SproutViewingKey> ViewingKey;
+
+class AddressInfoFromSpendingKey : public boost::static_visitor<std::pair<std::string, PaymentAddress>> {
+public:
+    std::pair<std::string, PaymentAddress> operator()(const SproutSpendingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const struct SaplingExtendedSpendingKey&) const;
+    std::pair<std::string, PaymentAddress> operator()(const InvalidEncoding&) const;
+};
 
 }
 
