@@ -61,6 +61,10 @@ Files: depends/sources/qpid-proton-*.tar.gz
 Copyright: 2012-2017 The Apache Software Foundation
 License: Apache-Qpid-Proton-with-BSD-Subcomponents
 
+Files: depends/sources/utfcpp-*.tar.gz
+Copyright: 2006 Nemanja Trifunovic
+License: Boost-Software-License-1.0
+
 Files: src/secp256k1/build-aux/m4/ax_jni_include_dir.m4
 Copyright: 2008 Don Anderson <dda@sleepycat.com>
 License: GNU-All-permissive-License
@@ -1095,7 +1099,7 @@ License: LGPL-with-ZeroMQ-exception
  the license of that module. An independent module is a module which is not
  derived from or based on this library. If you modify this library, you must
  extend this exception to your version of the library.
-  
+
  Note: this exception relieves you of any obligations under sections 4 and 5
  of this license, and section 6 of the GNU General Public License.
 Comment:
@@ -1323,4 +1327,3 @@ License: GNU-All-permissive-License
  permitted in any medium without royalty provided the copyright notice
  and this notice are preserved. This file is offered as-is, without any
  warranty.
-
