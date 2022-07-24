@@ -1,4 +1,4 @@
-# BitcoinZ 2.0.7-10
+# BitcoinZ 2.0.8-RC1
 **Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
 ### Ports:
