@@ -1,5 +1,5 @@
 ---
-name: "bitcoinz-2.0.8-RC1"
+name: "bitcoinz-2.0.8"
 enable_cache: true
 distro: "debian"
 suites:
