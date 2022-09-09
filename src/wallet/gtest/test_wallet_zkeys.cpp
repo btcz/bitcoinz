@@ -40,22 +40,22 @@ TEST(wallet_zkeys_tests, StoreAndLoadSaplingZkeys) {
     // wallet should have one key
     wallet.GetSaplingPaymentAddresses(addrs);
     ASSERT_EQ(1, addrs.size());
-    
+
     // verify wallet has incoming viewing key for the address
     ASSERT_TRUE(wallet.HaveSaplingIncomingViewingKey(address));
-    
+
     // manually add new spending key to wallet
     auto m = libzcash::SaplingExtendedSpendingKey::Master(seed);
     auto sk = m.Derive(0);
-    ASSERT_TRUE(wallet.AddSaplingZKey(sk, sk.DefaultAddress()));
+    ASSERT_TRUE(wallet.AddSaplingZKey(sk));
 
     // verify wallet did add it
-    auto fvk = sk.expsk.full_viewing_key();
-    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(fvk));
+    auto extfvk = sk.ToXFVK();
+    ASSERT_TRUE(wallet.HaveSaplingSpendingKey(extfvk));
 
     // verify spending key stored correctly
     libzcash::SaplingExtendedSpendingKey keyOut;
-    wallet.GetSaplingSpendingKey(fvk, keyOut);
+    wallet.GetSaplingSpendingKey(extfvk, keyOut);
     ASSERT_EQ(sk, keyOut);
 
     // verify there are two keys
@@ -75,7 +75,7 @@ TEST(wallet_zkeys_tests, StoreAndLoadSaplingZkeys) {
     EXPECT_FALSE(wallet.HaveSaplingIncomingViewingKey(dpa));
 
     // manually add a diversified address
-    auto ivk = fvk.in_viewing_key();
+    auto ivk = extfvk.fvk.in_viewing_key();
     EXPECT_TRUE(wallet.AddSaplingIncomingViewingKey(ivk, dpa));
 
     // verify wallet did add it
@@ -362,10 +362,10 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     strWalletPass.reserve(100);
     strWalletPass = "hello";
     ASSERT_TRUE(wallet.EncryptWallet(strWalletPass));
-    
+
     // adding a new key will fail as the wallet is locked
     EXPECT_ANY_THROW(wallet.GenerateNewSproutZKey());
-    
+
     // unlock wallet and then add
     wallet.Unlock(strWalletPass);
     auto paymentAddress2 = wallet.GenerateNewSproutZKey();
@@ -376,11 +376,11 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
 
     // Confirm it's not the same as the other wallet
     ASSERT_TRUE(&wallet != &wallet2);
-    
+
     // wallet should have two keys
     wallet2.GetSproutPaymentAddresses(addrs);
     ASSERT_EQ(2, addrs.size());
-    
+
     // check we have entries for our payment addresses
     ASSERT_TRUE(addrs.count(paymentAddress));
     ASSERT_TRUE(addrs.count(paymentAddress2));
@@ -389,13 +389,13 @@ TEST(wallet_zkeys_tests, write_cryptedzkey_direct_to_db) {
     libzcash::SproutSpendingKey keyOut;
     wallet2.GetSproutSpendingKey(paymentAddress, keyOut);
     ASSERT_FALSE(paymentAddress == keyOut.address());
-    
+
     // unlock wallet to get spending keys and verify payment addresses
     wallet2.Unlock(strWalletPass);
 
     wallet2.GetSproutSpendingKey(paymentAddress, keyOut);
     ASSERT_EQ(paymentAddress, keyOut.address());
-    
+
     wallet2.GetSproutSpendingKey(paymentAddress2, keyOut);
     ASSERT_EQ(paymentAddress2, keyOut.address());
 }

@@ -19,10 +19,10 @@ class WalletPersistenceTest (BitcoinTestFramework):
 
     def setup_chain(self):
         print("Initializing test directory " + self.options.tmpdir)
-        initialize_chain_clean(self.options.tmpdir, 3)
+        initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir,
+        self.nodes = start_nodes(4, self.options.tmpdir,
             extra_args=[[
                 '-nuparams=5ba81b19:100', # Overwinter
                 '-nuparams=76b809bb:201', # Sapling
@@ -116,6 +116,13 @@ class WalletPersistenceTest (BitcoinTestFramework):
         self.nodes[2].z_importkey(sk0, "yes")
         assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
 
+        # Verify importing a viewing key will update and persist the nullifiers and witnesses correctly
+        extfvk0 = self.nodes[0].z_exportviewingkey(sapling_addr)
+        self.nodes[3].z_importviewingkey(extfvk0, "yes")
+        assert_equal(self.nodes[3].z_getbalance(sapling_addr), Decimal('5'))
+        assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')
+        assert_equal(self.nodes[3].z_gettotalbalance(1, True)['private'], '5.00')
+
         # Restart the nodes
         stop_nodes(self.nodes)
         wait_bitcoinds()
@@ -125,6 +132,9 @@ class WalletPersistenceTest (BitcoinTestFramework):
         # Prior to PR #3590, there will be an error as spent notes are considered unspent:
         #    Assertion failed: expected: <25.00000000> but was: <5>
         assert_equal(self.nodes[2].z_getbalance(sapling_addr), Decimal('5'))
+        assert_equal(self.nodes[3].z_getbalance(sapling_addr), Decimal('5'))
+        assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')
+        assert_equal(self.nodes[3].z_gettotalbalance(1, True)['private'], '5.00')
 
         # Verity witnesses persisted correctly by sending shielded funds
         recipients = []
@@ -141,4 +151,5 @@ class WalletPersistenceTest (BitcoinTestFramework):
         assert_equal(self.nodes[1].z_getbalance(dest_addr), Decimal('16'))
 
 if __name__ == '__main__':
+
     WalletPersistenceTest().main()
