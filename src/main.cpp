@@ -1637,9 +1637,14 @@ bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
     if (mempool.getSpentIndex(key, value))
         return true;
 
-    if (!pblocktree->ReadSpentIndex(key, value))
+    // Check if its an OP_RETURN code. GITHUB ISSUE #71
+    // No spent informations exist if its a raw data with 0 value.
+    if (value.satoshis == 0 )
         return false;
-        //return error("Unable to get spent index information");
+        //return error("Unable to get spent index as the value is 0");
+
+    if (!pblocktree->ReadSpentIndex(key, value))
+        return error("Unable to get spent index information");
 
     return true;
 }
