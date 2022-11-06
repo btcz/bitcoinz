@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2014 The Bitcoin Core developers
 // Copyright (c) 2016-2019 The Zcash developers
-// Copyright (c) 2017-2020 The BitcoinZ Community
+// Copyright (c) 2017-2022 The BitcoinZ Community
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -19,7 +19,7 @@
 #define CLIENT_VERSION_MAJOR 2
 #define CLIENT_VERSION_MINOR 0
 #define CLIENT_VERSION_REVISION 8
-#define CLIENT_VERSION_BUILD 50
+#define CLIENT_VERSION_BUILD 51
 
 //! Set to true for release, false for prerelease or test build
 #define CLIENT_VERSION_IS_RELEASE true
