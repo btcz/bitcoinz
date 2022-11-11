@@ -2480,22 +2480,21 @@ void CWalletTx::GetAmounts(list<COutputEntry>& listReceived,
 
         CTxDestination address;
 
-        // Check if its an OP code. GITHUB ISSUE #71
-        vector<CTxDestination> addresses;
-        txnouttype typeRet;
-        int nRequiredRet;
-        ExtractDestinations(txout.scriptPubKey, typeRet, addresses, nRequiredRet);
-        if (typeRet == TX_NULL_DATA)
+        // In either case, we need to get the destination address
+        if (!ExtractDestination(txout.scriptPubKey, address))
         {
           address = CNoDestination();
-        }
 
-        // In either case, we need to get the destination address
-        else if (!ExtractDestination(txout.scriptPubKey, address))
-        {
+          // Check if its an OP code. GITHUB ISSUE #71
+          vector<CTxDestination> addresses;
+          txnouttype typeRet;
+          int nRequiredRet;
+          ExtractDestinations(txout.scriptPubKey, typeRet, addresses, nRequiredRet);
+          if (typeRet != TX_NULL_DATA)
+          {
             LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
                      this->GetHash().ToString());
-            address = CNoDestination();
+          }
         }
 
         COutputEntry output = {address, txout.nValue, (int)i};
