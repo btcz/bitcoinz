@@ -1637,8 +1637,16 @@ bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
     if (mempool.getSpentIndex(key, value))
         return true;
 
-    if (!pblocktree->ReadSpentIndex(key, value))
+    // In either case, we need to get more info ...
+    if (!pblocktree->ReadSpentIndex(key, value)) {
+
+      // Check if its an OP_RETURN code. GITHUB ISSUE #71
+      // Only return error if it's a valid address
+      CTxDestination dest = DestFromAddressHash(value.addressType, value.addressHash);
+      if (IsValidDestination(dest)) {
         return error("Unable to get spent index information");
+      }
+    }
 
     return true;
 }
