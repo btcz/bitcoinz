@@ -1637,35 +1637,15 @@ bool GetSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value)
     if (mempool.getSpentIndex(key, value))
         return true;
 
-    // Check if its an OP_RETURN code. GITHUB ISSUE #71
-    // No spent informations exist if its a raw data with 0 value.
     // In either case, we need to get more info ...
     if (!pblocktree->ReadSpentIndex(key, value)) {
 
-      if (value.satoshis == 0 && key.outputIndex == 0 )
-        return error("Unable to get spent index if no satoshis && no outputIndex");
-
-      if (key.outputIndex == 0 )
-        return error("Unable to get spent index if outputIndex == 0");
-
-      if (value.inputIndex == 0 && key.outputIndex == 0 )
-        return error("Unable to get spent index if no outputIndex && no inputIndex");
-
-      if (value.txid.IsNull() && key.txid.IsNull())
-        return error("Unable to get spent index if txid is NULL in value and key");
-
-      if (value.txid.IsNull()) // OP_RETURN to check.
-        return false; // To not flood the log if raw data field.
-        //return error("Unable to get spent index if txid is NULL");
-
-      if (value.satoshis == 0 )
-        return error("Unable to get spent index if satoshis == 0 ");
-
-      if (value.inputIndex == 0 )
-        //return false;
-        return error("Unable to get spent index if inputIndex == 0");
-
-      return error("Unable to get spent index information");
+      // Check if its an OP_RETURN code. GITHUB ISSUE #71
+      // Only return error if it's a valid address
+      CTxDestination dest = DestFromAddressHash(value.addressType, value.addressHash);
+      if (IsValidDestination(dest)) {
+        return error("Unable to get spent index information");
+      }
     }
 
     return true;
