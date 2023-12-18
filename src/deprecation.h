@@ -9,7 +9,7 @@
 // Deprecation policy:
 // * Shut down 16 weeks' worth of blocks after the estimated release block height.
 // * A warning is shown during the 2 weeks' worth of blocks prior to shut down.
-static const int APPROX_RELEASE_HEIGHT = 1208650; // Aug 2023
+static const int APPROX_RELEASE_HEIGHT = 1928680; // Assigned many blocks ahead to buy time, this allows about 3.4 years for the next release
 static const int WEEKS_UNTIL_DEPRECATION = 16;
 static const int DEPRECATION_HEIGHT = APPROX_RELEASE_HEIGHT + (WEEKS_UNTIL_DEPRECATION * 7 * 24 * 24);
 
