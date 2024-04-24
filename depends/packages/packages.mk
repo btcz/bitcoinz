@@ -1,3 +1,12 @@
+rust_packages := rust librustzcash
+
+ifeq ($(build_os),darwin)
+	zcash_packages := libsnark libgmp libsodium utfcpp
+else
+	proton_packages := proton
+	zcash_packages := libgmp libsodium utfcpp
+endif
+
 rust_crates := \
   crate_aes \
   crate_aesni \
@@ -33,9 +42,12 @@ rust_crates := \
   crate_winapi \
   crate_winapi_x86_64_pc_windows_gnu
 rust_packages := rust $(rust_crates) librustzcash
-proton_packages := proton
-zcash_packages := libgmp libsodium utfcpp
-packages := boost openssl libevent zeromq $(zcash_packages) googletest
 native_packages := native_ccache
 
 wallet_packages=bdb
+
+ifeq ($(host_os),linux)
+	packages := boost openssl libevent zeromq $(zcash_packages) googletest libcurl #googlemock
+else
+	packages := boost openssl libevent zeromq $(zcash_packages) libcurl googletest #googlemock
+endif
