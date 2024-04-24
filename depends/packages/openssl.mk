@@ -1,8 +1,8 @@
 package=openssl
-$(package)_version=1.1.1a
+$(package)_version=1.1.1k
 $(package)_download_path=https://www.openssl.org/source
 $(package)_file_name=$(package)-$($(package)_version).tar.gz
-$(package)_sha256_hash=fc20130f8b7cbd2fb918b2f14e2f429e109c31ddd0fb38fc5d71d9ffed3f9f41
+$(package)_sha256_hash=892a0875b9872acd04a9fde79b1f943075d5ea162415de3047c327df33fbaee5
 
 define $(package)_set_vars
 $(package)_config_env=AR="$($(package)_ar)" RANLIB="$($(package)_ranlib)" CC="$($(package)_cc)"
@@ -22,7 +22,6 @@ $(package)_config_opts+=no-comp
 $(package)_config_opts+=no-crypto-mdebug
 $(package)_config_opts+=no-crypto-mdebug-backtrace
 $(package)_config_opts+=no-ct
-$(package)_config_opts+=no-des
 $(package)_config_opts+=no-dgram
 $(package)_config_opts+=no-dsa
 $(package)_config_opts+=no-dso
@@ -58,15 +57,12 @@ $(package)_config_opts+=no-scrypt
 $(package)_config_opts+=no-sctp
 $(package)_config_opts+=no-seed
 $(package)_config_opts+=no-shared
-$(package)_config_opts+=no-sock
 $(package)_config_opts+=no-srp
 $(package)_config_opts+=no-srtp
-$(package)_config_opts+=no-ssl
 $(package)_config_opts+=no-ssl3
 $(package)_config_opts+=no-ssl3-method
 $(package)_config_opts+=no-ssl-trace
 $(package)_config_opts+=no-stdio
-$(package)_config_opts+=no-tls
 $(package)_config_opts+=no-tls1
 $(package)_config_opts+=no-tls1-method
 $(package)_config_opts+=no-ts
@@ -92,7 +88,7 @@ $(package)_config_opts_i686_mingw32=mingw
 endef
 
 define $(package)_preprocess_cmds
-  sed -i.old 's/built on: $$$$date/built on: date not available/' util/mkbuildinf.pl && \
+  sed -i.old 's/built on: $date/built on: not available/' util/mkbuildinf.pl && \
   sed -i.old "s|\"engines\", \"apps\", \"test\"|\"engines\"|" Configure
 endef
 
