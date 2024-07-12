@@ -405,12 +405,12 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         // Set to 0 so expiry height does not apply to coinbase txs
         txNew.nExpiryHeight = 0;
 
-        if (nHeight >= chainparams.GetCommunityFeeStartHeight()) {
+        if ((nHeight > chainparams.GetCommunityFeeStartHeight()) && (nHeight <= chainparams.GetLastCommunityFeeBlockHeight())) {
             // Community Fee is 5% of the block subsidy
             auto vCommunityFee = txNew.vout[0].nValue * 0.05;
             // Take some reward away from us
             txNew.vout[0].nValue -= vCommunityFee;
-             // And give it to the community
+            // And give it to the community
             txNew.vout.push_back(CTxOut(vCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight)));
         }
 

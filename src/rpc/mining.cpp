@@ -902,13 +902,12 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     int nHeight = (params.size()==1) ? params[0].get_int() : chainActive.Height();
-    int nextBlockHeight = nHeight + 1;
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CAmount nReward = GetBlockSubsidy(nextBlockHeight, Params().GetConsensus());
+    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
     CAmount nCommunityFee = 0;
-    if (nextBlockHeight >= Params().GetCommunityFeeStartHeight()) {
+    if ((nHeight > Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
         nCommunityFee = nReward * 0.05;
         nReward -= nCommunityFee;
     }

@@ -4009,7 +4009,7 @@ bool ContextualCheckBlock(
 
     // Coinbase transaction must include an output sending 5% of the block
     // reward to a community fee script.
-    if (nHeight >= Params().GetCommunityFeeStartHeight()) {
+    if ((nHeight > Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
         bool found = false;
         for (const CTxOut& output : block.vtx[0].vout) {
             if (output.scriptPubKey == chainparams.GetCommunityFeeScriptAtHeight(nHeight)) {
