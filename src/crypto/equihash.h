@@ -10,6 +10,7 @@
 #include "utilstrencodings.h"
 
 #include "sodium.h"
+#include <stdexcept>
 
 #include <cstring>
 #include <exception>
