@@ -4399,13 +4399,13 @@ bool static LoadBlockIndexDB()
     // Calculate nChainWork
     vector<pair<int, CBlockIndex*> > vSortedByHeight;
     vSortedByHeight.reserve(mapBlockIndex.size());
-    for (const PAIRTYPE(uint256, CBlockIndex*)& item : mapBlockIndex)
+    for (const std::pair<uint256, CBlockIndex*>& item : mapBlockIndex)
     {
         CBlockIndex* pindex = item.second;
         vSortedByHeight.push_back(make_pair(pindex->nHeight, pindex));
     }
     sort(vSortedByHeight.begin(), vSortedByHeight.end());
-    for (const PAIRTYPE(int, CBlockIndex*)& item : vSortedByHeight)
+    for (const std::pair<int, CBlockIndex*>& item : vSortedByHeight)
     {
         CBlockIndex* pindex = item.second;
         pindex->nChainWork = (pindex->pprev ? pindex->pprev->nChainWork : 0) + GetBlockProof(*pindex);
@@ -4491,7 +4491,7 @@ bool static LoadBlockIndexDB()
     // Check presence of blk files
     LogPrintf("Checking all blk files are present...\n");
     set<int> setBlkDataFiles;
-    for (const PAIRTYPE(uint256, CBlockIndex*)& item : mapBlockIndex)
+    for (const std::pair<uint256, CBlockIndex*>& item : mapBlockIndex)
     {
         CBlockIndex* pindex = item.second;
         if (pindex->nStatus & BLOCK_HAVE_DATA) {
@@ -4529,7 +4529,7 @@ bool static LoadBlockIndexDB()
     fTimestampIndex = fInsightExplorer;
 
     // Fill in-memory data
-    for (const PAIRTYPE(uint256, CBlockIndex*)& item : mapBlockIndex)
+    for (const std::pair<uint256, CBlockIndex*>& item : mapBlockIndex)
     {
         CBlockIndex* pindex = item.second;
         // - This relationship will always be true even if pprev has multiple
@@ -5501,7 +5501,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         // Relay alerts
         {
             LOCK(cs_mapAlerts);
-            for (PAIRTYPE(const uint256, CAlert)& item : mapAlerts)
+            for (std::pair<const uint256, CAlert>& item : mapAlerts)
                 item.second.RelayTo(pfrom);
         }
 
