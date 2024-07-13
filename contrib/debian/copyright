@@ -17,14 +17,6 @@ Files: depends/sources/libsodium-*.tar.gz
 Copyright: 2013-2016 Frank Denis
 License: ISC
 
-Files: depends/sources/libsnark-*.tar.gz
-Copyright: 2012-2016 SCIPR Lab and contributors; 2016 The Zcash developers
-License: Expat
-
-Files: depends/sources/gmp-*.tar.bz2
-Copyright: 1991, 1996, 1999, 2000, 2007 Free Software Foundation, Inc.
-License: LGPL
-
 Files: depends/sources/boost_*.tar.gz
 Copyright: 2008 Beman Dawes
 License: Boost-Software-License-1.0
