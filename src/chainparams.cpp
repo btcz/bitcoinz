@@ -848,7 +848,7 @@ bool SelectParamsFromCommandLine()
     return true;
 }
 
-// Block height must be >0 and <=last founders reward block height	// Block height must be >0 and <=last founders reward block height
+// Block height must be >0 and <=last founders reward block height
 // Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
 std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
   int preBlossomMaxHeight = GetLastCommunityFeeBlockHeight();

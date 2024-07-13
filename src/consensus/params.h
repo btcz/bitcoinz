@@ -107,8 +107,6 @@ struct Params {
 
     int Halving(int nHeight) const;
 
-    int GetLastCommunityFeeBlockHeight(int nHeight) const;
-
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;

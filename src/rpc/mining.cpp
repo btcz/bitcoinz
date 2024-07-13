@@ -645,7 +645,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
     int i = 0;
-    BOOST_FOREACH (const CTransaction& tx, pblock->vtx) {
+    for (const CTransaction& tx : pblock->vtx) {
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
@@ -659,7 +659,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.push_back(Pair("hash", txHash.GetHex()));
 
         UniValue deps(UniValue::VARR);
-        BOOST_FOREACH (const CTxIn &in, tx.vin)
+        for (const CTxIn &in : tx.vin)
         {
             if (setTxIndex.count(in.prevout.hash))
                 deps.push_back(setTxIndex[in.prevout.hash]);
@@ -902,13 +902,12 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     int nHeight = (params.size()==1) ? params[0].get_int() : chainActive.Height();
-    int nextBlockHeight = nHeight + 1;
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CAmount nReward = GetBlockSubsidy(nextBlockHeight, Params().GetConsensus());
+    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
     CAmount nCommunityFee = 0;
-    if (nextBlockHeight >= Params().GetCommunityFeeStartHeight()) {
+    if ((nHeight > Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
         nCommunityFee = nReward * 0.05;
         nReward -= nCommunityFee;
     }

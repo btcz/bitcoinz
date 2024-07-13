@@ -86,7 +86,6 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 static int GetLastCommunityFeeHeight(const Consensus::Params& params) {
     int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
     bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-    //return params.GetLastCommunityFeeBlockHeight(blossom ? blossomActivationHeight : 0);
     return Params().GetLastCommunityFeeBlockHeight();
 }
 
