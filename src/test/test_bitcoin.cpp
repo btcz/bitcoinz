@@ -31,6 +31,7 @@
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
 CWallet* pwalletMain;
 ZCJoinSplit *pzcashParams;
+FastRandomContext insecure_rand_ctx(true);
 
 extern bool fPrintToConsole;
 extern void noui_connect();
