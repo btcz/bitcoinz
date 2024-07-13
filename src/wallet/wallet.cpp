@@ -1217,9 +1217,17 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
             if (nd->witnesses.size() > 0) {
                 nd->witnesses.pop_front();
             }
-            // indexHeight is the height of the block being removed, so
-            // the new witness cache height is one below it.
-            nd->witnessHeight = indexHeight - 1;
+            if (nd->witnesses.empty()) {
+                // This allows "rollback" for empty Sapling wallets injected into nonempty
+                // chain state that is then rolled back
+
+                nd->witnessHeight = -1;
+
+            } else {
+                // indexHeight is the height of the block being removed, so
+                // the new witness cache height is one below it.
+                nd->witnessHeight = indexHeight - 1;
+            }
         }
         // Check the validity of the cache
         // Technically if there are notes witnessed above the current
@@ -1242,13 +1250,19 @@ void DecrementNoteWitnesses(NoteDataMap& noteDataMap, int indexHeight, int64_t n
 void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
 {
     LOCK(cs_wallet);
-    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+    bool hasSprout = false;
+    bool hasSapling = false;
+    or (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+        hasSprout |= !wtxItem.second.mapSproutNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
+        hasSapling |= !wtxItem.second.mapSaplingNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSaplingNoteData, pindex->nHeight, nWitnessCacheSize);
     }
-    nWitnessCacheSize -= 1;
-    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302)
-    assert(nWitnessCacheSize > 0);
+    if (nWitnessCacheSize > 0) {
+        nWitnessCacheSize -= 1;
+    }
+    // TODO: If nWitnessCache is zero, we need to regenerate the caches (#1302);
+    assert(!(hasSprout || hasSapling) || nWitnessCacheSize > 0);
 
     // For performance reasons, we write out the witness cache in
     // CWallet::SetBestChain() (which also ensures that overall consistency
