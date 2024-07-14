@@ -5,13 +5,13 @@
 # Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
-TESTS += zcash-gtest
-noinst_PROGRAMS += zcash-gtest
+TESTS += bitcoinz-gtest
+noinst_PROGRAMS += bitcoinz-gtest
 
 # tool for generating our public parameters.
 # test_checktransaction.cpp MUST be before
 # any test that calls SelectParams().
-zcash_gtest_SOURCES = \
+bitcoinz_gtest_SOURCES = \
 	gtest/main.cpp \
 	gtest/utils.cpp \
 	gtest/test_checktransaction.cpp \
@@ -21,10 +21,10 @@ zcash_gtest_SOURCES = \
 # These tests are order-dependent, because they
 # depend on global state (see #1539)
 if ENABLE_WALLET
-zcash_gtest_SOURCES += \
+bitcoinz_gtest_SOURCES += \
 	wallet/gtest/test_wallet_zkeys.cpp
 endif
-zcash_gtest_SOURCES += \
+bitcoinz_gtest_SOURCES += \
 	gtest/test_tautology.cpp \
 	gtest/test_deprecation.cpp \
 	gtest/test_equihash.cpp \
@@ -51,15 +51,15 @@ zcash_gtest_SOURCES += \
 	gtest/test_checkblock.cpp \
 	gtest/test_zip32.cpp
 if ENABLE_WALLET
-zcash_gtest_SOURCES += \
+bitcoinz_gtest_SOURCES += \
 	wallet/gtest/test_paymentdisclosure.cpp \
 	wallet/gtest/test_wallet.cpp
 endif
 
-zcash_gtest_CPPFLAGS = $(AM_CPPFLAGS) -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
-zcash_gtest_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
+bitcoinz_gtest_CPPFLAGS = $(AM_CPPFLAGS) -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
+bitcoinz_gtest_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
-zcash_gtest_LDADD = \
+bitcoinz_gtest_LDADD = \
   -lgtest -lgmock \
   $(LIBBITCOIN_SERVER) \
   $(LIBBITCOIN_CLI) \
@@ -74,7 +74,7 @@ zcash_gtest_LDADD = \
   $(LIBMEMENV) \
   $(LIBSECP256K1)
 
-zcash_gtest_LDADD += \
+bitcoinz_gtest_LDADD += \
   $(LIBZCASH_CONSENSUS) \
   $(BOOST_LIBS) \
   $(BOOST_UNIT_TEST_FRAMEWORK_LIB) \
@@ -88,10 +88,10 @@ zcash_gtest_LDADD += \
   $(LIBZCASH_LIBS)
 
 
-zcash_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
+bitcoinz_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 
-zcash-gtest_check: zcash-gtest FORCE
-	./zcash-gtest
+bitcoinz-gtest_check: bitcoinz-gtest FORCE
+	./bitcoinz-gtest
 
-zcash-gtest-expected-failures: zcash-gtest FORCE
-	./zcash-gtest --gtest_filter=*DISABLED_* --gtest_also_run_disabled_tests
+bitcoinz-gtest-expected-failures: bitcoinz-gtest FORCE
+	./bitcoinz-gtest --gtest_filter=*DISABLED_* --gtest_also_run_disabled_tests

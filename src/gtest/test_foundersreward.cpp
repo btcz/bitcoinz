@@ -16,7 +16,7 @@
 #include "utiltest.h"
 
 // To run tests:
-// ./zcash-gtest --gtest_filter="founders_reward_test.*"
+// ./bitcoinz-gtest --gtest_filter="founders_reward_test.*"
 
 //
 // Enable this test to generate and print 48 testnet 2-of-3 multisig addresses.
@@ -83,21 +83,17 @@ TEST(founders_reward_test, create_testnet_2of3multisig) {
 }
 #endif
 
-static int GetLastCommunityFeeHeight(const Consensus::Params& params) {
-    int blossomActivationHeight = Params().GetConsensus().vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-    bool blossom = blossomActivationHeight != Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT;
-    return Params().GetLastCommunityFeeBlockHeight();
-}
-
-// Utility method to check the number of unique addresses from height 1 to maxHeight
+// Utility method to check the number of unique addresses from 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
-    int maxHeight = Params().GetLastCommunityFeeBlockHeight();
+    CChainParams params = Params();
+
+    int maxHeight = params.GetLastCommunityFeeBlockHeight();
+
     std::set<std::string> addresses;
     for (int i = 1; i <= maxHeight; i++) {
-        addresses.insert(Params().GetCommunityFeeAddressAtHeight(i));
+        addresses.insert(params.GetCommunityFeeAddressAtHeight(i));
     }
-    //EXPECT_EQ(addresses.size(), nUnique);
-    ASSERT_TRUE(addresses.size() == nUnique);
+    EXPECT_EQ(addresses.size(), nUnique);
 }
 
 
@@ -107,16 +103,17 @@ TEST(founders_reward_test, general) {
     CChainParams params = Params();
 
     // Fourth testnet reward:
-    // address = t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy
-    // script.ToString() = OP_HASH160 55d64928e69829d9376c776550b6cc710d427153 OP_EQUAL
-    // HexStr(script) = a91455d64928e69829d9376c776550b6cc710d42715387
-    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(1)), "a914ef775f1f997f122a062fff1a2d7443abd1f9c64287");
-    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(1), "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi");
-    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53126)), "a914ac67f4c072668138d88a86ff21b27207b283212f87");
-    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53126), "t2NGQjYMQhFndDHguvUw4wZdNdsssA6K7x2");
-    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53127)), "a91455d64928e69829d9376c776550b6cc710d42715387");
-    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53127), "t2ENg7hHVqqs9JwU5cgjvSbxnT2a9USNfhy");
+    // address = t2EwBFfC96DCiCAcJuEqGUbUes8rTNmaD6Q
+    // script.ToString() = OP_HASH160 5bfbeb4df59710514b7004041e75ad287dad9bc8 OP_EQUAL
+    // HexStr(script) = a9145bfbeb4df59710514b7004041e75ad287dad9bc887
+    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(1)), "a91465a7c41acd34d55e7001a02d68c39f5470ae38cf87");
+    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(1), "t2FpKCWt95LAPVRed61YbBny9yz5nqexLGN");
+    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53126)), "a9145bfbeb4df59710514b7004041e75ad287dad9bc887");
+    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53126), "t2EwBFfC96DCiCAcJuEqGUbUes8rTNmaD6Q");
+    EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53127)), "a9145bfbeb4df59710514b7004041e75ad287dad9bc887");
+    EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53127), "t2EwBFfC96DCiCAcJuEqGUbUes8rTNmaD6Q");
 
+    int minHeight = params.GetCommunityFeeStartHeight();
     int maxHeight = params.GetLastCommunityFeeBlockHeight();
 
     // If the block height parameter is out of bounds, there is an assert.
@@ -131,19 +128,17 @@ TEST(founders_reward_test, regtest_get_last_block_blossom) {
     auto params = RegtestActivateBlossom(false, blossomActivationHeight);
     int lastFRHeight = Params().GetLastCommunityFeeBlockHeight();
     EXPECT_EQ(0, params.Halving(lastFRHeight));
-    EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
     RegtestDeactivateBlossom();
 }
 
 TEST(founders_reward_test, mainnet_get_last_block) {
     SelectParams(CBaseChainParams::MAIN);
     auto params = Params().GetConsensus();
-    int lastFRHeight = GetLastCommunityFeeHeight(params);
-    EXPECT_EQ(0, params.Halving(lastFRHeight));
-    EXPECT_EQ(1, params.Halving(lastFRHeight + 1));
+    int lastFRHeight = Params().GetLastCommunityFeeBlockHeight();
+    EXPECT_EQ(1, params.Halving(lastFRHeight));
 }
 
-#define NUM_MAINNET_FOUNDER_ADDRESSES 48
+#define NUM_MAINNET_FOUNDER_ADDRESSES 100
 
 TEST(founders_reward_test, mainnet) {
     SelectParams(CBaseChainParams::MAIN);
@@ -151,7 +146,7 @@ TEST(founders_reward_test, mainnet) {
 }
 
 
-#define NUM_TESTNET_FOUNDER_ADDRESSES 48
+#define NUM_TESTNET_FOUNDER_ADDRESSES 100
 
 TEST(founders_reward_test, testnet) {
     SelectParams(CBaseChainParams::TESTNET);
@@ -168,53 +163,81 @@ TEST(founders_reward_test, regtest) {
 
 
 
-// Test that 10% community fee is fully rewarded after the first halving and slow start shift.
-// On Mainnet, this would be 2,100,000 ZEC after 850,000 blocks (840,000 + 10,000).
+// Test that 5% community fee is fully rewarded in a defined period.
+// On Mainnet: nHeight > 328500 && nHeight <= 1400000 (494687187.5 BTCZ)
 TEST(founders_reward_test, slow_start_subsidy) {
     SelectParams(CBaseChainParams::MAIN);
     CChainParams params = Params();
 
+    int minHeight = params.GetCommunityFeeStartHeight();
     int maxHeight = params.GetLastCommunityFeeBlockHeight();
+
     CAmount totalSubsidy = 0;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
-        totalSubsidy += nSubsidy;
+        CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) * 0.05;
+	if (nHeight > minHeight) {
+            totalSubsidy += nSubsidy;
+        }
     }
 
-    ASSERT_TRUE(totalSubsidy == MAX_MONEY/10.0);
+    EXPECT_EQ(totalSubsidy, 49468718750000000);
 }
 
 
-// For use with mainnet and testnet which each have 48 addresses.
+// For use with mainnet and testnet which each have 100 addresses.
 // Verify the number of rewards each individual address receives.
-void verifyNumberOfRewards() {
+// Since on the main network vCommunityFeeStartHeight does not start from 0,
+// the first 22 elements of vCommunityFeeAddress are skipped.
+void verifyNumberOfRewards(bool fMainNet) {
     CChainParams params = Params();
+
+    int minHeight = params.GetCommunityFeeStartHeight();
     int maxHeight = params.GetLastCommunityFeeBlockHeight();
+
     std::map<std::string, CAmount> ms;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
       std::string addr = params.GetCommunityFeeAddressAtHeight(nHeight);
       if (ms.count(addr) == 0) {
           ms[addr] = 0;
       }
-      ms[addr] = ms[addr] + GetBlockSubsidy(nHeight, params.GetConsensus()) / 5;
+      if (nHeight > minHeight) {
+          ms[addr] = ms[addr] + GetBlockSubsidy(nHeight, params.GetConsensus()) * 0.05;
+      }
     }
 
-    EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(0)], 1960039937500);
-    EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(1)], 4394460062500);
-    for (int i = 2; i <= 46; i++) {
-        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(i)], 17709 * COIN * 2.5);
+    if (fMainNet) {
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(0)], 0 * 625 * COIN);
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(1)], 0 * 625 * COIN);
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(22)], 0 * 625 * COIN);
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(23)], 7523 * 625 * COIN);
+    } else {
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(0)], 12500 * 625 * COIN);
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(1)], 14001 * 625 * COIN);
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(22)], 14001 * 625 * COIN);
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(23)], 14001 * 625 * COIN);
     }
-    EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(47)], 17677 * COIN * 2.5);
+
+    for (int i = 24; i <= 58; i++) {
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(i)], 14001 * 625 * COIN);
+    }
+
+    EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(59)], 8731875 * COIN);
+
+    for (int i = 60; i <= 98; i++) {
+        EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(i)], 14001 * 312.5 * COIN);
+    }
+
+    EXPECT_EQ(ms[params.GetCommunityFeeAddressAtIndex(99)], 13902 * 312.5 * COIN);
 }
 
 // Verify the number of rewards going to each mainnet address
 TEST(founders_reward_test, per_address_reward_mainnet) {
     SelectParams(CBaseChainParams::MAIN);
-    verifyNumberOfRewards();
+    verifyNumberOfRewards(true);
 }
 
 // Verify the number of rewards going to each testnet address
 TEST(founders_reward_test, per_address_reward_testnet) {
     SelectParams(CBaseChainParams::TESTNET);
-    verifyNumberOfRewards();
+    verifyNumberOfRewards(false);
 }
