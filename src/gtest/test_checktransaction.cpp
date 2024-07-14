@@ -505,7 +505,7 @@ TEST(checktransaction_tests, bad_txns_invalid_joinsplit_signature) {
     MockCValidationState state;
     // during initial block download, DoS ban score should be zero, else 100
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return false; });;
+    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return false; });
 }
@@ -542,7 +542,7 @@ TEST(checktransaction_tests, non_canonical_ed25519_signature) {
     MockCValidationState state;
     // during initial block download, DoS ban score should be zero, else 100
     EXPECT_CALL(state, DoS(0, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
-    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return false; });;
+    ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return true; });
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-invalid-joinsplit-signature", false)).Times(1);
     ContextualCheckTransaction(tx, state, chainparams, 0, 100, [](const CChainParams&) { return false; });
 }
