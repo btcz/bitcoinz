@@ -9,6 +9,7 @@
 #include "uint256.h"
 
 #include <functional>
+#include <limits>
 #include <stdint.h>
 
 /**
