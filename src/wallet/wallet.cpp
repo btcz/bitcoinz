@@ -1252,7 +1252,7 @@ void CWallet::DecrementNoteWitnesses(const CBlockIndex* pindex)
     LOCK(cs_wallet);
     bool hasSprout = false;
     bool hasSapling = false;
-    or (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
+    for (std::pair<const uint256, CWalletTx>& wtxItem : mapWallet) {
         hasSprout |= !wtxItem.second.mapSproutNoteData.empty();
         ::DecrementNoteWitnesses(wtxItem.second.mapSproutNoteData, pindex->nHeight, nWitnessCacheSize);
         hasSapling |= !wtxItem.second.mapSaplingNoteData.empty();
