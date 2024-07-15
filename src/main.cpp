@@ -21,6 +21,7 @@
 #include "metrics.h"
 #include "net.h"
 #include "pow.h"
+#include "reverse_iterator.h"
 #include "txmempool.h"
 #include "ui_interface.h"
 #include "undo.h"
@@ -3427,7 +3428,7 @@ static bool ActivateBestChainStep(CValidationState& state, const CChainParams& c
         nHeight = nTargetHeight;
 
         // Connect new blocks.
-        BOOST_REVERSE_FOREACH(CBlockIndex *pindexConnect, vpindexToConnect) {
+        for (CBlockIndex *pindexConnect : reverse_iterate(vpindexToConnect)) {
             if (!ConnectTip(state, chainparams, pindexConnect, pindexConnect == pindexMostWork ? pblock : NULL)) {
                 if (state.IsInvalid()) {
                     // The block violates a consensus rule.

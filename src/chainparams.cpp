@@ -7,6 +7,7 @@
 #include "key_io.h"
 #include "main.h"
 #include "crypto/equihash.h"
+#include "reverse_iterator.h"
 
 #include "util.h"
 #include "utilstrencodings.h"
@@ -834,7 +835,7 @@ bool checkEHParamaters(int solSize, int height, const CChainParams& params) {
 }
 
 int CChainParams::GetFutureBlockTimeWindow(int height) const {
-    BOOST_REVERSE_FOREACH(const MapFutureBlockTimeWindows::value_type& i, futureBlockTimeWindows)
+    for (const MapFutureBlockTimeWindows::value_type& i : reverse_iterate(futureBlockTimeWindows))
     {
         if (i.first <= height) {
             return i.second * 60;
