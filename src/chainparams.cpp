@@ -13,6 +13,8 @@
 #include "utilstrencodings.h"
 
 #include <assert.h>
+#include <optional>
+#include <variant>
 
 #include <boost/assign/list_of.hpp>
 
@@ -96,7 +98,7 @@ public:
         consensus.nPreBlossomPowTargetSpacing = Consensus::PRE_BLOSSOM_POW_TARGET_SPACING;
         consensus.nPostBlossomPowTargetSpacing = Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
         //consensus.nPowTargetSpacing = 2.5 * 60;
-        consensus.nPowAllowMinDifficultyBlocksAfterHeight = boost::none;
+        consensus.nPowAllowMinDifficultyBlocksAfterHeight = std::nullopt;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nProtocolVersion = 170002;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
             Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
@@ -357,7 +359,7 @@ public:
         consensus.nPreBlossomPowTargetSpacing = Consensus::PRE_BLOSSOM_POW_TARGET_SPACING;
         consensus.nPostBlossomPowTargetSpacing = Consensus::POST_BLOSSOM_POW_TARGET_SPACING;
         //consensus.nPowTargetSpacing = 2.5 * 60;
-        consensus.nPowAllowMinDifficultyBlocksAfterHeight = boost::none;
+        consensus.nPowAllowMinDifficultyBlocksAfterHeight = std::nullopt;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nProtocolVersion = 170002;
         consensus.vUpgrades[Consensus::BASE_SPROUT].nActivationHeight =
             Consensus::NetworkUpgrade::ALWAYS_ACTIVE;
@@ -778,7 +780,7 @@ CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
     CTxDestination address = DecodeDestination(GetCommunityFeeAddressAtHeight(nHeight).c_str());
     assert(IsValidDestination(address));
     assert(IsScriptDestination(address));
-    CScriptID scriptID = boost::get<CScriptID>(address); // address is a boost variant
+    CScriptID scriptID = std::get<CScriptID>(address);
     CScript script = CScript() << OP_HASH160 << ToByteVector(scriptID) << OP_EQUAL;
     return script;
 }

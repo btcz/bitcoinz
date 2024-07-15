@@ -2,8 +2,6 @@
 
 #include "utilstrencodings.h"
 
-#include <boost/variant/get.hpp>
-
 #include "zcash/prf.h"
 #include "util.h"
 #include "streams.h"

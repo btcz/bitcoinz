@@ -187,7 +187,7 @@ void ThreadNotifyWallets()
                 SyncWithWallets(tx, NULL);
             }
             // Update cached incremental witnesses
-            GetMainSignals().ChainTip(pindexLastTip, &block, boost::none);
+            GetMainSignals().ChainTip(pindexLastTip, &block, std::nullopt);
 
             // On to the next block!
             pindexLastTip = pindexLastTip->pprev;

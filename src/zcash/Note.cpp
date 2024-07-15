@@ -48,7 +48,7 @@ SaplingNote::SaplingNote(const SaplingPaymentAddress& address, const uint64_t va
 }
 
 // Call librustzcash to compute the commitment
-boost::optional<uint256> SaplingNote::cm() const {
+std::optional<uint256> SaplingNote::cm() const {
     uint256 result;
     if (!librustzcash_sapling_compute_cm(
             d.data(),
@@ -58,14 +58,14 @@ boost::optional<uint256> SaplingNote::cm() const {
             result.begin()
         ))
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     return result;
 }
 
 // Call librustzcash to compute the nullifier
-boost::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, const uint64_t position) const
+std::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk, const uint64_t position) const
 {
     auto ak = vk.ak;
     auto nk = vk.nk;
@@ -82,7 +82,7 @@ boost::optional<uint256> SaplingNote::nullifier(const SaplingFullViewingKey& vk,
             result.begin()
     ))
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     return result;
@@ -149,17 +149,17 @@ SaplingNotePlaintext::SaplingNotePlaintext(
 }
 
 
-boost::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingViewingKey& ivk) const
+std::optional<SaplingNote> SaplingNotePlaintext::note(const SaplingIncomingViewingKey& ivk) const
 {
     auto addr = ivk.address(d);
     if (addr) {
-        return SaplingNote(d, addr.get().pk_d, value_, rcm);
+        return SaplingNote(d, addr.value().pk_d, value_, rcm);
     } else {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
-boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
+std::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     const SaplingOutCiphertext &ciphertext,
     const uint256& ovk,
     const uint256& cv,
@@ -169,13 +169,13 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
 {
     auto pt = AttemptSaplingOutDecryption(ciphertext, ovk, cv, cm, epk);
     if (!pt) {
-        return boost::none;
+        return std::nullopt;
     }
 
     // Deserialize from the plaintext
     try {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
+        ss << pt.value();
 
         SaplingOutgoingPlaintext ret;
         ss >> ret;
@@ -186,11 +186,11 @@ boost::optional<SaplingOutgoingPlaintext> SaplingOutgoingPlaintext::decrypt(
     } catch (const boost::thread_interrupted&) {
         throw;
     } catch (...) {
-        return boost::none;
+        return std::nullopt;
     }
 }
 
-boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
+std::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const SaplingEncCiphertext &ciphertext,
     const uint256 &ivk,
     const uint256 &epk,
@@ -199,25 +199,25 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 {
     auto pt = AttemptSaplingEncDecryption(ciphertext, ivk, epk);
     if (!pt) {
-        return boost::none;
+        return std::nullopt;
     }
 
     // Deserialize from the plaintext
     SaplingNotePlaintext ret;
     try {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
+        ss << pt.value();
         ss >> ret;
         assert(ss.size() == 0);
     } catch (const boost::thread_interrupted&) {
         throw;
     } catch (...) {
-        return boost::none;
+        return std::nullopt;
     }
 
     uint256 pk_d;
     if (!librustzcash_ivk_to_pkd(ivk.begin(), ret.d.data(), pk_d.begin())) {
-        return boost::none;
+        return std::nullopt;
     }
 
     uint256 cmu_expected;
@@ -229,17 +229,17 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         cmu_expected.begin()
     ))
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     if (cmu_expected != cmu) {
-        return boost::none;
+        return std::nullopt;
     }
 
     return ret;
 }
 
-boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
+std::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
     const SaplingEncCiphertext &ciphertext,
     const uint256 &epk,
     const uint256 &esk,
@@ -249,20 +249,20 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
 {
     auto pt = AttemptSaplingEncDecryption(ciphertext, epk, esk, pk_d);
     if (!pt) {
-        return boost::none;
+        return std::nullopt;
     }
 
     // Deserialize from the plaintext
     SaplingNotePlaintext ret;
     try {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-        ss << pt.get();
+        ss << pt.value();
         ss >> ret;
         assert(ss.size() == 0);
     } catch (const boost::thread_interrupted&) {
         throw;
     } catch (...) {
-        return boost::none;
+        return std::nullopt;
     }
 
     uint256 cmu_expected;
@@ -274,24 +274,24 @@ boost::optional<SaplingNotePlaintext> SaplingNotePlaintext::decrypt(
         cmu_expected.begin()
     ))
     {
-        return boost::none;
+        return std::nullopt;
     }
 
     if (cmu_expected != cmu) {
-        return boost::none;
+        return std::nullopt;
     }
 
     return ret;
 }
 
-boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
+std::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encrypt(const uint256& pk_d) const
 {
     // Get the encryptor
     auto sne = SaplingNoteEncryption::FromDiversifier(d);
     if (!sne) {
-        return boost::none;
+        return std::nullopt;
     }
-    auto enc = sne.get();
+    auto enc = sne.value();
 
     // Create the plaintext
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -303,9 +303,9 @@ boost::optional<SaplingNotePlaintextEncryptionResult> SaplingNotePlaintext::encr
     // Encrypt the plaintext
     auto encciphertext = enc.encrypt_to_recipient(pk_d, pt);
     if (!encciphertext) {
-        return boost::none;
+        return std::nullopt;
     }
-    return SaplingNotePlaintextEncryptionResult(encciphertext.get(), enc);
+    return SaplingNotePlaintextEncryptionResult(encciphertext.value(), enc);
 }
 
 

@@ -8,8 +8,8 @@
 
 #include "uint256.h"
 
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
+#include <optional>
+#include <variant>
 
 namespace Consensus {
 
@@ -71,7 +71,7 @@ struct NetworkUpgrade {
      * scrutiny than regular releases. nMinimumChainWork MUST be set to at least the chain
      * work of this block, otherwise this detection will have false positives.
      */
-    boost::optional<uint256> hashActivationBlock;
+    std::optional<uint256> hashActivationBlock;
 };
 
 /** ZIP208 block target interval in seconds. */
@@ -129,7 +129,7 @@ struct Params {
     unsigned int nEquihashN = 144;
     unsigned int nEquihashK = 5;
     uint256 powLimit;
-    boost::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
+    std::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;

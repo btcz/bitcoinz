@@ -377,7 +377,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
     auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
     auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
     auto fvk = sk.expsk.full_viewing_key();
-    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
+    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).value();
 
     mapSaplingNoteData_t noteDataMap;
     SaplingOutPoint outPoint {wtx.GetHash(), 0};
@@ -598,7 +598,7 @@ double benchmark_create_sapling_spend()
     SaplingNote note(address, GetRand(MAX_MONEY));
     SaplingMerkleTree tree;
     auto maybe_cm = note.cm();
-    tree.append(maybe_cm.get());
+    tree.append(maybe_cm.value());
     auto anchor = tree.root();
     auto witness = tree.witness();
     auto maybe_nf = note.nullifier(expsk.full_viewing_key(), witness.position());
@@ -655,7 +655,7 @@ double benchmark_create_sapling_output()
         throw JSONRPCError(RPC_INTERNAL_ERROR, "SaplingNotePlaintext::encrypt() failed");
     }
 
-    auto enc = res.get();
+    auto enc = res.value();
     auto encryptor = enc.second;
 
     auto ctx = librustzcash_sapling_proving_ctx_init();

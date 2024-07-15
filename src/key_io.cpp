@@ -10,16 +10,13 @@
 #include <script/script.h>
 #include <utilstrencodings.h>
 
-#include <boost/variant/apply_visitor.hpp>
-#include <boost/variant/static_visitor.hpp>
-
 #include <assert.h>
 #include <string.h>
 #include <algorithm>
 
 namespace
 {
-class DestinationEncoder : public boost::static_visitor<std::string>
+class DestinationEncoder
 {
 private:
     const CChainParams& m_params;
@@ -68,7 +65,7 @@ CTxDestination DecodeDestination(const std::string& str, const CChainParams& par
     return CNoDestination();
 }
 
-class PaymentAddressEncoder : public boost::static_visitor<std::string>
+class PaymentAddressEncoder
 {
 private:
     const CChainParams& m_params;
@@ -101,7 +98,7 @@ public:
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
-class ViewingKeyEncoder : public boost::static_visitor<std::string>
+class ViewingKeyEncoder
 {
 private:
     const CChainParams& m_params;
@@ -139,7 +136,7 @@ public:
     std::string operator()(const libzcash::InvalidEncoding& no) const { return {}; }
 };
 
-class SpendingKeyEncoder : public boost::static_visitor<std::string>
+class SpendingKeyEncoder
 {
 private:
     const CChainParams& m_params;
@@ -264,7 +261,7 @@ std::string EncodeExtKey(const CExtKey& key)
 
 std::string EncodeDestination(const CTxDestination& dest)
 {
-    return boost::apply_visitor(DestinationEncoder(Params()), dest);
+    return std::visit(DestinationEncoder(Params()), dest);
 }
 
 CTxDestination DecodeDestination(const std::string& str)
@@ -284,7 +281,7 @@ bool IsValidDestinationString(const std::string& str)
 
 std::string EncodePaymentAddress(const libzcash::PaymentAddress& zaddr)
 {
-    return boost::apply_visitor(PaymentAddressEncoder(Params()), zaddr);
+    return std::visit(PaymentAddressEncoder(Params()), zaddr);
 }
 
 template<typename T1, typename T2, typename T3>
@@ -344,7 +341,7 @@ bool IsValidPaymentAddressString(const std::string& str) {
 
 std::string EncodeViewingKey(const libzcash::ViewingKey& vk)
 {
-    return boost::apply_visitor(ViewingKeyEncoder(Params()), vk);
+    return std::visit(ViewingKeyEncoder(Params()), vk);
 }
 
 libzcash::ViewingKey DecodeViewingKey(const std::string& str)
@@ -360,7 +357,7 @@ libzcash::ViewingKey DecodeViewingKey(const std::string& str)
 
 std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey)
 {
-    return boost::apply_visitor(SpendingKeyEncoder(Params()), zkey);
+    return std::visit(SpendingKeyEncoder(Params()), zkey);
 }
 
 libzcash::SpendingKey DecodeSpendingKey(const std::string& str)

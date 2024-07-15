@@ -1080,7 +1080,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
         libzcash::PaymentAddress address = DecodePaymentAddress(migrationDestAddress);
-        if (boost::get<libzcash::SaplingPaymentAddress>(&address) == nullptr) {
+        if (std::get_if<libzcash::SaplingPaymentAddress>(&address) == nullptr) {
             return InitError(_("-migrationdestaddress must be a valid Sapling address."));
         }
     }
@@ -1778,7 +1778,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
         if (pwalletMain) {
             // Address has already been validated
             CTxDestination addr = DecodeDestination(mapArgs["-mineraddress"]);
-            CKeyID keyID = boost::get<CKeyID>(addr);
+            CKeyID keyID = std::get<CKeyID>(addr);
             minerAddressInLocalWallet = pwalletMain->HaveKey(keyID);
         }
         if (GetBoolArg("-minetolocalwallet", true) && !minerAddressInLocalWallet) {

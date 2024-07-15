@@ -7,7 +7,7 @@
 #include "NoteEncryption.hpp"
 
 #include <array>
-#include <boost/optional.hpp>
+#include <optional>
 
 namespace libzcash {
 
@@ -56,8 +56,8 @@ public:
 
     virtual ~SaplingNote() {};
 
-    boost::optional<uint256> cm() const;
-    boost::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
+    std::optional<uint256> cm() const;
+    std::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
 };
 
 class BaseNotePlaintext {
@@ -127,14 +127,14 @@ public:
 
     SaplingNotePlaintext(const SaplingNote& note, std::array<unsigned char, ZC_MEMO_SIZE> memo);
 
-    static boost::optional<SaplingNotePlaintext> decrypt(
+    static std::optional<SaplingNotePlaintext> decrypt(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &ivk,
         const uint256 &epk,
         const uint256 &cmu
     );
 
-    static boost::optional<SaplingNotePlaintext> decrypt(
+    static std::optional<SaplingNotePlaintext> decrypt(
         const SaplingEncCiphertext &ciphertext,
         const uint256 &epk,
         const uint256 &esk,
@@ -142,7 +142,7 @@ public:
         const uint256 &cmu
     );
 
-    boost::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
+    std::optional<SaplingNote> note(const SaplingIncomingViewingKey& ivk) const;
 
     virtual ~SaplingNotePlaintext() {}
 
@@ -163,7 +163,7 @@ public:
         READWRITE(memo_);       // 512 bytes
     }
 
-    boost::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
+    std::optional<SaplingNotePlaintextEncryptionResult> encrypt(const uint256& pk_d) const;
 };
 
 class SaplingOutgoingPlaintext
@@ -184,7 +184,7 @@ public:
         READWRITE(esk);         // 8 bytes
     }
 
-    static boost::optional<SaplingOutgoingPlaintext> decrypt(
+    static std::optional<SaplingOutgoingPlaintext> decrypt(
         const SaplingOutCiphertext &ciphertext,
         const uint256& ovk,
         const uint256& cv,

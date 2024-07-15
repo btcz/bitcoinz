@@ -2,6 +2,7 @@
 #include "sodium.h"
 
 #include <array>
+#include <optional>
 #include <stdexcept>
 
 #include "zcash/Note.hpp"
@@ -39,7 +40,7 @@ TEST(noteencryption, NotePlaintext)
     if (!cmu_opt) {
         FAIL();
     }
-    uint256 cmu = cmu_opt.get();
+    uint256 cmu = cmu_opt.value();
     SaplingNotePlaintext pt(note, memo);
 
     auto res = pt.encrypt(addr.pk_d);
@@ -47,7 +48,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto enc = res.get();
+    auto enc = res.value();
 
     auto ct = enc.first;
     auto encryptor = enc.second;
@@ -73,7 +74,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto bar = foo.get();
+    auto bar = foo.value();
 
     ASSERT_TRUE(bar.value() == pt.value());
     ASSERT_TRUE(bar.memo() == pt.memo());
@@ -86,7 +87,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto new_note = foobar.get();
+    auto new_note = foobar.value();
 
     ASSERT_TRUE(note.value() == new_note.value());
     ASSERT_TRUE(note.d == new_note.d);
@@ -121,7 +122,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto decrypted_out_ct_unwrapped = decrypted_out_ct.get();
+    auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
 
     ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
     ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
@@ -150,7 +151,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    bar = foo.get();
+    bar = foo.value();
 
     ASSERT_TRUE(bar.value() == pt.value());
     ASSERT_TRUE(bar.memo() == pt.memo());
@@ -183,7 +184,7 @@ TEST(noteencryption, SaplingApi)
     }
 
     // Invalid diversifier
-    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+    ASSERT_EQ(std::nullopt, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
 
     // Encrypt to pk_1
     auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
