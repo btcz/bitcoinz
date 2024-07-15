@@ -15,8 +15,6 @@
 #include "version.h"
 #include "deprecation.h"
 
-#include <boost/foreach.hpp>
-
 #include <univalue.h>
 
 using namespace std;

@@ -26,8 +26,6 @@
 #include "zcash/IncrementalMerkleTree.hpp"
 #include "zcash/util.h"
 
-#include <boost/foreach.hpp>
-
 #include "json_test_vectors.h"
 
 using namespace std;

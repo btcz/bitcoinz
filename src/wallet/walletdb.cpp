@@ -17,7 +17,6 @@
 #include "zcash/Proof.hpp"
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 
