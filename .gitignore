@@ -5,7 +5,7 @@ src/bitcoinzd
 src/bitcoinz-cli
 src/bitcoinz-gtest
 src/bitcoinz-tx
-src/test/test_bitcoin
+src/test/test_bitcoinz
 src/BitcoinZWallet.jar
 
 *.pk
@@ -90,7 +90,7 @@ build
 *.gcno
 *.gcda
 /*.info
-test_bitcoin.coverage/
+test_bitcoinz.coverage/
 bitcoinz-gtest.coverage/
 total.coverage/
 coverage_percent.txt

@@ -92,9 +92,9 @@ LIBZCASH_H = \
   zcash/IncrementalMerkleTree.hpp \
   zcash/NoteEncryption.hpp \
   zcash/Address.hpp \
-	zcash/address/sapling.hpp \
-	zcash/address/sprout.hpp \
-	zcash/address/zip32.h \
+  zcash/address/sapling.hpp \
+  zcash/address/sprout.hpp \
+  zcash/address/zip32.h \
   zcash/JoinSplit.hpp \
   zcash/Note.hpp \
   zcash/prf.h \
@@ -208,7 +208,7 @@ BITCOIN_CORE_H = \
   utiltime.h \
   validationinterface.h \
   version.h \
-	wallet/asyncrpcoperation_common.h \
+  wallet/asyncrpcoperation_common.h \
   wallet/asyncrpcoperation_mergetoaddress.h \
   wallet/asyncrpcoperation_saplingmigration.h \
   wallet/asyncrpcoperation_sendmany.h \
@@ -221,7 +221,7 @@ BITCOIN_CORE_H = \
   wallet/wallet.h \
   wallet/wallet_ismine.h \
   wallet/walletdb.h \
-	warnings.h \
+  warnings.h \
   zmq/zmqabstractnotifier.h \
   zmq/zmqconfig.h\
   zmq/zmqnotificationinterface.h \
@@ -300,7 +300,7 @@ libbitcoin_wallet_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_wallet_a_SOURCES = \
   zcbenchmarks.cpp \
   zcbenchmarks.h \
-	wallet/asyncrpcoperation_common.cpp \
+  wallet/asyncrpcoperation_common.cpp \
   wallet/asyncrpcoperation_mergetoaddress.cpp \
   wallet/asyncrpcoperation_saplingmigration.cpp \
   wallet/asyncrpcoperation_sendmany.cpp \
@@ -364,7 +364,7 @@ libbitcoin_common_a_SOURCES = \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
-	consensus/params.cpp \
+  consensus/params.cpp \
   consensus/upgrades.cpp \
   core_read.cpp \
   core_write.cpp \
@@ -385,7 +385,7 @@ libbitcoin_common_a_SOURCES = \
   script/standard.cpp \
   transaction_builder.cpp \
   utiltest.cpp \
-	warnings.cpp \
+  warnings.cpp \
   $(BITCOIN_CORE_H) \
   $(LIBZCASH_H)
 
@@ -511,7 +511,7 @@ libzcash_a_SOURCES = \
   zcash/IncrementalMerkleTree.cpp \
   zcash/NoteEncryption.cpp \
   zcash/Address.cpp \
-	zcash/address/sapling.cpp \
+  zcash/address/sapling.cpp \
   zcash/address/sprout.cpp \
   zcash/address/zip32.cpp \
   zcash/JoinSplit.cpp \
