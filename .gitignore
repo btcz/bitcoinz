@@ -1,20 +1,15 @@
 *.tar.gz
 *.deb
 *.exe
-src/bitcoin
 src/bitcoinzd
 src/bitcoinz-cli
 src/bitcoinz-gtest
 src/bitcoinz-tx
-src/zcashd
-src/zcash-cli
-src/zcash-gtest
-src/zcash-tx
 src/test/test_bitcoin
 src/BitcoinZWallet.jar
 
-*zcashTest.pk
-*zcashTest.vk
+*.pk
+*.vk
 
 # autoreconf
 Makefile.in
@@ -58,7 +53,7 @@ src/univalue/gen
 *.pyc
 *.o
 *.o-*
-.zcash
+.bitcoinz
 *.a
 *.pb.cc
 *.pb.h
@@ -96,7 +91,7 @@ build
 *.gcda
 /*.info
 test_bitcoin.coverage/
-zcash-gtest.coverage/
+bitcoinz-gtest.coverage/
 total.coverage/
 coverage_percent.txt
 
@@ -120,3 +115,4 @@ contrib/debian/substvars
 
 .idea/
 *.iml
+*.patch
