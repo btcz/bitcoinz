@@ -9,6 +9,7 @@
 #include "uint256.h"
 
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 
 namespace Consensus {
 

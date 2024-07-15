@@ -14,6 +14,8 @@
 #include <memenv.h>
 #include <stdint.h>
 
+#include <boost/scoped_ptr.hpp>
+
 static leveldb::Options GetOptions(size_t nCacheSize)
 {
     leveldb::Options options;
