@@ -22,7 +22,7 @@ Common `host-platform-triplets` for cross compilation are:
 
 - `i686-w64-mingw32` for Win32
 - `x86_64-w64-mingw32` for Win64
-- `x86_64-apple-darwin11` for MacOSX
+- `x86_64-apple-darwin18` for MacOSX
 - `arm-linux-gnueabihf` for Linux ARM
 
 No other options are needed, the paths are automatically configured.
