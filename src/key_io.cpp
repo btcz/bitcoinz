@@ -77,7 +77,7 @@ public:
     {
         CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
         ss << zaddr;
-        std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::ZCPAYMENT_ADDRRESS);
+        std::vector<unsigned char> data = m_params.Base58Prefix(CChainParams::ZCPAYMENT_ADDRESS);
         data.insert(data.end(), ss.begin(), ss.end());
         return EncodeBase58Check(data);
     }
@@ -330,7 +330,7 @@ libzcash::PaymentAddress DecodePaymentAddress(const std::string& str)
         libzcash::SproutPaymentAddress,
         libzcash::SaplingPaymentAddress>(
             str,
-            std::make_pair(CChainParams::ZCPAYMENT_ADDRRESS, libzcash::SerializedSproutPaymentAddressSize),
+            std::make_pair(CChainParams::ZCPAYMENT_ADDRESS, libzcash::SerializedSproutPaymentAddressSize),
             std::make_pair(CChainParams::SAPLING_PAYMENT_ADDRESS, ConvertedSaplingPaymentAddressSize)
         );
 }
