@@ -11,7 +11,8 @@ fi
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
-SPROUT_URL="https://verus.io/zcparams"
+DOWNLOAD_URL="https://download.z.cash/downloads"
+IPFS_HASH="/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
 SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
@@ -36,7 +37,7 @@ function fetch_aria2 {
     local dlname="$(basename "$2")"
 
     cat <<EOF
-Retrieving (aria2): $SPROUT_URL/$filename
+Retrieving (aria2): $DOWNLOAD_URL/$filename
 EOF
 
     aria2c \
@@ -52,7 +53,7 @@ EOF
         --allow-overwrite=true \
         --download-result=full \
         --summary-interval=10 \
-        "$SPROUT_URL/$filename" || \
+        "$DOWNLOAD_URL/$filename" || \
     {   echo -e "\n\nResume failed, downloading $filename from scratch.\n\n" \
         && aria2c \
             --out="$dlname" \
@@ -64,7 +65,7 @@ EOF
             --allow-overwrite=true \
             --download-result=full \
             --summary-interval=10 \
-            "$SPROUT_URL/$filename"
+            "$DOWNLOAD_URL/$filename"
     }
 }
 
@@ -77,7 +78,7 @@ function fetch_wget {
     local dlname="$2"
 
     cat <<EOF
-Retrieving (wget): $SPROUT_URL/$filename
+Retrieving (wget): $DOWNLOAD_URL/$filename
 EOF
 
     wget \
@@ -85,15 +86,30 @@ EOF
         --output-document="$dlname" \
         --continue --tries=3 \
         --retry-connrefused --waitretry=3 --timeout=90 \
-        "$SPROUT_URL/$filename" || \
+        "$DOWNLOAD_URL/$filename" || \
     {   echo -e "\n\nResume failed, downloading $filename from scratch.\n\n" \
         && wget \
             --progress=dot:giga \
             --output-document="$dlname" \
             --tries=3 \
             --retry-connrefused --waitretry=3 --timeout=30 \
-            "$SPROUT_URL/$filename"
+            "$DOWNLOAD_URL/$filename"
     }
+}
+
+function fetch_ipfs {
+    if [ -z "$IPFSCMD" ] || ! [ -z "$ZC_DISABLE_IPFS" ]; then
+        return 1
+    fi
+
+    local filename="$1"
+    local dlname="$2"
+
+    cat <<EOF
+Retrieving (ipfs): $IPFS_HASH/$filename
+EOF
+
+    ipfs get --output "$dlname" "$IPFS_HASH/$filename"
 }
 
 function fetch_curl {
@@ -105,13 +121,13 @@ function fetch_curl {
     local dlname="$2"
 
     cat <<EOF
-Retrieving (curl): $SPROUT_URL/$filename
+Retrieving (curl): $DOWNLOAD_URL/$filename
 EOF
 
     curl \
         --output "$dlname" \
         -# -L -C - \
-        "$SPROUT_URL/$filename"
+        "$DOWNLOAD_URL/$filename"
 
 }
 
