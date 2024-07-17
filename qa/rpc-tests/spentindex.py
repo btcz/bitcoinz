@@ -2,24 +2,27 @@
 # Copyright (c) 2020 The BitcoinZ Community
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+# file COPYING or https://www.opensource.org/licenses/mit-license.php.
 #
-# Test spentindex generation and fetching
-#
+# Test spentindex generation and fetching for insightexplorer
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.authproxy import JSONRPCException
 
-from test_framework.util import assert_equal
-from test_framework.util import initialize_chain_clean
-from test_framework.util import start_nodes, stop_nodes, connect_nodes
-from test_framework.util import wait_bitcoinds
-from test_framework.util import fail
+from test_framework.util import (
+    assert_equal,
+    initialize_chain_clean,
+    start_nodes,
+    stop_nodes,
+    connect_nodes,
+    wait_bitcoinds,
+    fail,
+)
 
 from test_framework.mininode import COIN
+
 
 class SpentIndexTest(BitcoinTestFramework):
 
@@ -30,7 +33,8 @@ class SpentIndexTest(BitcoinTestFramework):
     def setup_network(self):
         # -insightexplorer causes spentindex to be enabled (fSpentIndex = true)
 
-        self.nodes = start_nodes(3, self.options.tmpdir,
+        self.nodes = start_nodes(
+            3, self.options.tmpdir,
             [['-debug', '-txindex', '-experimentalfeatures', '-insightexplorer']]*3)
         connect_nodes(self.nodes[0], 1)
         connect_nodes(self.nodes[0], 2)
@@ -178,6 +182,7 @@ class SpentIndexTest(BitcoinTestFramework):
         out = filter(lambda o: o['satoshis'] == 1*COIN, to_b_tx['outputs'])
         assert_equal(len(out), 1)
         assert_equal(out[0]['address'], addr2)
+
 
 if __name__ == '__main__':
     SpentIndexTest().main()

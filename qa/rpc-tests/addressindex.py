@@ -2,8 +2,7 @@
 # Copyright (c) 2020 The BitcoinZ Community
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+# file COPYING or https://www.opensource.org/licenses/mit-license.php.
 #
 # Test addressindex generation and fetching for insightexplorer
 #
@@ -14,12 +13,10 @@
 #   getaddressdeltas
 #   getaddressutxos
 #   getaddressmempool
-#
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-
 
 from test_framework.util import (
     assert_equal,
@@ -27,9 +24,8 @@ from test_framework.util import (
     start_nodes,
     stop_nodes,
     connect_nodes,
+    wait_bitcoinds,
 )
-
-from test_framework.util import wait_bitcoinds
 
 from test_framework.script import (
     CScript,
@@ -39,8 +35,11 @@ from test_framework.script import (
     OP_DROP,
 )
 
-from test_framework.mininode import COIN, CTransaction
-from test_framework.mininode import CTxIn, CTxOut, COutPoint
+from test_framework.mininode import (
+    COIN,
+    CTransaction,
+    CTxIn, CTxOut, COutPoint,
+)
 
 from binascii import hexlify
 
@@ -101,7 +100,7 @@ class AddressIndexTest(BitcoinTestFramework):
         assert_equal(self.nodes[1].getbalance(), 0)
 
         # only the oldest 5; subsequent are not yet mature
-        unspent_txids = [ u['txid'] for u in self.nodes[0].listunspent() ]
+        unspent_txids = [u['txid'] for u in self.nodes[0].listunspent()]
 
         # Currently our only unspents are coinbase transactions, choose any one
         tx = self.nodes[0].getrawtransaction(unspent_txids[0], 1)
