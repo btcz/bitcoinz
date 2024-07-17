@@ -13,8 +13,6 @@ from test_framework.util import (
     get_coinbase_address
 )
 
-from test_framework.authproxy import JSONRPCException
-
 from decimal import Decimal
 
 # Test mempool behaviour around network upgrade activation
