@@ -98,7 +98,7 @@ void AddTimeData(const CNetAddr& ip, int64_t nOffsetSample)
                 if (!fMatch)
                 {
                     fDone = true;
-                    std::string strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong Zcash will not work properly.");
+                    std::string strMessage = _("Warning: Please check that your computer's date and time are correct! If your clock is wrong BitcoinZ will not work properly.");
                     SetMiscWarning(strMessage);
                     LogPrintf("*** %s\n", strMessage);
                     uiInterface.ThreadSafeMessageBox(strMessage, "", CClientUIInterface::MSG_WARNING);

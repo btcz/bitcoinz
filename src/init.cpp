@@ -192,7 +192,7 @@ void Shutdown()
     /// for example if the data directory was found to be locked.
     /// Be sure that anything that writes files or flushes caches only does this if the respective
     /// module was initialized.
-    RenameThread("zcash-shutoff");
+    RenameThread("bitcoinz-shutoff");
     mempool.AddTransactionsUpdated(1);
 
     StopHTTPRPC();
@@ -608,7 +608,7 @@ void CleanupBlockRevFiles()
 void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
 {
     const CChainParams& chainparams = Params();
-    RenameThread("zcash-loadblk");
+    RenameThread("bitcoinz-loadblk");
     // -reindex
     if (fReindex) {
         CImportingNow imp;
@@ -718,7 +718,7 @@ static void ZC_LoadParams(
         uiInterface.ThreadSafeMessageBox(strprintf(
             _("Cannot find the BitcoinZ network parameters in the following directory:\n"
               "%s\n"
-              "Please run 'zcash-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
+              "Please run 'bitcoinz-fetch-params' or './zcutil/fetch-params.sh' and then restart."),
                 ZC_GetParamsDir()),
             "", CClientUIInterface::MSG_ERROR);
         StartShutdown();

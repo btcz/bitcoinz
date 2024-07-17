@@ -138,7 +138,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             std::vector<JSOutPoint> vOutPoints = {sproutEntry.jsop};
             // Each migration transaction SHOULD specify an anchor at height N-10
             // for each Sprout JoinSplit description
-            // TODO: the above functionality (in comment) is not implemented in zcashd
+            // TODO: the above functionality (in comment) is not implemented in bitcoinzd
             uint256 inputAnchor;
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
             pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);

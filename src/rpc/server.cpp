@@ -469,9 +469,9 @@ std::string HelpExampleRpc(const std::string& methodname, const std::string& arg
 string experimentalDisabledHelpMsg(const string& rpc, const string& enableArg)
 {
     return "\nWARNING: " + rpc + " is disabled.\n"
-        "To enable it, restart zcashd with the -experimentalfeatures and\n"
+        "To enable it, restart bitcoinzd with the -experimentalfeatures and\n"
         "-" + enableArg + " commandline options, or add these two lines\n"
-        "to the zcash.conf file:\n\n"
+        "to the bitcoinz.conf file:\n\n"
         "experimentalfeatures=1\n"
         + enableArg + "=1\n";
 }

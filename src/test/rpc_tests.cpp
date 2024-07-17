@@ -366,28 +366,28 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
 {
     CheckRPCThrows("getaddressmempool \"a\"",
         "Error: getaddressmempool is disabled. "
-        "Run './zcash-cli help getaddressmempool' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getaddressmempool' for instructions on how to enable this feature.");
     CheckRPCThrows("getaddressutxos \"a\"",
         "Error: getaddressutxos is disabled. "
-        "Run './zcash-cli help getaddressutxos' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getaddressutxos' for instructions on how to enable this feature.");
     CheckRPCThrows("getaddressdeltas \"a\"",
         "Error: getaddressdeltas is disabled. "
-        "Run './zcash-cli help getaddressdeltas' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getaddressdeltas' for instructions on how to enable this feature.");
     CheckRPCThrows("getaddressbalance \"a\"",
         "Error: getaddressbalance is disabled. "
-        "Run './zcash-cli help getaddressbalance' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getaddressbalance' for instructions on how to enable this feature.");
     CheckRPCThrows("getaddresstxids \"a\"",
         "Error: getaddresstxids is disabled. "
-        "Run './zcash-cli help getaddresstxids' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getaddresstxids' for instructions on how to enable this feature.");
     CheckRPCThrows("getspentinfo {\"a\":1}",
         "Error: getspentinfo is disabled. "
-        "Run './zcash-cli help getspentinfo' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getspentinfo' for instructions on how to enable this feature.");
     CheckRPCThrows("getblockdeltas \"a\"",
         "Error: getblockdeltas is disabled. "
-        "Run './zcash-cli help getblockdeltas' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getblockdeltas' for instructions on how to enable this feature.");
     CheckRPCThrows("getblockhashes 0 0",
         "Error: getblockhashes is disabled. "
-        "Run './zcash-cli help getblockhashes' for instructions on how to enable this feature.");
+        "Run './bitcoinz-cli help getblockhashes' for instructions on how to enable this feature.");
 
     // During startup of the real system, fInsightExplorer ("-insightexplorer")
     // automatically enables the next three, but not here, must explicitly enable.

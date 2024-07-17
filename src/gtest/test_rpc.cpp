@@ -35,18 +35,18 @@ TEST(rpc, check_blockToJSON_returns_minified_solution) {
 // TEST(rpc, CheckExperimentalDisabledHelpMsg) {
 //     EXPECT_EQ(experimentalDisabledHelpMsg("somerpc", {"somevalue"}),
 //         "\nWARNING: somerpc is disabled.\n"
-//         "To enable it, restart zcashd with the following command line options:\n"
+//         "To enable it, restart bitcoinzd with the following command line options:\n"
 //         "-experimentalfeatures and -somevalue\n\n"
-//         "Alternatively add these two lines to the zcash.conf file:\n\n"
+//         "Alternatively add these two lines to the bitcoinz.conf file:\n\n"
 //         "experimentalfeatures=1\n"
 //         "somevalue=1\n");
 //     EXPECT_EQ(experimentalDisabledHelpMsg("somerpc", {"somevalue", "someothervalue"}),
 //         "\nWARNING: somerpc is disabled.\n"
-//         "To enable it, restart zcashd with the following command line options:\n"
+//         "To enable it, restart bitcoinzd with the following command line options:\n"
 //         "-experimentalfeatures and -somevalue"
 //         " or:\n-experimentalfeatures and -someothervalue"
 //         "\n\n"
-//         "Alternatively add these two lines to the zcash.conf file:\n\n"
+//         "Alternatively add these two lines to the bitcoinz.conf file:\n\n"
 //         "experimentalfeatures=1\n"
 //         "somevalue=1\n"
 //         "\nor:\n\n"
@@ -54,12 +54,12 @@ TEST(rpc, check_blockToJSON_returns_minified_solution) {
 //         "someothervalue=1\n");
 //     EXPECT_EQ(experimentalDisabledHelpMsg("somerpc", {"somevalue", "someothervalue", "athirdvalue"}),
 //         "\nWARNING: somerpc is disabled.\n"
-//         "To enable it, restart zcashd with the following command line options:\n"
+//         "To enable it, restart bitcoinzd with the following command line options:\n"
 //         "-experimentalfeatures and -somevalue"
 //         " or:\n-experimentalfeatures and -someothervalue"
 //         " or:\n-experimentalfeatures and -athirdvalue"
 //          "\n\n"
-//         "Alternatively add these two lines to the zcash.conf file:\n\n"
+//         "Alternatively add these two lines to the bitcoinz.conf file:\n\n"
 //         "experimentalfeatures=1\n"
 //         "somevalue=1\n"
 //         "\nor:\n\n"
