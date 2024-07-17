@@ -11,7 +11,10 @@ UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<
     // Send the transaction
     if (!testmode) {
         CWalletTx wtx(pwalletMain, tx);
-        pwalletMain->CommitTransaction(wtx, reservekey);
+        if (!pwalletMain->CommitTransaction(wtx, reservekey)) {
+            // More details in debug.log
+            throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: CommitTransaction failed");
+        }
         o.push_back(Pair("txid", tx.GetHash().ToString()));
     } else {
         // Test mode does not send the transaction to the network.
