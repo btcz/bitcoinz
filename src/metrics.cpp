@@ -110,6 +110,15 @@ double GetLocalSolPS()
     return miningTimer.rate(solutionTargetChecks);
 }
 
+std::string WhichNetwork()
+{
+    if (GetBoolArg("-regtest", false))
+        return "regtest";
+    if (GetBoolArg("-testnet", false))
+        return "testnet";
+    return "mainnet";
+}
+
 int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight, int64_t currentHeadersTime)
 {
     int64_t now = GetAdjustedTime();
@@ -462,7 +471,7 @@ void ThreadShowMetricsScreen()
 
         // Thank you text
         std::cout << _("BTCZ Node Version 2.0.8 (YODA) - Protocol 770008") << std::endl;
-        std::cout << _("Thank you for running a BitcoinZ node!") << std::endl;
+        std::cout << strprintf(_("Thank you for running a %s BitcoinZ node!"), WhichNetwork()) << std::endl;
         std::cout << _("You're helping to strengthen the network and contributing to a social good :)") << std::endl;
     }
 
