@@ -3888,12 +3888,6 @@ bool CheckBlockHeader(
         return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
                          REJECT_INVALID, "high-hash");
 
-    // Check timestamp is within the allowed window to help decrease effectiveness of timewarp attacks
-    int futureBlockTimeWindow = Params().GetFutureBlockTimeWindow(nHeight);
-    if (block.GetBlockTime() > GetAdjustedTime() + futureBlockTimeWindow)
-        return state.Invalid(error("CheckBlockHeader(): block timestamp too far in the future"),
-                             REJECT_INVALID, "time-too-new");
-
     return true;
 }
 
@@ -3991,6 +3985,12 @@ bool ContextualCheckBlockHeader(
     if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
         return state.Invalid(error("%s: block's timestamp is too early", __func__),
                              REJECT_INVALID, "time-too-old");
+
+    // Check timestamp is within the allowed window to help decrease effectiveness of timewarp attacks
+    int futureBlockTimeWindow = Params().GetFutureBlockTimeWindow(nHeight);
+    if (block.GetBlockTime() > GetAdjustedTime() + futureBlockTimeWindow)
+        return state.Invalid(error("%s: block timestamp too far in the future", __func__),
+                             REJECT_INVALID, "time-too-new");
 
     if (fCheckpointsEnabled)
     {
