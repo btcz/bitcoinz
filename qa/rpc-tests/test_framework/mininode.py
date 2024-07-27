@@ -1,6 +1,6 @@
 # mininode.py - Bitcoin P2P network half-a-node
 #
-# Distributed under the MIT/X11 software license, see the accompanying
+# Distributed under the MIT software license, see the accompanying
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 # This python code was modified from ArtForz' public domain  half-a-node, as

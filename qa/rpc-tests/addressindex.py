@@ -2,7 +2,7 @@
 # Copyright (c) 2020 The BitcoinZ Community
 # Copyright (c) 2019 The Zcash developers
 # Distributed under the MIT software license, see the accompanying
-# file COPYING or https://www.opensource.org/licenses/mit-license.php.
+# file COPYING or https://www.opensource.org/licenses/mit-license.php .
 #
 # Test addressindex generation and fetching for insightexplorer
 #
