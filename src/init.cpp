@@ -1888,11 +1888,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     StartNode(threadGroup, scheduler);
 
-    // Monitor the chain every minute, and alert if we get blocks much quicker or slower than expected.
-    //CScheduler::Function frecBlock = boost::bind(&PartitionCheck, &IsInitialBlockDownload,
-    //                                      boost::ref(cs_main), boost::cref(pindexBestHeader));
-    //scheduler.scheduleEvery(frecBlock, 60);
-
 #ifdef ENABLE_MINING
     // Generate coins in the background
     GenerateBitcoins(GetBoolArg("-gen", false), GetArg("-genproclimit", 1), chainparams);
