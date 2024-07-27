@@ -58,7 +58,7 @@ bitcoinz_gtest_SOURCES += \
 	wallet/gtest/test_wallet.cpp
 endif
 
-bitcoinz_gtest_CPPFLAGS = $(AM_CPPFLAGS) -DBINARY_OUTPUT -DCURVE_ALT_BN128 -DSTATIC $(BITCOIN_INCLUDES)
+bitcoinz_gtest_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES)
 bitcoinz_gtest_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 
 bitcoinz_gtest_LDADD = \
