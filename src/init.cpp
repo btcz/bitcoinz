@@ -819,7 +819,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     struct sigaction sa;
     sa.sa_handler = HandleSIGTERM;
     sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
+    sa.sa_flags = SA_RESTART;
     sigaction(SIGTERM, &sa, NULL);
     sigaction(SIGINT, &sa, NULL);
 
@@ -827,7 +827,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     struct sigaction sa_hup;
     sa_hup.sa_handler = HandleSIGHUP;
     sigemptyset(&sa_hup.sa_mask);
-    sa_hup.sa_flags = 0;
+    sa_hup.sa_flags = SA_RESTART;
     sigaction(SIGHUP, &sa_hup, NULL);
 
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
