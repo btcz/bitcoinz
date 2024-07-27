@@ -115,4 +115,3 @@ contrib/debian/substvars
 
 .idea/
 *.iml
-*.patch

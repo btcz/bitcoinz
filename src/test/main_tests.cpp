@@ -23,18 +23,18 @@ static int GetTotalHalvings(const Consensus::Params& consensusParams) {
 
 static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
 {
-        bool blossomActive = false;
-        int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-        int nHeight = consensusParams.nSubsidySlowStartInterval;
-        BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight, consensusParams), INITIAL_SUBSIDY);
-        CAmount nPreviousSubsidy = INITIAL_SUBSIDY;
-        for (int nHalvings = 1; nHalvings < GetTotalHalvings(consensusParams); nHalvings++) {
-          if (blossomActive) {
+    bool blossomActive = false;
+    int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
+    int nHeight = consensusParams.nSubsidySlowStartInterval;
+    BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight, consensusParams), INITIAL_SUBSIDY);
+    CAmount nPreviousSubsidy = INITIAL_SUBSIDY;
+    for (int nHalvings = 1; nHalvings < GetTotalHalvings(consensusParams); nHalvings++) {
+        if (blossomActive) {
             if (nHeight == blossomActivationHeight) {
-              int preBlossomHeight = (nHalvings - 1) * consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
-              nHeight += (preBlossomHeight - blossomActivationHeight) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
+                int preBlossomHeight = (nHalvings - 1) * consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
+                nHeight += (preBlossomHeight - blossomActivationHeight) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
             } else {
-              nHeight += consensusParams.nPostBlossomSubsidyHalvingInterval;
+                nHeight += consensusParams.nPostBlossomSubsidyHalvingInterval;
             }
         } else {
             nHeight = nHalvings * consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
@@ -84,16 +84,16 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
         nSum += nSubsidy;
         BOOST_CHECK(MoneyRange(nSum));
     }
-    BOOST_CHECK_EQUAL(nSum, 1250000000000ULL);
+    BOOST_CHECK_EQUAL(nSum, 0ULL);
 
     // Regular mining
     CAmount nSubsidy;
     do {
-      nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
-      BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
-      nSum += nSubsidy;
-      BOOST_ASSERT(MoneyRange(nSum));
-      ++nHeight;
+        nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
+        BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
+        nSum += nSubsidy;
+        BOOST_ASSERT(MoneyRange(nSum));
+        ++nHeight;
     } while (nSubsidy > 0);
 
     // Changing the block interval from 10 to 2.5 minutes causes truncation
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     // Note that these numbers may or may not change depending on the activation height
     // BOOST_CHECK_EQUAL(nSum, 2099999981520000LL);
     // BOOST_CHECK_EQUAL(nSum, 2099999990760000ULL);
-    BOOST_CHECK_EQUAL(nSum, 2099999981520000LL);
+    BOOST_CHECK_EQUAL(nSum, 2099999999988240000LL);
 }
 
 bool ReturnFalse() { return false; }

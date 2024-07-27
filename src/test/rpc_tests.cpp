@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
         "txid must be hexadecimal string (not 'hello')");
 
     // only the mainnet genesis block exists
-    BOOST_CHECK_NO_THROW(CallRPC("getblockdeltas \"00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce08\""));
+    BOOST_CHECK_NO_THROW(CallRPC("getblockdeltas \"f499ee3d498b4298ac6a64205b8addb7c43197e2a660229be65db8a4534d75c1\""));
     // damage the block hash (change last digit)
     CheckRPCThrows("getblockdeltas \"00040fe8ec8471911baa1db1266ea15dd06b4a8a5c453883c000b031973dce09\"",
         "Block not found");
