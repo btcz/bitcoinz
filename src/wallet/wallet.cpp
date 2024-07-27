@@ -2730,8 +2730,10 @@ void CWallet::WitnessNoteCommitment(std::vector<uint256> commitments,
                                     std::vector<std::optional<SproutWitness>>& witnesses,
                                     uint256 &final_anchor)
 {
-    witnesses.resize(commitments.size());
+    AssertLockHeld(cs_main);
     CBlockIndex* pindex = chainActive.Genesis();
+
+    witnesses.resize(commitments.size());
     SproutMerkleTree tree;
 
     while (pindex) {
@@ -3613,7 +3615,10 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
 
     wtxNew.fTimeReceivedIsTxTime = true;
     wtxNew.BindWallet(this);
+
+    LOCK(cs_main);
     int nextBlockHeight = chainActive.Height() + 1;
+
     CMutableTransaction txNew = CreateNewContextualCMutableTransaction(
         Params().GetConsensus(), nextBlockHeight);
 
@@ -3653,7 +3658,8 @@ bool CWallet::CreateTransaction(const vector<CRecipient>& vecSend, CWalletTx& wt
     assert(txNew.nLockTime < LOCKTIME_THRESHOLD);
 
     {
-        LOCK2(cs_main, cs_wallet);
+        // cs_main already taken above
+        LOCK(cs_wallet);
         {
             nFeeRet = 0;
             while (true)
@@ -4601,6 +4607,7 @@ public:
 };
 
 void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
+    AssertLockHeld(cs_main); // chainActive
     AssertLockHeld(cs_wallet); // mapKeyMetadata
     mapKeyBirth.clear();
 
