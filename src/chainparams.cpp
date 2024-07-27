@@ -843,5 +843,5 @@ int CChainParams::GetFutureBlockTimeWindow(int height) const {
             return i.second * 60;
         }
     }
-    return 2 * 60 * 60;
+    return MAX_FUTURE_BLOCK_TIME;
 }
