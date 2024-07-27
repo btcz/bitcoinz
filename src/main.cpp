@@ -3986,11 +3986,13 @@ bool ContextualCheckBlockHeader(
         return state.Invalid(error("%s: block's timestamp is too early", __func__),
                              REJECT_INVALID, "time-too-old");
 
-    // Check timestamp is within the allowed window to help decrease effectiveness of timewarp attacks
-    int futureBlockTimeWindow = Params().GetFutureBlockTimeWindow(nHeight);
-    if (block.GetBlockTime() > GetAdjustedTime() + futureBlockTimeWindow)
-        return state.Invalid(error("%s: block timestamp too far in the future", __func__),
+    // Check timestamp
+    auto nTimeLimit = GetAdjustedTime() + Params().GetFutureBlockTimeWindow(nHeight);
+    if (block.GetBlockTime() > nTimeLimit) {
+        return state.Invalid(error("%s: block at height %d, timestamp %d is too far ahead of local time, limit is %d",
+                                   __func__, nHeight, block.GetBlockTime(), nTimeLimit),
                              REJECT_INVALID, "time-too-new");
+    }
 
     if (fCheckpointsEnabled)
     {
