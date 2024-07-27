@@ -8,10 +8,15 @@ Build-Depends: autoconf, automake, bsdmainutils, build-essential,
  m4, ncurses-dev, pkg-config, python,
  unzip, wget, zlib1g-dev
 Vcs-Git: https://github.com/btcz/bitcoinz.git
-Vcs-Browser: https://github.com/btcz
+Vcs-Browser: https://github.com/btcz/bitcoinz
 
 Package: bitcoinz
-Version: 1.4.0
+Architecture: amd64
 Depends: ${shlibs:Depends}
-Architecture: all
-Description: BitcoinZ is a decentralized community project based on the Bitcoin and Zcash codebase.
+Description: BitcoinZ libraries and tools
+ Based on Bitcoin's code, it intends to offer a far higher standard
+ of privacy and anonymity through a sophisticiated zero-knowledge
+ proving scheme which preserves confidentiality of transaction metadata.
+ Think of it as HTTPS for money.
+ This package provides the daemon, bitcoinzd, and the CLI tool,
+ bitcoinz-cli, to interact with the daemon.
