@@ -3787,22 +3787,27 @@ bool CheckBlockHeader(
     bool fCheckPOW)
 {
     unsigned int nHeight = chainActive.Height();
-    const CChainParams& chainParams = Params();
+    auto consensusParams = chainparams.GetConsensus();
 
     // Check block version
     if (block.nVersion < MIN_BLOCK_VERSION)
         return state.DoS(100, error("CheckBlockHeader(): block version too low"),
                          REJECT_INVALID, "version-too-low");
 
-    // Check Equihash solution is valid
-    if (fCheckPOW && !CheckEquihashSolution(&block, chainparams.GetConsensus()))
-        return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
-                         REJECT_INVALID, "invalid-solution");
+    // Check Equihash solution is valid. The main check is in ContextualCheckBlockHeader,
+    // because we currently need to know the block height. That function skips the genesis
+    // block because it has no previous block, so we check it specifically here.
+    if (block.GetHash() != consensusParams.hashGenesisBlock) {
+        // Check Equihash solution is valid
+        if (fCheckPOW && !CheckEquihashSolution(&block, chainparams.GetConsensus()))
+            return state.DoS(100, error("CheckBlockHeader(): Equihash solution invalid"),
+                             REJECT_INVALID, "invalid-solution");
 
-    // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus()))
-        return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
-                         REJECT_INVALID, "high-hash");
+        // Check proof of work matches claimed amount
+        if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, chainparams.GetConsensus()))
+            return state.DoS(50, error("CheckBlockHeader(): proof of work failed"),
+                             REJECT_INVALID, "high-hash");
+    }
 
     return true;
 }
