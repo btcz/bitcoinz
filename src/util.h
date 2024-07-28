@@ -49,10 +49,6 @@ extern std::atomic<bool> fReopenDebugLog;
 extern const char * const BITCOIN_CONF_FILENAME;
 extern const char * const BITCOIN_PID_FILENAME;
 
-static const bool DEFAULT_SELFSIGNED_ROOTCERTS = false;
-static const bool DEFAULT_CHOOSE_DATADIR = false;
-static const bool DEFAULT_SPLASHSCREEN = true;
-
 /** Translate a message to the native language of the user. */
 const extern std::function<std::string(const char*)> G_TRANSLATION_FUN;
 
