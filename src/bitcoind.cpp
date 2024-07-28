@@ -101,7 +101,7 @@ bool AppInit(int argc, char* argv[])
         }
         try
         {
-            ReadConfigFile(mapArgs, mapMultiArgs);
+            ReadConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME), mapArgs, mapMultiArgs);
         } catch (const missing_zcash_conf& e) {
             fprintf(stderr,
                 (_("Before starting bitcoinzd, you need to create a configuration file:\n"
@@ -116,7 +116,7 @@ bool AppInit(int argc, char* argv[])
                    "depending on how you installed BitcoinZ:\n") +
                  _("- Source code:  %s\n"
                    "- .deb package: %s\n")).c_str(),
-                GetConfigFile().string().c_str(),
+                GetConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME)).string().c_str(),
                 "contrib/debian/examples/bitcoinz.conf",
                 "/usr/share/doc/bitcoinz/examples/bitcoinz.conf");
             return false;
