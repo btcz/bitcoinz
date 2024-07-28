@@ -44,7 +44,7 @@
  * 2. Set the GENERATE_ALERTS_FLAG to true.
  *
  * 3. Build and run:
- *    test_bitcoin -t Generate_Alert_Test_Data
+ *    test_bitcoinz -t Generate_Alert_Test_Data
  *
  * 4. Test data is saved in your current directory as alertTests.raw.NEW
  *    Copy this file to: src/test/data/alertTests.raw
@@ -57,7 +57,7 @@
  *    - Remove your private key from alertkeys.h
  *
  * 6. Build and verify the new test data:
- *    test_bitcoin -t Alert_tests
+ *    test_bitcoinz -t Alert_tests
  *
  */
 #define GENERATE_ALERTS_FLAG false
@@ -174,6 +174,14 @@ void GenerateAlertTests()
     alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0";
     SignAndSerialize(alert, sBuffer);
 
+    alert.setSubVer.insert(std::string("/MagicBean:0.2.1(foo)/"));
+    alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0, 0.2.1(foo)";
+    SignAndSerialize(alert, sBuffer);
+
+    alert.setSubVer.insert(std::string("/MagicBean:0.2.1/"));
+    alert.strStatusBar  = "Alert 1 for MagicBean 0.1.0, 0.2.0, 0.2.1(foo), 0.2.1";
+    SignAndSerialize(alert, sBuffer);
+
     alert.setSubVer.clear();
     ++alert.nID;
     alert.nCancel = 1;
@@ -278,8 +286,6 @@ struct ReadAlerts : public TestingSetup
     std::vector<CAlert> alerts;
 };
 
-/* Alerts disabled
-
 BOOST_FIXTURE_TEST_SUITE(Alert_tests, ReadAlerts)
 
 
@@ -306,6 +312,15 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
     BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.1.0/"));
     BOOST_CHECK(alerts[2].AppliesTo(1, "/MagicBean:0.2.0/"));
 
+    BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[3].AppliesTo(1, "/MagicBean:0.2.1(foo)/"));
+
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.2.0/"));
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.2.1(foo)/"));
+    BOOST_CHECK(alerts[4].AppliesTo(1, "/MagicBean:0.2.1/"));
+
     // Don't match:
     BOOST_CHECK(!alerts[0].AppliesTo(-1, ""));
     BOOST_CHECK(!alerts[0].AppliesTo(999002, ""));
@@ -316,9 +331,16 @@ BOOST_AUTO_TEST_CASE(AlertApplies)
     BOOST_CHECK(!alerts[1].AppliesTo(1, "MagicBean:0.1.0/"));
     BOOST_CHECK(!alerts[1].AppliesTo(-1, "/MagicBean:0.1.0/"));
     BOOST_CHECK(!alerts[1].AppliesTo(999002, "/MagicBean:0.1.0/"));
+    BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.1.0/FlowerPot:0.0.1/"));
     BOOST_CHECK(!alerts[1].AppliesTo(1, "/MagicBean:0.2.0/"));
 
+    // SubVer with comment doesn't match SubVer pattern without
+    BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.2.0(foo)/"));
+    BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.2.1/"));
     BOOST_CHECK(!alerts[2].AppliesTo(1, "/MagicBean:0.3.0/"));
+
+    // SubVer without comment doesn't match SubVer pattern with
+    BOOST_CHECK(!alerts[3].AppliesTo(1, "/MagicBean:0.2.1/"));
 
     SetMockTime(0);
 }
@@ -373,13 +395,13 @@ BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
     BOOST_CHECK_EQUAL(GetWarnings("rpc"), "");
 
     // First alert should disable RPC
-    alerts[5].ProcessAlert(alertKey, false);
-    BOOST_CHECK_EQUAL(alerts[5].strRPCError, "RPC disabled");
+    alerts[7].ProcessAlert(alertKey, false);
+    BOOST_CHECK_EQUAL(alerts[7].strRPCError, "RPC disabled");
     BOOST_CHECK_EQUAL(GetWarnings("rpc"), "RPC disabled");
 
     // Second alert should re-enable RPC
-    alerts[6].ProcessAlert(alertKey, false);
-    BOOST_CHECK_EQUAL(alerts[6].strRPCError, "");
+    alerts[8].ProcessAlert(alertKey, false);
+    BOOST_CHECK_EQUAL(alerts[8].strRPCError, "");
     BOOST_CHECK_EQUAL(GetWarnings("rpc"), "");
 
     SetMockTime(0);
@@ -389,7 +411,5 @@ BOOST_AUTO_TEST_CASE(AlertDisablesRPC)
 static bool falseFunc(const CChainParams&) { return false; }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-*/
 
 #endif
