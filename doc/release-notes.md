@@ -76,3 +76,11 @@ This change has several implications:
 - Starting from this release, the circuit parameters from the original Sprout
   MPC are no longer required to start `bitcoinzd`, and will not be downloaded by
   `fetch-params.sh`. They are not being automatically deleted at this time.
+
+Option parsing behavior
+-----------------------
+
+Command line options are now parsed strictly in the order in which they are
+specified. It used to be the case that `-X -noX` ends up, unintuitively, with X
+set, as `-X` had precedence over `-noX`. This is no longer the case. Like for
+other software, the last specified value for an option will hold.
