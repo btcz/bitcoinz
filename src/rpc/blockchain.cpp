@@ -8,6 +8,7 @@
 #include "chainparams.h"
 #include "checkpoints.h"
 #include "consensus/validation.h"
+#include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
 #include "primitives/transaction.h"
@@ -407,11 +408,9 @@ UniValue getrawmempool(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getblockdeltas(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool enabled = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!enabled) {
-        disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockdeltas", "insightexplorer");
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -464,7 +463,7 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getblockdeltas", "\"00227e566682aebd6a7a5b772c96d7a999cadaebeaf1ce96f4191a3aad58b00b\"")
         );
 
-    if (!enabled) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockdeltas is disabled. "
             "Run './bitcoinz-cli help getblockdeltas' for instructions on how to enable this feature.");
     }
@@ -492,11 +491,9 @@ UniValue getblockdeltas(const UniValue& params, bool fHelp)
 // insightexplorer
 UniValue getblockhashes(const UniValue& params, bool fHelp)
 {
-    std::string enableArg = "insightexplorer";
-    bool fEnableGetBlockHashes = fExperimentalMode && fInsightExplorer;
     std::string disabledMsg = "";
-    if (!fEnableGetBlockHashes) {
-        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", enableArg);
+    if (!fExperimentalInsightExplorer) {
+        disabledMsg = experimentalDisabledHelpMsg("getblockhashes", "insightexplorer");
     }
     if (fHelp || params.size() < 2)
         throw runtime_error(
@@ -529,7 +526,7 @@ UniValue getblockhashes(const UniValue& params, bool fHelp)
             + HelpExampleCli("getblockhashes", "1558141697 1558141576 '{\"noOrphans\":false, \"logicalTimes\":true}'")
             );
 
-    if (!fEnableGetBlockHashes) {
+    if (!fExperimentalInsightExplorer) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getblockhashes is disabled. "
             "Run './bitcoinz-cli help getblockhashes' for instructions on how to enable this feature.");
     }

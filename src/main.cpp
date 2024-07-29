@@ -16,6 +16,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "deprecation.h"
+#include "experimental_features.h"
 #include "init.h"
 #include "merkleblock.h"
 #include "metrics.h"
@@ -65,11 +66,9 @@ static int64_t nTimeBestReceived = 0;
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
-bool fExperimentalMode = false;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
-bool fInsightExplorer = false;  // insightexplorer
 bool fAddressIndex = false;     // insightexplorer
 bool fSpentIndex = false;       // insightexplorer
 bool fTimestampIndex = false;   // insightexplorer
@@ -3575,7 +3574,7 @@ void FallbackSproutValuePoolBalance(
     }
 
     // When developer option -developersetpoolsizezero is enabled, we don't need a fallback balance.
-    if (fExperimentalMode && mapArgs.count("-developersetpoolsizezero")) {
+    if (fExperimentalDeveloperSetPoolSizeZero) {
         return;
     }
 
@@ -4402,7 +4401,7 @@ bool static LoadBlockIndexDB()
             // If developer option -developersetpoolsizezero has been enabled,
             // override and set the in-memory size of shielded pools to zero.  An unshielding transaction
             // can then be used to trigger and test the handling of turnstile violations.
-            if (fExperimentalMode && mapArgs.count("-developersetpoolsizezero")) {
+            if (fExperimentalDeveloperSetPoolSizeZero) {
                 pindex->nChainSproutValue = 0;
                 pindex->nChainSaplingValue = 0;
             }
@@ -4481,6 +4480,7 @@ bool static LoadBlockIndexDB()
 
     // insightexplorer
     // Check whether block explorer features are enabled
+    bool fInsightExplorer = false;
     pblocktree->ReadFlag("insightexplorer", fInsightExplorer);
     LogPrintf("%s: insight explorer %s\n", __func__, fInsightExplorer ? "enabled" : "disabled");
     fAddressIndex = fInsightExplorer;
@@ -4828,11 +4828,10 @@ bool InitBlockIndex(const CChainParams& chainparams) {
     pblocktree->WriteFlag("txindex", fTxIndex);
 
     // Use the provided setting for -insightexplorer in the new database
-    fInsightExplorer = GetBoolArg("-insightexplorer", false);
-    pblocktree->WriteFlag("insightexplorer", fInsightExplorer);
-    fAddressIndex = fInsightExplorer;
-    fSpentIndex = fInsightExplorer;
-    fTimestampIndex = fInsightExplorer;
+    pblocktree->WriteFlag("insightexplorer", fExperimentalInsightExplorer);
+    fAddressIndex = fExperimentalInsightExplorer;
+    fSpentIndex = fExperimentalInsightExplorer;
+    fTimestampIndex = fExperimentalInsightExplorer;
 
     LogPrintf("Initializing databases...\n");
 

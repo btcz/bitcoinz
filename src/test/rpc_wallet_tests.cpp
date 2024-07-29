@@ -5,6 +5,7 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
 #include "wallet/wallet.h"
@@ -1698,7 +1699,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
         "Error: z_mergetoaddress is disabled. Run './bitcoinz-cli help z_mergetoaddress' for instructions on how to enable this feature.");
 
     // Set global state required for z_mergetoaddress
-    fExperimentalMode = true;
+    fExperimentalMergeToAddress = true;
     mapArgs["-zmergetoaddress"] = "1";
 
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
@@ -1842,7 +1843,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     }
 
     // Un-set global state
-    fExperimentalMode = false;
+    fExperimentalMergeToAddress = false;
     mapArgs.erase("-zmergetoaddress");
 }
 
