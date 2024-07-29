@@ -31,27 +31,27 @@ TEST(ConsensusTests, LibsodiumPubkeyValidation) {
     // little-endian order, as in Ed25519).
     TestLibsodiumEd25519SignatureVerification(
         "Test vector 1",
-        "bitcoinz ed25519 libsodium compatibility",
+        "zcash ed25519 libsodium compatibility",
         ParseHex("0100000000000000000000000000000000000000000000000000000000000000"),
         ParseHex("58666666666666666666666666666666666666666666666666666666666666660100000000000000000000000000000000000000000000000000000000000000"));
     TestLibsodiumEd25519SignatureVerification(
         "Test vector 2",
-        "bitcoinz ed25519 libsodium compatibility",
+        "zcash ed25519 libsodium compatibility",
         ParseHex("0000000000000000000000000000000000000000000000000000000000000080"),
         ParseHex("58666666666666666666666666666666666666666666666666666666666666660100000000000000000000000000000000000000000000000000000000000000"));
     TestLibsodiumEd25519SignatureVerification(
         "Test vector 3",
-        "bitcoinz ed25519 libsodium compatibility",
+        "zcash ed25519 libsodium compatibility",
         ParseHex("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85"),
         ParseHex("da99e28ba529cdde35a25fba9059e78ecaee239f99755b9b1aa4f65df00803e20100000000000000000000000000000000000000000000000000000000000000"));
     TestLibsodiumEd25519SignatureVerification(
         "Test vector 4",
-        "bitcoinz ed25519 libsodium compatibility",
+        "zcash ed25519 libsodium compatibility",
         ParseHex("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a"),
         ParseHex("95999999999999999999999999999999999999999999999999999999999999990100000000000000000000000000000000000000000000000000000000000000"));
     TestLibsodiumEd25519SignatureVerification(
         "Test vector 5",
-        "bitcoinz ed25519 libsodium compatibility",
+        "zcash ed25519 libsodium compatibility",
         ParseHex("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85"),
         ParseHex("13661d745ad63221ca5da0456fa618713511dc60668aa464e55b09a20ff7fc1d0100000000000000000000000000000000000000000000000000000000000000"));
 
@@ -63,7 +63,7 @@ TEST(ConsensusTests, LibsodiumPubkeyValidation) {
     // subgroup, that satisfies R = [0] B - [k] A and also evades the blocklist.
     TestLibsodiumEd25519SignatureVerification(
         "Small order R that is not rejected by libsodium <= 1.0.15",
-        "bitcoinz ed25519 libsodium compatibility",
+        "zcash ed25519 libsodium compatibility",
         ParseHex("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a"),
         ParseHex("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc850000000000000000000000000000000000000000000000000000000000000000"));
 }
