@@ -5,6 +5,7 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
+#include "consensus/merkle.h"
 #include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
@@ -1355,7 +1356,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
     CBlock block;
     block.hashPrevBlock = chainActive.Tip()->GetBlockHash();
     block.vtx.push_back(wtx);
-    block.hashMerkleRoot = block.BuildMerkleTree();
+    block.hashMerkleRoot = BlockMerkleRoot(block);
     auto blockHash = block.GetHash();
     CBlockIndex fakeIndex {block};
     fakeIndex.nHeight = 1;
@@ -2036,7 +2037,7 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
         BOOST_CHECK_EQUAL(height, chainActive.Height());
         CBlock block;
         if (has_trx) block.vtx.push_back(wtx);
-        block.hashMerkleRoot = block.BuildMerkleTree();
+        block.hashMerkleRoot = BlockMerkleRoot(block);
         auto blockHash = block.GetHash();
         CBlockIndex fakeIndex {block};
         fakeIndex.nHeight = height+1;

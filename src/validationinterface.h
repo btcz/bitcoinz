@@ -13,6 +13,12 @@
 
 #include "zcash/IncrementalMerkleTree.hpp"
 
+/**
+ * Limit on the maximum number of blocks that will be staged for
+ * scanning before an interrupt will be handled.
+ */
+static const size_t WALLET_NOTIFY_MAX_BLOCKS = 1000;
+
 class CBlock;
 class CBlockIndex;
 struct CBlockLocator;

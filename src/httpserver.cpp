@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h>
+#include <future>
 
 #include <event2/event.h>
 #include <event2/http.h>
@@ -35,15 +36,15 @@
 #endif
 #endif
 
-#include <boost/algorithm/string/case_conv.hpp> // for to_lower()
-#include <boost/scoped_ptr.hpp>
+/** Maximum size of http request (request line + headers) */
+static const size_t MAX_HEADERS_SIZE = 8192;
 
 /** HTTP request work item */
 class HTTPWorkItem : public HTTPClosure
 {
 public:
-    HTTPWorkItem(HTTPRequest* req, const std::string &path, const HTTPRequestHandler& func):
-        req(req), path(path), func(func)
+    HTTPWorkItem(std::unique_ptr<HTTPRequest> req, const std::string &path, const HTTPRequestHandler& func):
+        req(std::move(req)), path(path), func(func)
     {
     }
     void operator()()
@@ -51,7 +52,7 @@ public:
         func(req.get(), path);
     }
 
-    boost::scoped_ptr<HTTPRequest> req;
+    std::unique_ptr<HTTPRequest> req;
 
 private:
     std::string path;
@@ -66,10 +67,9 @@ class WorkQueue
 {
 private:
     /** Mutex protects entire object */
-    CWaitableCriticalSection cs;
-    CConditionVariable cond;
-    /* XXX in C++11 we can use std::unique_ptr here and avoid manual cleanup */
-    std::deque<WorkItem*> queue;
+    std::mutex cs;
+    std::condition_variable cond;
+    std::deque<std::unique_ptr<WorkItem>> queue;
     bool running;
     size_t maxDepth;
     int numThreads;
@@ -81,12 +81,12 @@ private:
         WorkQueue &wq;
         ThreadCounter(WorkQueue &w): wq(w)
         {
-            boost::lock_guard<boost::mutex> lock(wq.cs);
+            std::lock_guard<std::mutex> lock(wq.cs);
             wq.numThreads += 1;
         }
         ~ThreadCounter()
         {
-            boost::lock_guard<boost::mutex> lock(wq.cs);
+            std::lock_guard<std::mutex> lock(wq.cs);
             wq.numThreads -= 1;
             wq.cond.notify_all();
         }
@@ -98,24 +98,20 @@ public:
                                  numThreads(0)
     {
     }
-    /*( Precondition: worker threads have all stopped
+    /** Precondition: worker threads have all stopped
      * (call WaitExit)
      */
     ~WorkQueue()
     {
-        while (!queue.empty()) {
-            delete queue.front();
-            queue.pop_front();
-        }
     }
     /** Enqueue a work item */
     bool Enqueue(WorkItem* item)
     {
-        boost::unique_lock<boost::mutex> lock(cs);
+        std::unique_lock<std::mutex> lock(cs);
         if (queue.size() >= maxDepth) {
             return false;
         }
-        queue.push_back(item);
+        queue.emplace_back(std::unique_ptr<WorkItem>(item));
         cond.notify_one();
         return true;
     }
@@ -124,31 +120,30 @@ public:
     {
         ThreadCounter count(*this);
         while (running) {
-            WorkItem* i = 0;
+            std::unique_ptr<WorkItem> i;
             {
-                boost::unique_lock<boost::mutex> lock(cs);
+                std::unique_lock<std::mutex> lock(cs);
                 while (running && queue.empty())
                     cond.wait(lock);
                 if (!running)
                     break;
-                i = queue.front();
+                i = std::move(queue.front());
                 queue.pop_front();
             }
             (*i)();
-            delete i;
         }
     }
     /** Interrupt and exit loops */
     void Interrupt()
     {
-        boost::unique_lock<boost::mutex> lock(cs);
+        std::unique_lock<std::mutex> lock(cs);
         running = false;
         cond.notify_all();
     }
     /** Wait for worker threads to exit */
     void WaitExit()
     {
-        boost::unique_lock<boost::mutex> lock(cs);
+        std::unique_lock<std::mutex> lock(cs);
         while (numThreads > 0)
             cond.wait(lock);
     }
@@ -156,7 +151,7 @@ public:
     /** Return current depth of queue */
     size_t Depth()
     {
-        boost::unique_lock<boost::mutex> lock(cs);
+        std::unique_lock<std::mutex> lock(cs);
         return queue.size();
     }
 };
@@ -285,12 +280,15 @@ static void http_request_cb(struct evhttp_request* req, void* arg)
 
     // Dispatch to worker thread
     if (i != iend) {
-        std::unique_ptr<HTTPWorkItem> item(new HTTPWorkItem(hreq.release(), path, i->handler));
+        std::unique_ptr<HTTPWorkItem> item(new HTTPWorkItem(std::move(hreq), path, i->handler));
         assert(workQueue);
         if (workQueue->Enqueue(item.get()))
+        {
             item.release(); /* if true, queue took ownership */
-        else
+        } else {
+            LogPrintf("WARNING: request rejected because http work queue depth exceeded, it can be increased with the -rpcworkqueue= setting\n");
             item->req->WriteReply(HTTP_SERVICE_UNAVAILABLE, "Work queue depth exceeded");
+        }
     } else {
         hreq->WriteReply(HTTP_NOTFOUND);
     }
@@ -304,13 +302,14 @@ static void http_reject_request_cb(struct evhttp_request* req, void*)
 }
 
 /** Event dispatcher thread */
-static void ThreadHTTP(struct event_base* base, struct evhttp* http)
+static bool ThreadHTTP(struct event_base* base, struct evhttp* http)
 {
     RenameThread("bitcoinz-http");
     LogPrint("http", "Entering http event loop\n");
     event_base_dispatch(base);
     // Event loop will be interrupted by InterruptHTTPServer()
     LogPrint("http", "Exited http event loop\n");
+    return event_base_got_break(base) == 0;
 }
 
 /** Bind HTTP server to specified addresses */
@@ -418,6 +417,7 @@ bool InitHTTPServer()
     }
 
     evhttp_set_timeout(http, GetArg("-rpcservertimeout", DEFAULT_HTTP_SERVER_TIMEOUT));
+    evhttp_set_max_headers_size(http, MAX_HEADERS_SIZE);
     evhttp_set_max_body_size(http, MAX_SIZE);
     evhttp_set_gencb(http, http_request_cb, NULL);
 
@@ -438,17 +438,20 @@ bool InitHTTPServer()
     return true;
 }
 
-boost::thread threadHTTP;
+std::thread threadHTTP;
+std::future<bool> threadResult;
 
 bool StartHTTPServer()
 {
     LogPrint("http", "Starting HTTP server\n");
     int rpcThreads = std::max((long)GetArg("-rpcthreads", DEFAULT_HTTP_THREADS), 1L);
     LogPrintf("HTTP: starting %d worker threads\n", rpcThreads);
-    threadHTTP = boost::thread(boost::bind(&ThreadHTTP, eventBase, eventHTTP));
+    std::packaged_task<bool(event_base*, evhttp*)> task(ThreadHTTP);
+    threadResult = task.get_future();
+    threadHTTP = std::thread(std::move(task), eventBase, eventHTTP);
 
     for (int i = 0; i < rpcThreads; i++) {
-        boost::thread rpc_worker(HTTPWorkQueueRun, workQueue);
+        std::thread rpc_worker(HTTPWorkQueueRun, workQueue);
         rpc_worker.detach();
     }
     return true;
@@ -487,11 +490,11 @@ void StopHTTPServer()
         // master that appears to be solved, so in the future that solution
         // could be used again (if desirable).
         // (see discussion in https://github.com/bitcoin/bitcoin/pull/6990)
-        if (!threadHTTP.try_join_for(boost::chrono::milliseconds(2000))) {
+        if (threadResult.valid() && threadResult.wait_for(std::chrono::milliseconds(2000)) == std::future_status::timeout) {
             LogPrintf("HTTP event loop did not exit within allotted time, sending loopbreak\n");
             event_base_loopbreak(eventBase);
-            threadHTTP.join();
         }
+        threadHTTP.join();
     }
     if (eventHTTP) {
         evhttp_free(eventHTTP);
@@ -600,7 +603,7 @@ void HTTPRequest::WriteReply(int nStatus, const std::string& strReply)
     assert(evb);
     evbuffer_add(evb, strReply.data(), strReply.size());
     HTTPEvent* ev = new HTTPEvent(eventBase, true,
-        boost::bind(evhttp_send_reply, req, nStatus, (const char*)NULL, (struct evbuffer *)NULL));
+        std::bind(evhttp_send_reply, req, nStatus, (const char*)NULL, (struct evbuffer *)NULL));
     ev->trigger(0);
     replySent = true;
     req = 0; // transferred back to main thread
@@ -665,4 +668,3 @@ void UnregisterHTTPHandler(const std::string &prefix, bool exactMatch)
         pathHandlers.erase(i);
     }
 }
-

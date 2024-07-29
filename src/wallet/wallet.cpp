@@ -1817,9 +1817,8 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn, bool fFromLoadWallet, CWalletD
                 wtx.hashBlock = wtxIn.hashBlock;
                 fUpdated = true;
             }
-            if (wtxIn.nIndex != -1 && (wtxIn.vMerkleBranch != wtx.vMerkleBranch || wtxIn.nIndex != wtx.nIndex))
+            if (wtxIn.nIndex != -1 && (wtxIn.nIndex != wtx.nIndex))
             {
-                wtx.vMerkleBranch = wtxIn.vMerkleBranch;
                 wtx.nIndex = wtxIn.nIndex;
                 fUpdated = true;
             }
@@ -1867,11 +1866,13 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         auto tmp = wtxIn.mapSproutNoteData;
         // Ensure we keep any cached witnesses we may already have
         for (const std::pair <JSOutPoint, SproutNoteData> nd : wtx.mapSproutNoteData) {
-            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-                tmp.at(nd.first).witnesses.assign(
-                        nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            if (tmp.count(nd.first)) {
+                if (nd.second.witnesses.size() > 0) {
+                    tmp.at(nd.first).witnesses.assign(
+                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+                }
+                tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
             }
-            tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
         }
         // Now copy over the updated note data
         wtx.mapSproutNoteData = tmp;
@@ -1883,11 +1884,13 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
         // Ensure we keep any cached witnesses we may already have
 
         for (const std::pair <SaplingOutPoint, SaplingNoteData> nd : wtx.mapSaplingNoteData) {
-            if (tmp.count(nd.first) && nd.second.witnesses.size() > 0) {
-                tmp.at(nd.first).witnesses.assign(
-                        nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+            if (tmp.count(nd.first)) {
+                if (nd.second.witnesses.size() > 0) {
+                    tmp.at(nd.first).witnesses.assign(
+                            nd.second.witnesses.cbegin(), nd.second.witnesses.cend());
+                }
+                tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
             }
-            tmp.at(nd.first).witnessHeight = nd.second.witnessHeight;
         }
 
         // Now copy over the updated note data
@@ -4760,7 +4763,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("Fee (in %s/kB) to add to transactions you send (default: %s)"),
                                                             CURRENCY_UNIT, FormatMoney(payTxFee.GetFeePerK())));
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions on startup"));
-    strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup"));
+    strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup (implies -rescan)"));
     strUsage += HelpMessageOpt("-sendfreetransactions", strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), DEFAULT_SEND_FREE_TRANSACTIONS));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), DEFAULT_TX_CONFIRM_TARGET));
@@ -4879,6 +4882,9 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     RegisterValidationInterface(walletInstance);
 
+    // chainActive.Genesis() may return null; in this case, we want rescanning
+    // to happen automatically as a consequence of the genesis block (and subsequent
+    // blocks) being added to the chain.
     CBlockIndex *pindexRescan = chainActive.Tip();
     if (clearWitnessCaches || GetBoolArg("-rescan", false))
     {
@@ -5055,13 +5061,9 @@ void CMerkleTx::SetMerkleBranch(const CBlock& block)
             break;
     if (nIndex == (int)block.vtx.size())
     {
-        vMerkleBranch.clear();
         nIndex = -1;
         LogPrintf("ERROR: SetMerkleBranch(): couldn't find tx in block\n");
     }
-
-    // Fill in merkle branch
-    vMerkleBranch = block.GetMerkleBranch(nIndex);
 }
 
 int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const
@@ -5077,14 +5079,6 @@ int CMerkleTx::GetDepthInMainChainINTERNAL(const CBlockIndex* &pindexRet) const
     CBlockIndex* pindex = (*mi).second;
     if (!pindex || !chainActive.Contains(pindex))
         return 0;
-
-    // Make sure the merkle branch connects to this block
-    if (!fMerkleVerified)
-    {
-        if (CBlock::CheckMerkleBranch(GetHash(), vMerkleBranch, nIndex) != pindex->hashMerkleRoot)
-            return 0;
-        fMerkleVerified = true;
-    }
 
     pindexRet = pindex;
     return chainActive.Height() - pindex->nHeight + 1;
