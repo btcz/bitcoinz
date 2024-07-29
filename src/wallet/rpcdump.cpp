@@ -160,19 +160,19 @@ void ImportScript(const CScript& script, const string& strLabel, bool isRedeemSc
     if (!pwalletMain->HaveWatchOnly(script) && !pwalletMain->AddWatchOnly(script))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
 
-        if (isRedeemScript) {
-            const CScriptID id(script);
-            if (!pwalletMain->HaveCScript(id) && !pwalletMain->AddCScript(script)) {
-                throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
-            }
-            ImportAddress(id, strLabel);
-        } else {
-            CTxDestination destination;
-            if (ExtractDestination(script, destination)) {
-                pwalletMain->SetAddressBook(destination, strLabel, "receive");
-            }
+    if (isRedeemScript) {
+        const CScriptID id(script);
+        if (!pwalletMain->HaveCScript(id) && !pwalletMain->AddCScript(script)) {
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding p2sh redeemScript to wallet");
+        }
+        ImportAddress(id, strLabel);
+    } else {
+        CTxDestination destination;
+        if (ExtractDestination(script, destination)) {
+            pwalletMain->SetAddressBook(destination, strLabel, "receive");
         }
     }
+}
 
 void ImportAddress(const CTxDestination& dest, const string& strLabel)
 {

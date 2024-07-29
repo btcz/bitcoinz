@@ -594,14 +594,14 @@ public:
     void SetSaplingNoteData(mapSaplingNoteData_t &noteData);
 
     std::pair<libzcash::SproutNotePlaintext, libzcash::SproutPaymentAddress> DecryptSproutNote(
-         JSOutPoint jsop) const;
+        JSOutPoint jsop) const;
     std::optional<std::pair<
-         libzcash::SaplingNotePlaintext,
-         libzcash::SaplingPaymentAddress>> DecryptSaplingNote(SaplingOutPoint op) const;
+        libzcash::SaplingNotePlaintext,
+        libzcash::SaplingPaymentAddress>> DecryptSaplingNote(SaplingOutPoint op) const;
     std::optional<std::pair<
-         libzcash::SaplingNotePlaintext,
-         libzcash::SaplingPaymentAddress>> RecoverSaplingNote(
-             SaplingOutPoint op, std::set<uint256>& ovks) const;
+        libzcash::SaplingNotePlaintext,
+        libzcash::SaplingPaymentAddress>> RecoverSaplingNote(
+            SaplingOutPoint op, std::set<uint256>& ovks) const;
 
     //! filter decides which addresses will count towards the debit
     CAmount GetDebit(const isminefilter& filter) const;
@@ -697,7 +697,7 @@ public:
     std::string strOtherAccount;
     std::string strComment;
     mapValue_t mapValue;
-    int64_t nOrderPos;  //!< position in ordered transaction list
+    int64_t nOrderPos; //!< position in ordered transaction list
     uint64_t nEntryNo;
 
     CAccountingEntry()

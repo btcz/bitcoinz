@@ -298,7 +298,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"btczaddress\"          (string) BitcoinZ address\n"
+            "           \"address\"               (string) BitcoinZ address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -591,9 +591,9 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
 
       // Add data field acceptence
       if (name_ == "data") {
-        std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
-        CTxOut out(0, CScript() << OP_RETURN << data);
-        rawTx.vout.push_back(out);
+          std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
+          CTxOut out(0, CScript() << OP_RETURN << data);
+          rawTx.vout.push_back(out);
       } else {
           CTxDestination destination = DecodeDestination(name_);
           if (!IsValidDestination(destination)) {

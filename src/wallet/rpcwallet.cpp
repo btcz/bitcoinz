@@ -3753,8 +3753,6 @@ UniValue z_viewtransaction(const UniValue& params, bool fHelp)
     return entry;
 }
 
-
-
 UniValue z_getoperationresult(const UniValue& params, bool fHelp)
 {
     if (!EnsureWalletIsAvailable(fHelp))

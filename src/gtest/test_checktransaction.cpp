@@ -929,10 +929,14 @@ TEST(ChecktransactionTests, OverwinteredContextualCreateTx) {
     ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 3,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Just before Sapling activation
-    ContextualCreateTxCheck(params, saplingActivationHeight - 4, OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - 3, OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - 2, OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - 1, OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 4,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 3,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 2,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
+    ContextualCreateTxCheck(params, saplingActivationHeight - 1,
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Sapling activates
     ContextualCreateTxCheck(params, saplingActivationHeight,
         SAPLING_TX_VERSION, true, SAPLING_VERSION_GROUP_ID, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);

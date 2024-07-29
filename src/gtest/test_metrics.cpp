@@ -95,17 +95,17 @@ TEST(Metrics, GetLocalSolPS) {
 }
 
 TEST(Metrics, EstimateNetHeight) {
-  auto params = RegtestActivateBlossom(false, 200);
-  int64_t blockTimes[400];
-  for (int i = 0; i < 400; i++) {
-    blockTimes[i] = i ? blockTimes[i - 1] + params.PoWTargetSpacing(i) : 0;
-  }
-  SetMockTime(blockTimes[399]);
-  for (int i = 0; i < 400; i++) {
-    // Check that we are within 1 of the correct height
-    EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2);
-  }
-  RegtestDeactivateBlossom();
+    auto params = RegtestActivateBlossom(false, 200);
+    int64_t blockTimes[400];
+    for (int i = 0; i < 400; i++) {
+        blockTimes[i] = i ? blockTimes[i - 1] + params.PoWTargetSpacing(i) : 0;
+    }
+    SetMockTime(blockTimes[399]);
+    for (int i = 0; i < 400; i++) {
+        // Check that we are within 1 of the correct height
+        EXPECT_LT(std::abs(399 - EstimateNetHeight(params, i, blockTimes[i])), 2);
+    }
+    RegtestDeactivateBlossom();
 }
 
 TEST(Metrics, NextUpgrade) {

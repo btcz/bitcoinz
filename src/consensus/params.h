@@ -110,11 +110,10 @@ struct Params {
      *
      * t_s = nSubsidySlowStartInterval
      * t_r = number of blocks between end of slow start and first halving
-     * t_h = nSubsidyHalvingInterval
+     * t_h = nPreBlossomSubsidyHalvingInterval
      * t_c = SubsidySlowStartShift()
      */
     int SubsidySlowStartShift() const { return nSubsidySlowStartInterval / 2; }
-    int nSubsidyHalvingInterval;
     int nPreBlossomSubsidyHalvingInterval;
     int nPostBlossomSubsidyHalvingInterval;
 
@@ -135,6 +134,7 @@ struct Params {
     int64_t nPowMaxAdjustUp;
     int64_t nPreBlossomPowTargetSpacing;
     int64_t nPostBlossomPowTargetSpacing;
+
     int64_t PoWTargetSpacing(int nHeight) const;
     int64_t AveragingWindowTimespan(int nHeight) const;
     int64_t MinActualTimespan(int nHeight) const;

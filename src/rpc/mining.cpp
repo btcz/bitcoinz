@@ -208,9 +208,9 @@ UniValue generate(const UniValue& params, bool fHelp)
 
     while (nHeight < nHeightEnd)
     {
-            validEHparameterList(ehparams,nHeight+1,chainparams);
-            unsigned int n = ehparams[0].n;
-            unsigned int k = ehparams[0].k;
+        validEHparameterList(ehparams,nHeight+1,chainparams);
+        unsigned int n = ehparams[0].n;
+        unsigned int k = ehparams[0].k;
 
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), coinbaseScript->reserveScript));
         if (!pblocktemplate.get())
@@ -682,17 +682,17 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
 
                 // GITHUB issue #66 - Add founderaddress to gbt
-                const CScript & scriptPublicKey = tx.vout[1].scriptPubKey  ;
+                const CScript & scriptPublicKey = tx.vout[1].scriptPubKey;
                 std::vector<CTxDestination> addresses;
                 txnouttype whichType;
                 int nRequired;
 
                 ExtractDestinations(scriptPublicKey, whichType, addresses, nRequired);
-                //entry.push_back(Pair("script", GetTxnOutputType(whichType)));
-                //entry.push_back(Pair("hex", HexStr(scriptPublicKey.begin(), scriptPublicKey.end())));
-                UniValue a(UniValue::VARR);
-                for (const CTxDestination& addr : addresses) {a.push_back(EncodeDestination(addr));}
-                entry.push_back(Pair("foundersraddress", a));
+                UniValue o(UniValue::VARR);
+                for (const CTxDestination& addr : addresses) {
+                    o.push_back(EncodeDestination(addr));
+                }
+                entry.push_back(Pair("foundersraddress", o));
 
             }
             entry.push_back(Pair("required", true));

@@ -119,3 +119,6 @@ src/fuzz.cpp
 
 .idea/
 *.iml
+
+src/zcash/CreateJoinSplit
+src/zcash/GenerateParams

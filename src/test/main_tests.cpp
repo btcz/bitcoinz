@@ -102,9 +102,6 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     // BOOST_CHECK_EQUAL(nSum, 2099999997690000ULL);
     // Reducing the interval further to 1.25 minutes has a similar effect,
     // decreasing the total monetary supply by another 0.09240 ZEC.
-    // TODO Change this assert when setting the blossom activation height
-    // Note that these numbers may or may not change depending on the activation height
-    // BOOST_CHECK_EQUAL(nSum, 2099999981520000LL);
     // BOOST_CHECK_EQUAL(nSum, 2099999990760000ULL);
     BOOST_CHECK_EQUAL(nSum, 2099999999988240000LL);
 }

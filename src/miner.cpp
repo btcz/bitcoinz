@@ -322,7 +322,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
             PrecomputedTransactionData txdata(tx);
-          if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
+            if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
                 continue;
 
             if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
@@ -531,8 +531,24 @@ void static BitcoinMiner(const CChainParams& chainparams)
     boost::shared_ptr<CReserveScript> coinbaseScript;
     GetMainSignals().ScriptForMining(coinbaseScript);
 
+
+    // Get the height of current tip
+    int nHeight = chainActive.Height();
+    if (nHeight == -1) {
+        LogPrintf("Error in BitcoinZ Miner: chainActive.Height() returned -1\n");
+        return;
+    }
+
+    // Get equihash parameters for the next block to be mined.
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+    validEHparameterList(ehparams, nHeight + 1, chainparams);
+
+    unsigned int n = ehparams[0].n;
+    unsigned int k = ehparams[0].k;
+
     std::string solver = GetArg("-equihashsolver", "default");
     assert(solver == "tromp" || solver == "default");
+    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::mutex m_cs;
     bool cancelSolver = false;
@@ -572,21 +588,6 @@ void static BitcoinMiner(const CChainParams& chainparams)
             //
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
-
-            // Get the height of current tip
-            int nHeight = chainActive.Height();
-            if (nHeight == -1) {
-                LogPrintf("Error in BitcoinZ Miner: chainActive.Height() returned -1\n");
-                return;
-            }
-
-            // Get equihash parameters for the next block to be mined.
-            EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
-            validEHparameterList(ehparams, nHeight + 1, chainparams);
-
-            unsigned int n = ehparams[0].n;
-            unsigned int k = ehparams[0].k;
-            LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(chainparams, coinbaseScript->reserveScript));
             if (!pblocktemplate.get())

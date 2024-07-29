@@ -96,10 +96,9 @@ protected:
         mtx.vout[0].nValue = 0;
 
         // Give it a Founder's Reward vout for height 1.
-        auto rewardScript = Params().GetCommunityFeeScriptAtHeight(1);
         mtx.vout.push_back(CTxOut(
                     GetBlockSubsidy(1, Params().GetConsensus()) * 0.05,
-                    rewardScript));
+                    Params().GetCommunityFeeScriptAtHeight(1)));
 
         return mtx;
     }

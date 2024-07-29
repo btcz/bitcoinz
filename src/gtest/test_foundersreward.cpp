@@ -85,13 +85,9 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
 
 // Utility method to check the number of unique addresses from 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
-    CChainParams params = Params();
-
-    int maxHeight = params.GetLastCommunityFeeBlockHeight();
-
     std::set<std::string> addresses;
-    for (int i = 1; i <= maxHeight; i++) {
-        addresses.insert(params.GetCommunityFeeAddressAtHeight(i));
+    for (int i = 1; i <= Params().GetLastCommunityFeeBlockHeight(); i++) {
+        addresses.insert(Params().GetCommunityFeeAddressAtHeight(i));
     }
     EXPECT_EQ(addresses.size(), nUnique);
 }
@@ -126,16 +122,16 @@ TEST(FoundersRewardTest, General) {
 TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
     int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
     auto params = RegtestActivateBlossom(false, blossomActivationHeight);
-    int lastFRHeight = Params().GetLastCommunityFeeBlockHeight();
-    EXPECT_EQ(0, params.Halving(lastFRHeight));
+    int lastCFHeight = Params().GetLastCommunityFeeBlockHeight();
+    EXPECT_EQ(0, params.Halving(lastCFHeight));
     RegtestDeactivateBlossom();
 }
 
 TEST(FoundersRewardTest, MainnetGetLastBlock) {
     SelectParams(CBaseChainParams::MAIN);
     auto params = Params().GetConsensus();
-    int lastFRHeight = Params().GetLastCommunityFeeBlockHeight();
-    EXPECT_EQ(1, params.Halving(lastFRHeight));
+    int lastCFHeight = Params().GetLastCommunityFeeBlockHeight();
+    EXPECT_EQ(1, params.Halving(lastCFHeight));
 }
 
 #define NUM_MAINNET_FOUNDER_ADDRESSES 100

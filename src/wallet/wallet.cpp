@@ -613,9 +613,6 @@ void CWallet::ChainTipAdded(const CBlockIndex *pindex,
 
 void CWallet::ChainTip(const CBlockIndex *pindex,
                        const CBlock *pblock,
-                       //SproutMerkleTree sproutTree,
-                       //SaplingMerkleTree saplingTree,
-                       //bool added)
                        std::optional<std::pair<SproutMerkleTree, SaplingMerkleTree>> added)
 {
     if (added) {
@@ -1901,16 +1898,16 @@ bool CWallet::UpdatedNoteData(const CWalletTx& wtxIn, CWalletTx& wtx)
 }
 
 /**
-  * Add a transaction to the wallet, or update it.
-  * pblock is optional, but should be provided if the transaction is known to be in a block.
-  * If fUpdate is true, existing transactions will be updated.
-  *
-  * If pblock is null, this transaction has either recently entered the mempool from the
-  * network, is re-entering the mempool after a block was disconnected, or is exiting the
-  * mempool because it conflicts with another transaction. In all these cases, if there is
-  * an existing wallet transaction, the wallet transaction's Merkle branch data is _not_
-  * updated; instead, the transaction being in the mempool or conflicted is determined on
-  * the fly in CMerkleTx::GetDepthInMainChain().
+ * Add a transaction to the wallet, or update it.
+ * pblock is optional, but should be provided if the transaction is known to be in a block.
+ * If fUpdate is true, existing transactions will be updated.
+ *
+ * If pblock is null, this transaction has either recently entered the mempool from the
+ * network, is re-entering the mempool after a block was disconnected, or is exiting the
+ * mempool because it conflicts with another transaction. In all these cases, if there is
+ * an existing wallet transaction, the wallet transaction's Merkle branch data is _not_
+ * updated; instead, the transaction being in the mempool or conflicted is determined on
+ * the fly in CMerkleTx::GetDepthInMainChain().
  */
 bool CWallet::AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate)
 {
@@ -2480,7 +2477,6 @@ void CWalletTx::SetSaplingNoteData(mapSaplingNoteData_t &noteData)
         }
     }
 }
-
 
 std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNote(
     JSOutPoint jsop) const
@@ -5329,8 +5325,8 @@ bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::SaplingPayment
     libzcash::SaplingExtendedFullViewingKey extfvk;
 
     return m_wallet->GetSaplingIncomingViewingKey(zaddr, ivk) &&
-    m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
-    m_wallet->HaveSaplingSpendingKey(extfvk);
+           m_wallet->GetSaplingFullViewingKey(ivk, extfvk) &&
+           m_wallet->HaveSaplingSpendingKey(extfvk);
 }
 
 bool HaveSpendingKeyForPaymentAddress::operator()(const libzcash::InvalidEncoding& no) const
@@ -5413,35 +5409,38 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKe
 }
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
-  auto extfvk = sk.ToXFVK();
-  auto ivk = extfvk.fvk.in_viewing_key();
-    if (log){
-        LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(sk.DefaultAddress()));
-    }
-    // Don't throw error in case a key is already there
-    if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
-        return KeyAlreadyExists;
-    } else {
-        if (!m_wallet-> AddSaplingZKey(sk)) {
-            return KeyNotAdded;
+    auto extfvk = sk.ToXFVK();
+    auto ivk = extfvk.fvk.in_viewing_key();
+    {
+        if (log){
+            LogPrint("zrpc", "Importing zaddr %s...\n", EncodePaymentAddress(sk.DefaultAddress()));
         }
 
-        // Sapling addresses can't have been used in transactions prior to activation.
-        if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
-            m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = nTime;
+        // Don't throw error in case a key is already there
+        if (m_wallet->HaveSaplingSpendingKey(extfvk)) {
+            return KeyAlreadyExists;
         } else {
-            // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
-            m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
+            if (!m_wallet-> AddSaplingZKey(sk)) {
+                return KeyNotAdded;
+            }
+
+            // Sapling addresses can't have been used in transactions prior to activation.
+            if (params.vUpgrades[Consensus::UPGRADE_SAPLING].nActivationHeight == Consensus::NetworkUpgrade::ALWAYS_ACTIVE) {
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = nTime;
+            } else {
+                // 154051200 seconds from epoch is Friday, 26 October 2018 00:00:00 GMT - definitely before Sapling activates
+                m_wallet->mapSaplingZKeyMetadata[ivk].nCreateTime = std::max((int64_t) 154051200, nTime);
+            }
+            if (hdKeypath) {
+                m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
+            }
+            if (seedFpStr) {
+                uint256 seedFp;
+                seedFp.SetHex(seedFpStr.value());
+                m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
+            }
+            return KeyAdded;
         }
-        if (hdKeypath) {
-            m_wallet->mapSaplingZKeyMetadata[ivk].hdKeypath = hdKeypath.value();
-        }
-        if (seedFpStr) {
-            uint256 seedFp;
-            seedFp.SetHex(seedFpStr.value());
-            m_wallet->mapSaplingZKeyMetadata[ivk].seedFp = seedFp;
-        }
-        return KeyAdded;
     }
 }
 
