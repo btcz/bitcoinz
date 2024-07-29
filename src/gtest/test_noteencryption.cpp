@@ -21,7 +21,7 @@ public:
     }
 };
 
-TEST(noteencryption, NotePlaintext)
+TEST(Noteencryption, NotePlaintext)
 {
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
@@ -159,7 +159,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(bar.rcm == pt.rcm);
 }
 
-TEST(noteencryption, SaplingApi)
+TEST(Noteencryption, SaplingApi)
 {
     using namespace libzcash;
 
@@ -342,7 +342,7 @@ TEST(noteencryption, SaplingApi)
     ));
 }
 
-TEST(noteencryption, api)
+TEST(Noteencryption, api)
 {
     uint256 sk_enc = ZCNoteEncryption::generate_privkey(uint252(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a07")));
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
@@ -447,7 +447,7 @@ uint256 test_prf(
     return ret;
 }
 
-TEST(noteencryption, prf_addr)
+TEST(Noteencryption, PrfAddr)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -467,7 +467,7 @@ TEST(noteencryption, prf_addr)
     }
 }
 
-TEST(noteencryption, prf_nf)
+TEST(Noteencryption, PrfNf)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -478,7 +478,7 @@ TEST(noteencryption, prf_nf)
     }
 }
 
-TEST(noteencryption, prf_pk)
+TEST(Noteencryption, PrfPk)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -501,7 +501,7 @@ TEST(noteencryption, prf_pk)
     ASSERT_THROW(PRF_pk(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, prf_rho)
+TEST(Noteencryption, PrfRho)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 phi = libzcash::random_uint252();
@@ -524,7 +524,7 @@ TEST(noteencryption, prf_rho)
     ASSERT_THROW(PRF_rho(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, uint252)
+TEST(Noteencryption, uint252)
 {
     ASSERT_THROW(uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516847e")), std::domain_error);
 }
