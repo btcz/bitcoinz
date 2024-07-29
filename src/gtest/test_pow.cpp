@@ -63,15 +63,14 @@ void TestDifficultyAveragingImpl(const Consensus::Params& params)
                                         blocks[lastBlk].nHeight + 1),
               GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
 
-    // FIXME: consensus changed
-//    // Result should be the same as if the average difficulty was used
-//    arith_uint256 average = UintToArith256(uint256S("0000796968696969696969696969696969696969696969696969696969696969"));
-//    EXPECT_EQ(CalculateNextWorkRequired(average,
-//                                        blocks[lastBlk].GetMedianTimePast(),
-//                                        blocks[firstBlk].GetMedianTimePast(),
-//                                        params,
-//                                        blocks[lastBlk].nHeight + 1),
-//              GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
+    // Result should be the same as if the average difficulty was used
+    arith_uint256 average = UintToArith256(uint256S("0000776275276276276276276276276276276276276276276276276276276276"));
+    EXPECT_EQ(CalculateNextWorkRequired(average,
+                                        blocks[lastBlk].GetMedianTimePast(),
+                                        blocks[firstBlk].GetMedianTimePast(),
+                                        params,
+                                        blocks[lastBlk].nHeight + 1),
+              GetNextWorkRequired(&blocks[lastBlk], nullptr, params));
 }
 
 TEST(PoW, DifficultyAveraging) {
@@ -80,9 +79,10 @@ TEST(PoW, DifficultyAveraging) {
 }
 
 TEST(PoW, DifficultyAveragingBlossom) {
-    TestDifficultyAveragingImpl(RegtestActivateBlossom(true));
+    TestDifficultyAveragingImpl(RegtestActivateBlossom(false));
     RegtestDeactivateBlossom();
 }
+
 TEST(PoW, MinDifficultyRules) {
     SelectParams(CBaseChainParams::TESTNET);
     const Consensus::Params& params = Params().GetConsensus();
