@@ -247,7 +247,7 @@ CScript::ScriptType CScript::GetType() const
         return CScript::P2PKH;
     if (this->IsPayToScriptHash())
         return CScript::P2SH;
-    // We don't know this script
+    // We don't know this script type
     return CScript::UNKNOWN;
 }
 
