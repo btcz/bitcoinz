@@ -5,7 +5,7 @@ sense to simply use this framework rather than require developers to
 configure some other framework (we want as few impediments to creating
 unit tests as possible).
 
-The build system is setup to compile an executable called "test_bitcoin"
+The build system is setup to compile an executable called "test_bitcoinz"
 that runs all of the unit tests.  The main source file is called
 test_bitcoin.cpp, which simply includes other files that contain the
 actual unit tests (outside of a couple required preprocessor
@@ -29,6 +29,6 @@ example, to run just the getarg_tests verbosely:
 
 ... or to run just the doubledash test:
 
-    test_bitcoin --run_test=getarg_tests/doubledash
+    test_bitcoinz --run_test=getarg_tests/doubledash
 
 Run  test_bitcoinz --help   for the full list.
