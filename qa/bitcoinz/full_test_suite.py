@@ -132,6 +132,7 @@ def util_test():
 #
 
 STAGES = [
+    'check-depends',
     'btest',
     'gtest',
     'sec-hard',
@@ -143,7 +144,8 @@ STAGES = [
 ]
 
 STAGE_COMMANDS = {
-    'btest': [repofile('src/test/test_bitcoin'), '-p'],
+    'check-depends': ['qa/bitcoinz/test-depends-sources-mirror.py'],
+    'btest': [repofile('src/test/test_bitcoinz'), '-p'],
     'gtest': [repofile('src/bitcoinz-gtest')],
     'sec-hard': check_security_hardening,
     'no-dot-so': ensure_no_dot_so_in_depends,
