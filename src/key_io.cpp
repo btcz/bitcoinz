@@ -362,34 +362,11 @@ std::string EncodeSpendingKey(const libzcash::SpendingKey& zkey)
 
 libzcash::SpendingKey DecodeSpendingKey(const std::string& str)
 {
-    std::vector<unsigned char> data;
-    if (DecodeBase58Check(str, data)) {
-        const std::vector<unsigned char>& zkey_prefix = Params().Base58Prefix(CChainParams::ZCSPENDING_KEY);
-        if ((data.size() == libzcash::SerializedSproutSpendingKeySize + zkey_prefix.size()) &&
-            std::equal(zkey_prefix.begin(), zkey_prefix.end(), data.begin())) {
-            CSerializeData serialized(data.begin() + zkey_prefix.size(), data.end());
-            CDataStream ss(serialized, SER_NETWORK, PROTOCOL_VERSION);
-            libzcash::SproutSpendingKey ret;
-            ss >> ret;
-            memory_cleanse(serialized.data(), serialized.size());
-            memory_cleanse(data.data(), data.size());
-            return ret;
-        }
-    }
-    data.clear();
-    auto bech = bech32::Decode(str);
-    if (bech.first == Params().Bech32HRP(CChainParams::SAPLING_EXTENDED_SPEND_KEY) &&
-        bech.second.size() == ConvertedSaplingExtendedSpendingKeySize) {
-        // Bech32 decoding
-        data.reserve((bech.second.size() * 5) / 8);
-        if (ConvertBits<5, 8, false>([&](unsigned char c) { data.push_back(c); }, bech.second.begin(), bech.second.end())) {
-            CDataStream ss(data, SER_NETWORK, PROTOCOL_VERSION);
-            libzcash::SaplingExtendedSpendingKey ret;
-            ss >> ret;
-            memory_cleanse(data.data(), data.size());
-            return ret;
-        }
-    }
-    memory_cleanse(data.data(), data.size());
-    return libzcash::InvalidEncoding();
+    return DecodeAny<libzcash::SpendingKey,
+        libzcash::SproutSpendingKey,
+        libzcash::SaplingExtendedSpendingKey>(
+            str,
+            std::make_pair(CChainParams::ZCSPENDING_KEY, libzcash::SerializedSproutSpendingKeySize),
+            std::make_pair(CChainParams::SAPLING_EXTENDED_SPEND_KEY, ConvertedSaplingExtendedSpendingKeySize)
+        );
 }
