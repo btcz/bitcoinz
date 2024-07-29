@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <utility>
 
-#include <boost/bind/bind.hpp>
+#include <boost/bind.hpp>
 
 CScheduler::CScheduler() : nThreadsServicingQueue(0), stopRequested(false), stopWhenEmpty(false)
 {
