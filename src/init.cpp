@@ -859,6 +859,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
 
     // Clean shutdown on SIGTERM
+    assert(fRequestShutdown.is_lock_free());
     struct sigaction sa;
     sa.sa_handler = HandleSIGTERM;
     sigemptyset(&sa.sa_mask);
@@ -867,6 +868,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     sigaction(SIGINT, &sa, NULL);
 
     // Reopen debug.log on SIGHUP
+    assert(fReopenDebugLog.is_lock_free());
     struct sigaction sa_hup;
     sa_hup.sa_handler = HandleSIGHUP;
     sigemptyset(&sa_hup.sa_mask);
@@ -1584,10 +1586,21 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             vImportFiles.push_back(strFile);
     }
     threadGroup.create_thread(boost::bind(&ThreadImport, vImportFiles));
-    if (chainActive.Tip() == NULL) {
-        LogPrintf("Waiting for genesis block to be imported...\n");
-        while (!fRequestShutdown && chainActive.Tip() == NULL)
+
+    // Wait for genesis block to be processed
+    bool fHaveGenesis = false;
+    while (!fHaveGenesis && !fRequestShutdown) {
+        {
+            LOCK(cs_main);
+            fHaveGenesis = (chainActive.Tip() != NULL);
+        }
+
+        if (!fHaveGenesis) {
             MilliSleep(10);
+        }
+    }
+    if (!fHaveGenesis) {
+        return false;
     }
 
     // ********************************************************* Step 11: start node
