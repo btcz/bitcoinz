@@ -214,27 +214,27 @@ UniValue importaddress(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_ERROR, "Importing addresses is disabled in pruned mode");
 
     string strLabel = "";
-     if (params.size() > 1)
-         strLabel = params[1].get_str();
+    if (params.size() > 1)
+        strLabel = params[1].get_str();
 
-     // Whether to perform rescan after import
-     bool fRescan = true;
-     if (params.size() > 2)
-         fRescan = params[2].get_bool();
+    // Whether to perform rescan after import
+    bool fRescan = true;
+    if (params.size() > 2)
+        fRescan = params[2].get_bool();
 
-     // Whether to import a p2sh version, too
-     bool fP2SH = false;
-     if (params.size() > 3)
-         fP2SH = params[3].get_bool();
+    // Whether to import a p2sh version, too
+    bool fP2SH = false;
+    if (params.size() > 3)
+        fP2SH = params[3].get_bool();
 
-     LOCK2(cs_main, pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     CTxDestination dest = DecodeDestination(params[0].get_str());
     if (IsValidDestination(dest)) {
-      if (fP2SH) {
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Cannot use the p2sh flag with an address - use a script instead");
-      }
-      ImportAddress(dest, strLabel);
+        if (fP2SH) {
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Cannot use the p2sh flag with an address - use a script instead");
+        }
+        ImportAddress(dest, strLabel);
     } else if (IsHex(params[0].get_str())) {
         std::vector<unsigned char> data(ParseHex(params[0].get_str()));
         ImportScript(CScript(data.begin(), data.end()), strLabel, fP2SH);
@@ -356,8 +356,8 @@ UniValue importwallet(const UniValue& params, bool fHelp)
 
 UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys)
 {
-  if (fPruneMode)
-      throw JSONRPCError(RPC_WALLET_ERROR, "Importing wallets is disabled in pruned mode");
+    if (fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Importing wallets is disabled in pruned mode");
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 

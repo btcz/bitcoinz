@@ -67,6 +67,7 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         self.nodes[0].generate(1)
         self.nodes[0].setmocktime(starttime + 9000)
         self.nodes[0].generate(1)
+        self.sync_all()
 
         # Confirm the balance on node 0.
         resp = self.nodes[0].z_getbalance(myzaddr)
