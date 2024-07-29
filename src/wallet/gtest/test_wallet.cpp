@@ -137,17 +137,19 @@ std::pair<JSOutPoint, SaplingOutPoint> CreateValidBlock(TestWallet& wallet,
     return std::make_pair(jsoutpt, saplingNotes[0]);
 }
 
-std::pair<uint256, uint256> GetWitnessesAndAnchors(TestWallet& wallet,
+std::pair<uint256, uint256> GetWitnessesAndAnchors(
+                                TestWallet& wallet,
                                 std::vector<JSOutPoint>& sproutNotes,
                                 std::vector<SaplingOutPoint>& saplingNotes,
+                                const unsigned int anchorDepth,
                                 std::vector<std::optional<SproutWitness>>& sproutWitnesses,
                                 std::vector<std::optional<SaplingWitness>>& saplingWitnesses) {
     sproutWitnesses.clear();
     saplingWitnesses.clear();
     uint256 sproutAnchor;
     uint256 saplingAnchor;
-    wallet.GetSproutNoteWitnesses(sproutNotes, sproutWitnesses, sproutAnchor);
-    wallet.GetSaplingNoteWitnesses(saplingNotes, saplingWitnesses, saplingAnchor);
+    assert(wallet.GetSproutNoteWitnesses(sproutNotes, anchorDepth, sproutWitnesses, sproutAnchor));
+    assert(wallet.GetSaplingNoteWitnesses(saplingNotes, anchorDepth, saplingWitnesses, saplingAnchor));
     return std::make_pair(sproutAnchor, saplingAnchor);
 }
 
@@ -1161,7 +1163,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     std::vector<std::optional<SproutWitness>> sproutWitnesses;
     std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
-    ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+    ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses);
 
     EXPECT_FALSE((bool) sproutWitnesses[0]);
     EXPECT_FALSE((bool) sproutWitnesses[1]);
@@ -1169,7 +1171,7 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
 
     wallet.AddToWallet(wtx, true, NULL);
 
-    ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+    ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses);
 
     EXPECT_FALSE((bool) sproutWitnesses[0]);
     EXPECT_FALSE((bool) sproutWitnesses[1]);
@@ -1182,13 +1184,52 @@ TEST(WalletTests, CachedWitnessesEmptyChain) {
     SaplingMerkleTree saplingTree;
     wallet.IncrementNoteWitnesses(&index, &block, sproutTree, saplingTree);
 
-    ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+    // this death will occur because there will not be sufficient Sprout witnesses to reach the
+    // default anchor depth
+    EXPECT_DEATH(
+        ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
+        "GetSproutNoteWitnesses"
+    );
+
+    // add another block; we still don't have enough witnesses
+    {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = 1;
+        wallet.IncrementNoteWitnesses(&another_index, &another_block, sproutTree, saplingTree);
+    }
+
+    EXPECT_DEATH(
+        ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses),
+        "GetSproutNoteWitnesses"
+    );
+
+    for (int i = 2; i <= 8; i++) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.IncrementNoteWitnesses(&another_index, &another_block, sproutTree, saplingTree);
+    }
+
+    CBlock last_block;
+    CBlockIndex last_index(last_block);
+    last_index.nHeight = 9;
+    wallet.IncrementNoteWitnesses(&last_index, &last_block, sproutTree, saplingTree);
+
+    ::GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, nAnchorConfirmations, sproutWitnesses, saplingWitnesses);
 
     EXPECT_TRUE((bool) sproutWitnesses[0]);
     EXPECT_TRUE((bool) sproutWitnesses[1]);
     EXPECT_TRUE((bool) saplingWitnesses[0]);
 
-    // Until #1302 is implemented, this should triggger an assertion
+    for (int i = 9; i >= 1; i--) {
+        CBlock another_block;
+        CBlockIndex another_index(another_block);
+        another_index.nHeight = i;
+        wallet.DecrementNoteWitnesses(&another_index);
+    }
+
+    // Until #1302 is implemented, this should trigger an assertion
     EXPECT_DEATH(wallet.DecrementNoteWitnesses(&index),
                  ".*nWitnessCacheSize > 0.*");
 }
@@ -1215,7 +1256,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         std::vector<std::optional<SproutWitness>> sproutWitnesses;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
-        anchors1 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        anchors1 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors1.first, anchors1.second);
     }
 
@@ -1237,7 +1278,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         std::vector<std::optional<SproutWitness>> sproutWitnesses;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
-        GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
 
         EXPECT_FALSE((bool) sproutWitnesses[0]);
         EXPECT_FALSE((bool) saplingWitnesses[0]);
@@ -1252,7 +1293,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         SaplingMerkleTree saplingTree2 {saplingTree};
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree2, saplingTree2);
 
-        auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors2.first, anchors2.second);
 
         EXPECT_TRUE((bool) sproutWitnesses[0]);
@@ -1262,7 +1303,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 
         // Decrementing should give us the previous anchor
         wallet.DecrementNoteWitnesses(&index2);
-        auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
 
         EXPECT_FALSE((bool) sproutWitnesses[0]);
         EXPECT_FALSE((bool) saplingWitnesses[0]);
@@ -1272,7 +1313,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
 
         // Re-incrementing with the same block should give the same result
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
-        auto anchors4 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors4 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         EXPECT_NE(anchors4.first, anchors4.second);
 
         EXPECT_TRUE((bool) sproutWitnesses[0]);
@@ -1285,7 +1326,7 @@ TEST(WalletTests, CachedWitnessesChainTip) {
         std::vector<std::optional<SproutWitness>> sproutWitnesses5;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses5;
 
-        auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses5, saplingWitnesses5);
+        auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses5, saplingWitnesses5);
         EXPECT_NE(anchors5.first, anchors5.second);
 
         EXPECT_EQ(sproutWitnesses, sproutWitnesses5);
@@ -1325,7 +1366,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         std::vector<SaplingOutPoint> saplingNotes {outpts.second};
         std::vector<std::optional<SproutWitness>> sproutWitnesses;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses;
-        anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
     }
 
 {
@@ -1346,7 +1387,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         std::vector<std::optional<SproutWitness>> sproutWitnesses;
         std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
-        auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors3 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
 
         EXPECT_FALSE((bool) sproutWitnesses[0]);
         EXPECT_FALSE((bool) saplingWitnesses[0]);
@@ -1355,7 +1396,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         // should give us the previous anchor
         wallet.DecrementNoteWitnesses(&index2);
 
-        auto anchors4 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors4 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
 
         EXPECT_FALSE((bool) sproutWitnesses[0]);
         EXPECT_FALSE((bool) saplingWitnesses[0]);
@@ -1366,7 +1407,7 @@ TEST(WalletTests, CachedWitnessesDecrementFirst) {
         // Re-incrementing with the same block should give the same result
         wallet.IncrementNoteWitnesses(&index2, &block2, sproutTree, saplingTree);
 
-        auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors5 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
 
         EXPECT_FALSE((bool) sproutWitnesses[0]);
         EXPECT_FALSE((bool) saplingWitnesses[0]);
@@ -1407,7 +1448,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
         sproutNotes.push_back(outpts.first);
         saplingNotes.push_back(outpts.second);
 
-        auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         for (size_t j = 0; j <= i; j++) {
             EXPECT_TRUE((bool) sproutWitnesses[j]);
             EXPECT_TRUE((bool) saplingWitnesses[j]);
@@ -1423,7 +1464,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
         SaplingMerkleTree saplingRiPrevTree {saplingRiTree};
         wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiTree, saplingRiTree);
 
-        auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+        auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
         for (size_t j = 0; j < numBlocks; j++) {
             EXPECT_TRUE((bool) sproutWitnesses[j]);
             EXPECT_TRUE((bool) saplingWitnesses[j]);
@@ -1437,7 +1478,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
             {
                 wallet.DecrementNoteWitnesses(&(indices[i]));
 
-                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
                     EXPECT_TRUE((bool) saplingWitnesses[j]);
@@ -1449,7 +1490,7 @@ TEST(WalletTests, CachedWitnessesCleanIndex) {
 
             {
                 wallet.IncrementNoteWitnesses(&(indices[i]), &(blocks[i]), sproutRiPrevTree, saplingRiPrevTree);
-                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+                auto anchors = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
                 for (size_t j = 0; j < numBlocks; j++) {
                     EXPECT_TRUE((bool) sproutWitnesses[j]);
                     EXPECT_TRUE((bool) saplingWitnesses[j]);
@@ -1507,7 +1548,7 @@ TEST(WalletTests, ClearNoteWitnessCache) {
     std::vector<std::optional<SaplingWitness>> saplingWitnesses;
 
     // Before clearing, we should have a witness for one note
-    GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+    GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
     EXPECT_TRUE((bool) sproutWitnesses[0]);
     EXPECT_FALSE((bool) sproutWitnesses[1]);
     EXPECT_TRUE((bool) saplingWitnesses[0]);
@@ -1518,7 +1559,7 @@ TEST(WalletTests, ClearNoteWitnessCache) {
 
     // After clearing, we should not have a witness for either note
     wallet.ClearNoteWitnessCache();
-    auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, sproutWitnesses, saplingWitnesses);
+    auto anchors2 = GetWitnessesAndAnchors(wallet, sproutNotes, saplingNotes, 1, sproutWitnesses, saplingWitnesses);
     EXPECT_FALSE((bool) sproutWitnesses[0]);
     EXPECT_FALSE((bool) sproutWitnesses[1]);
     EXPECT_FALSE((bool) saplingWitnesses[0]);

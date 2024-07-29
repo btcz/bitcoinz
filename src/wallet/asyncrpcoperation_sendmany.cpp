@@ -62,9 +62,10 @@ AsyncRPCOperation_sendmany::AsyncRPCOperation_sendmany(
         std::vector<SendManyRecipient> tOutputs,
         std::vector<SendManyRecipient> zOutputs,
         int minDepth,
+        unsigned int anchorDepth,
         CAmount fee,
         UniValue contextInfo) :
-        tx_(contextualTx), fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), fee_(fee), contextinfo_(contextInfo)
+        tx_(contextualTx), fromaddress_(fromAddress), t_outputs_(tOutputs), z_outputs_(zOutputs), mindepth_(minDepth), anchordepth_(anchorDepth), fee_(fee), contextinfo_(contextInfo)
 {
     assert(fee_ >= 0);
 
@@ -408,7 +409,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         std::vector<std::optional<SaplingWitness>> witnesses;
         {
             LOCK2(cs_main, pwalletMain->cs_wallet);
-            pwalletMain->GetSaplingNoteWitnesses(ops, witnesses, anchor);
+            if (!pwalletMain->GetSaplingNoteWitnesses(ops, anchordepth_, witnesses, anchor)) {
+                // This error should not appear once we're nAnchorConfirmations blocks past
+                // Sapling activation.
+                throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sapling witnesses.");
+            }
         }
 
         // Add Sapling spends
@@ -529,7 +534,11 @@ bool AsyncRPCOperation_sendmany::main_impl() {
             std::vector<JSOutPoint> vOutPoints = { jso };
             uint256 inputAnchor;
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
-            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            if (!pwalletMain->GetSproutNoteWitnesses(vOutPoints, anchordepth_, vInputWitnesses, inputAnchor)) {
+                // This error should not appear once we're nAnchorConfirmations blocks past
+                // Sprout activation.
+                throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sprout witnesses.");
+            }
             jsopWitnessAnchorMap[ jso.ToString() ] = WitnessAnchorData{ vInputWitnesses[0], inputAnchor };
         }
     }
@@ -1007,7 +1016,11 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(AsyncJoinSplitInfo & info
     uint256 anchor;
     {
         LOCK(cs_main);
-        pwalletMain->GetSproutNoteWitnesses(outPoints, witnesses, anchor);
+        if (!pwalletMain->GetSproutNoteWitnesses(outPoints, anchordepth_, witnesses, anchor)) {
+            // This error should not appear once we're nAnchorConfirmations blocks past
+            // Sprout activation.
+            throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sprout witnesses.");
+        }
     }
     return perform_joinsplit(info, witnesses, anchor);
 }

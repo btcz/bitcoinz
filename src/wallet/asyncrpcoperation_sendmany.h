@@ -82,6 +82,7 @@ public:
         std::vector<SendManyRecipient> tOutputs,
         std::vector<SendManyRecipient> zOutputs,
         int minDepth,
+        unsigned int anchorDepth,
         CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_sendmany();
@@ -108,7 +109,8 @@ private:
     bool isUsingBuilder_; // Indicates that no Sprout addresses are involved
     uint32_t consensusBranchId_;
     CAmount fee_;
-    int mindepth_;
+    int mindepth_{1};
+    unsigned int anchordepth_{nAnchorConfirmations};
     std::string fromaddress_;
     bool isfromtaddr_;
     bool isfromzaddr_;

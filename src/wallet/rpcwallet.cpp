@@ -3892,7 +3892,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
             "      \"amount\":amount    (numeric, required) The numeric amount in " + CURRENCY_UNIT + " is the value\n"
             "      \"memo\":memo        (string, optional) If the address is a zaddr, raw data represented in hexadecimal string format\n"
             "    }, ... ]\n"
-            "3. minconf               (numeric, optional, default=1) Only use funds confirmed at least this many times.\n"
+            "3. minconf               (numeric, optional, default=" + strprintf("%u", DEFAULT_NOTE_CONFIRMATIONS) + ") Only use funds confirmed at least this many times.\n"
             "4. fee                   (numeric, optional, default="
             + strprintf("%s", FormatMoney(ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE)) + ") The fee amount to attach to this transaction.\n"
             "\nResult:\n"
@@ -4079,7 +4079,7 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
     }
 
     // Minimum confirmations
-    int nMinDepth = 1;
+    int nMinDepth = DEFAULT_NOTE_CONFIRMATIONS;
     if (params.size() > 2) {
         nMinDepth = params[2].get_int();
     }
@@ -4144,9 +4144,11 @@ UniValue z_sendmany(const UniValue& params, bool fHelp)
         contextualTx.nVersion = 2; // Tx format should support vJoinSplits
     }
 
+    unsigned int nAnchorDepth = std::min((unsigned int) nMinDepth, nAnchorConfirmations);
+
     // Create operation and add to global queue
     std::shared_ptr<AsyncRPCQueue> q = getAsyncRPCQueue();
-    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nFee, contextInfo) );
+    std::shared_ptr<AsyncRPCOperation> operation( new AsyncRPCOperation_sendmany(builder, contextualTx, fromaddress, taddrRecipients, zaddrRecipients, nMinDepth, nAnchorDepth, nFee, contextInfo) );
     q->addOperation(operation);
     AsyncRPCOperationId operationId = operation->getId();
     return operationId;
@@ -4747,7 +4749,7 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
         // Get available notes
         std::vector<SproutNoteEntry> sproutEntries;
         std::vector<SaplingNoteEntry> saplingEntries;
-        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs);
+        pwalletMain->GetFilteredNotes(sproutEntries, saplingEntries, zaddrs, nAnchorConfirmations);
 
         // If Sapling is not active, do not allow sending from a sapling addresses.
         if (!saplingActive && saplingEntries.size() > 0) {

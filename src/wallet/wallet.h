@@ -48,6 +48,7 @@ extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
 extern bool fSendFreeTransactions;
 extern bool fPayAtLeastCustomFee;
+extern unsigned int nAnchorConfirmations;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;
 //! -paytxfee default
@@ -72,6 +73,11 @@ static const unsigned int WITNESS_CACHE_SIZE = MAX_REORG_LENGTH + 1;
 
 //! Size of HD seed in bytes
 static const size_t HD_WALLET_SEED_LENGTH = 32;
+
+//! -anchorconfirmations default
+static const unsigned int DEFAULT_ANCHOR_CONFIRMATIONS = 3;
+//! Default minimum number of confirmations for note selection
+static const unsigned int DEFAULT_NOTE_CONFIRMATIONS = 10;
 
 extern const char * DEFAULT_WALLET_DAT;
 
@@ -1262,14 +1268,17 @@ public:
     bool IsSproutNullifierFromMe(const uint256& nullifier) const;
     bool IsSaplingNullifierFromMe(const uint256& nullifier) const;
 
-    void GetSproutNoteWitnesses(
-         std::vector<JSOutPoint> notes,
+    bool GetSproutNoteWitnesses(
+         const std::vector<JSOutPoint>& notes,
+         unsigned int confirmations,
          std::vector<std::optional<SproutWitness>>& witnesses,
-         uint256 &final_anchor);
-    void GetSaplingNoteWitnesses(
-         std::vector<SaplingOutPoint> notes,
+         uint256 &final_anchor) const;
+
+    bool GetSaplingNoteWitnesses(
+         const std::vector<SaplingOutPoint>& notes,
+         unsigned int confirmations,
          std::vector<std::optional<SaplingWitness>>& witnesses,
-         uint256 &final_anchor);
+         uint256 &final_anchor) const;
 
     isminetype IsMine(const CTxIn& txin) const;
     CAmount GetDebit(const CTxIn& txin, const isminefilter& filter) const;
@@ -1423,7 +1432,7 @@ public:
     void GetFilteredNotes(std::vector<SproutNoteEntry>& sproutEntries,
                           std::vector<SaplingNoteEntry>& saplingEntries,
                           std::set<libzcash::PaymentAddress>& filterAddresses,
-                          int minDepth=1,
+                          int minDepth,
                           int maxDepth=INT_MAX,
                           bool ignoreSpent=true,
                           bool requireSpendingKey=true,

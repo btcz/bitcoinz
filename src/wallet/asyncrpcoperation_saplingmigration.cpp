@@ -136,12 +136,15 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             libzcash::SproutSpendingKey sproutSk;
             pwalletMain->GetSproutSpendingKey(sproutEntry.address, sproutSk);
             std::vector<JSOutPoint> vOutPoints = {sproutEntry.jsop};
-            // Each migration transaction SHOULD specify an anchor at height N-10
+            // Each migration transaction uses the anchor at height N-nAnchorConfirmations
             // for each Sprout JoinSplit description
-            // TODO: the above functionality (in comment) is not implemented in bitcoinzd
             uint256 inputAnchor;
             std::vector<std::optional<SproutWitness>> vInputWitnesses;
-            pwalletMain->GetSproutNoteWitnesses(vOutPoints, vInputWitnesses, inputAnchor);
+            if (!pwalletMain->GetSproutNoteWitnesses(vOutPoints, nAnchorConfirmations, vInputWitnesses, inputAnchor)) {
+                // This error should not appear once we're nAnchorConfirmations blocks past
+                // Sprout activation.
+                throw JSONRPCError(RPC_WALLET_ERROR, "Insufficient Sprout witnesses.");
+            }
             builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }
         // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
