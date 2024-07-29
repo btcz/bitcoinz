@@ -129,7 +129,7 @@ public:
     int GetCommunityFeeStartHeight() const { return vCommunityFeeStartHeight; };
     int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
     /** Enforce coinbase consensus rule in regtest mode */
-    void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
+    void SetRegTestCoinbaseMustBeShielded() { consensus.fCoinbaseMustBeShielded = true; }
     int GetFutureBlockTimeWindow(int height) const;
     int GetRollingCheckpointStartHeight() const { return vRollingCheckpointStartHeight; }
 protected:
