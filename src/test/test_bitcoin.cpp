@@ -152,8 +152,14 @@ CBlock
 TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>& txns, const CScript& scriptPubKey)
 {
     const CChainParams& chainparams = Params();
-    unsigned int n = chainparams.GetConsensus().nEquihashN;
-    unsigned int k = chainparams.GetConsensus().nEquihashK;
+
+    int nHeight = chainActive.Height();
+
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN];
+    validEHparameterList(ehparams, nHeight + 1, chainparams);
+
+    unsigned int n = ehparams[0].n;
+    unsigned int k = ehparams[0].k;
 
     CBlockTemplate *pblocktemplate = CreateNewBlock(chainparams, scriptPubKey);
     CBlock& block = pblocktemplate->block;
