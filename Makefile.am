@@ -167,3 +167,4 @@ DISTCHECK_CONFIGURE_FLAGS = --enable-man
 
 clean-local:
 	rm -rf test_bitcoinz.coverage/ bitcoinz-gtest.coverage/ total.coverage/
+	rm -rf afl-temp

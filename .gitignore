@@ -94,6 +94,7 @@ test_bitcoinz.coverage/
 bitcoinz-gtest.coverage/
 total.coverage/
 coverage_percent.txt
+afl-temp
 
 #build tests
 linux-coverage-build
