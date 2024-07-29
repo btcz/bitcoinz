@@ -57,7 +57,6 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/function.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 
@@ -1566,9 +1565,9 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             LOCK(cs_main);
             pindexLastTip = chainActive.Tip();
         }
-        boost::function<void()> threadnotifywallets = boost::bind(&ThreadNotifyWallets, pindexLastTip);
+        std::function<void()> threadnotifywallets = std::bind(&ThreadNotifyWallets, pindexLastTip);
         threadGroup.create_thread(
-            boost::bind(&TraceThread<boost::function<void()>>, "txnotify", threadnotifywallets)
+            std::bind(&TraceThread<std::function<void()>>, "txnotify", threadnotifywallets)
         );
     }
 
