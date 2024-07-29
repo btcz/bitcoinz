@@ -9,8 +9,8 @@
 bool fExperimentalDeveloperEncryptWallet = false;
 bool fExperimentalDeveloperSetPoolSizeZero = false;
 bool fExperimentalPaymentDisclosure = false;
-bool fExperimentalMergeToAddress = false;
 bool fExperimentalInsightExplorer = false;
+bool fExperimentalLightWalletd = false;
 
 boost::optional<std::string> InitExperimentalMode()
 {
@@ -18,8 +18,8 @@ boost::optional<std::string> InitExperimentalMode()
     fExperimentalDeveloperEncryptWallet = GetBoolArg("-developerencryptwallet", false);
     fExperimentalDeveloperSetPoolSizeZero = GetBoolArg("-developersetpoolsizezero", false);
     fExperimentalPaymentDisclosure = GetBoolArg("-paymentdisclosure", false);
-    fExperimentalMergeToAddress = GetBoolArg("-zmergetoaddress", false);
     fExperimentalInsightExplorer = GetBoolArg("-insightexplorer", false);
+    fExperimentalLightWalletd  = GetBoolArg("-lightwalletd", false);
 
     // Fail if user has set experimental options without the global flag
     if (!fExperimentalMode) {
@@ -29,10 +29,10 @@ boost::optional<std::string> InitExperimentalMode()
             return _("Setting the size of shielded pools to zero requires -experimentalfeatures.");
         } else if (fExperimentalPaymentDisclosure) {
             return _("Payment disclosure requires -experimentalfeatures.");
-        } else if (fExperimentalMergeToAddress) {
-            return _("RPC method z_mergetoaddress requires -experimentalfeatures.");
         } else if (fExperimentalInsightExplorer) {
             return _("Insight explorer requires -experimentalfeatures.");
+        } else if (fExperimentalLightWalletd) {
+            return _("Light Walletd requires -experimentalfeatures.");
         }
     }
     return boost::none;
@@ -47,10 +47,10 @@ std::vector<std::string> GetExperimentalFeatures()
         experimentalfeatures.push_back("developersetpoolsizezero");
     if (fExperimentalPaymentDisclosure)
         experimentalfeatures.push_back("paymentdisclosure");
-    if (fExperimentalMergeToAddress)
-        experimentalfeatures.push_back("zmergetoaddress");
     if (fExperimentalInsightExplorer)
         experimentalfeatures.push_back("insightexplorer");
+    if (fExperimentalLightWalletd)
+        experimentalfeatures.push_back("lightwalletd");
 
     return experimentalfeatures;
 }

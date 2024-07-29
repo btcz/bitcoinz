@@ -1695,13 +1695,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 
     LOCK(pwalletMain->cs_wallet);
 
-    CheckRPCThrows("z_mergetoaddress 1 2",
-        "Error: z_mergetoaddress is disabled. Run './bitcoinz-cli help z_mergetoaddress' for instructions on how to enable this feature.");
-
-    // Set global state required for z_mergetoaddress
-    fExperimentalMergeToAddress = true;
-    mapArgs["-zmergetoaddress"] = "1";
-
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress just too many args present for this method"), runtime_error);
@@ -1841,10 +1834,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     } catch (const UniValue& objError) {
         BOOST_CHECK( find_error(objError, "Invalid recipient address"));
     }
-
-    // Un-set global state
-    fExperimentalMergeToAddress = false;
-    mapArgs.erase("-zmergetoaddress");
 }
 
 

@@ -578,8 +578,8 @@ static bool getAddressesFromParams(
 UniValue getaddressmempool(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressmempool", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -613,7 +613,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressmempool", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressmempool is disabled. "
             "Run './bitcoinz-cli help getaddressmempool' for instructions on how to enable this feature.");
     }
@@ -658,7 +658,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
     if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", "insightexplorer");
+        disabledMsg = experimentalDisabledHelpMsg("getaddressutxos", {"insightexplorer"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -814,8 +814,8 @@ static void getAddressesInHeightRange(
 UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressdeltas", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -875,7 +875,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressdeltas", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000, \"chainInfo\": true}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressdeltas is disabled. "
             "Run './bitcoinz-cli help getaddressdeltas' for instructions on how to enable this feature.");
     }
@@ -943,8 +943,8 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 UniValue getaddressbalance(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddressbalance", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -971,7 +971,7 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddressbalance", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddressbalance is disabled. "
             "Run './bitcoinz-cli help getaddressbalance' for instructions on how to enable this feature.");
     }
@@ -1000,8 +1000,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
 UniValue getaddresstxids(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
-    if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", "insightexplorer");
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
+        disabledMsg = experimentalDisabledHelpMsg("getaddresstxids", {"insightexplorer", "lightwalletd"});
     }
     if (fHelp || params.size() != 1)
         throw runtime_error(
@@ -1031,7 +1031,7 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
             + HelpExampleRpc("getaddresstxids", "{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"], \"start\": 1000, \"end\": 2000}")
         );
 
-    if (!fExperimentalInsightExplorer) {
+    if (!(fExperimentalInsightExplorer || fExperimentalLightWalletd)) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: getaddresstxids is disabled. "
             "Run './bitcoinz-cli help getaddresstxids' for instructions on how to enable this feature.");
     }
@@ -1066,7 +1066,7 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
 {
     std::string disabledMsg = "";
     if (!fExperimentalInsightExplorer) {
-        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", "insightexplorer");
+        disabledMsg = experimentalDisabledHelpMsg("getspentinfo", {"insightexplorer"});
     }
     if (fHelp || params.size() != 1 || !params[0].isObject())
         throw runtime_error(

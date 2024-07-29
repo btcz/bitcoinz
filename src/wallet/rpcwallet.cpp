@@ -2043,7 +2043,7 @@ UniValue encryptwallet(const UniValue& params, bool fHelp)
 
     std::string disabledMsg = "";
     if (!fExperimentalDeveloperEncryptWallet) {
-        disabledMsg = experimentalDisabledHelpMsg("encryptwallet", "developerencryptwallet");
+        disabledMsg = experimentalDisabledHelpMsg("encryptwallet", {"developerencryptwallet"});
     }
 
     if (!pwalletMain->IsCrypted() && (fHelp || params.size() != 1))
@@ -4484,15 +4484,9 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
     if (!EnsureWalletIsAvailable(fHelp))
         return NullUniValue;
 
-    std::string disabledMsg = "";
-    if (!fExperimentalMergeToAddress) {
-        disabledMsg = experimentalDisabledHelpMsg("z_mergetoaddress", "zmergetoaddress");
-    }
-
     if (fHelp || params.size() < 2 || params.size() > 6)
         throw runtime_error(
             "z_mergetoaddress [\"fromaddress\", ... ] \"toaddress\" ( fee ) ( transparent_limit ) ( shielded_limit ) ( memo )\n"
-            + disabledMsg +
             "\nMerge multiple UTXOs and notes into a single UTXO or note.  Coinbase UTXOs are ignored; use `z_shieldcoinbase`"
             "\nto combine those into a single note."
             "\n\nThis is an asynchronous operation, and UTXOs selected for merging will be locked.  If there is an error, they"
@@ -4542,10 +4536,6 @@ UniValue z_mergetoaddress(const UniValue& params, bool fHelp)
             + HelpExampleCli("z_mergetoaddress", "'[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"]' ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj")
             + HelpExampleRpc("z_mergetoaddress", "[\"ANY_SAPLING\", \"t1M72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"], \"ztestsapling19rnyu293v44f0kvtmszhx35lpdug574twc0lwyf4s7w0umtkrdq5nfcauxrxcyfmh3m7slemqsj\"")
         );
-
-    if (!fExperimentalMergeToAddress) {
-        throw JSONRPCError(RPC_WALLET_ERROR, "Error: z_mergetoaddress is disabled. Run './bitcoinz-cli help z_mergetoaddress' for instructions on how to enable this feature.");
-    }
 
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
