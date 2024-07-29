@@ -39,7 +39,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
             pindexLast->nHeight >= params.nPowAllowMinDifficultyBlocksAfterHeight.value())
         {
             // Special difficulty rule for testnet:
-            // If the new block's timestamp is more than 6 * block interval  minutes
+            // If the new block's timestamp is more than 6 * block interval minutes
             // then allow mining of a min-difficulty block.
             if (pblock && pblock->GetBlockTime() > pindexLast->GetBlockTime() + params.PoWTargetSpacing(pindexLast->nHeight + 1) * 6)
                 return nProofOfWorkLimit;
@@ -167,9 +167,9 @@ arith_uint256 GetBlockProof(const CBlockIndex& block)
     if (fNegative || fOverflow || bnTarget == 0)
         return 0;
     // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
-    // as it's too large for a arith_uint256. However, as 2**256 is at least as large
+    // as it's too large for an arith_uint256. However, as 2**256 is at least as large
     // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
-    // or ~bnTarget / (nTarget+1) + 1.
+    // or ~bnTarget / (bnTarget+1) + 1.
     return (~bnTarget / (bnTarget + 1)) + 1;
 }
 

@@ -418,7 +418,7 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
             break
         time.sleep(1)
 
-    assert_true(result is not None, "timeout occured")
+    assert_true(result is not None, "timeout occurred")
     status = result['status']
 
     debug = os.getenv("PYTHON_DEBUG", "")

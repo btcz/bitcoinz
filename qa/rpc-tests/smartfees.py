@@ -17,7 +17,7 @@ import random
 from decimal import Decimal, ROUND_DOWN
 
 # Construct 2 trivial P2SH's and the ScriptSigs that spend them
-# So we can create many many transactions without needing to spend
+# So we can create many transactions without needing to spend
 # time signing.
 P2SH_1 = "2MySexEGVzZpRgNQ1JdjdP5bRETznm3roQ2" # P2SH of "OP_1 OP_DROP"
 P2SH_2 = "2NBdpwq8Aoo1EEKEXPNrKvr5xQr3M9UfcZA" # P2SH of "OP_2 OP_DROP"
@@ -31,7 +31,7 @@ def satoshi_round(amount):
 def small_txpuzzle_randfee(from_node, conflist, unconflist, amount, min_fee, fee_increment):
     '''
     Create and send a transaction with a random fee.
-    The transaction pays to a trival P2SH script, and assumes that its inputs
+    The transaction pays to a trivial P2SH script, and assumes that its inputs
     are of the same form.
     The function takes a list of confirmed outputs and unconfirmed outputs
     and attempts to use the confirmed list first for its inputs.

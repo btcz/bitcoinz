@@ -370,7 +370,7 @@ struct equi {
   struct collisiondata {
 #ifdef XBITMAP
 #if NSLOTS > 64
-#error cant use XBITMAP with more than 64 slots
+#error can not use XBITMAP with more than 64 slots
 #endif
     u64 xhashmap[NRESTS];
     u64 xmap;
