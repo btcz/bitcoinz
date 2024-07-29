@@ -73,6 +73,6 @@ struct CMainSignals {
 
 CMainSignals& GetMainSignals();
 
-void ThreadNotifyWallets();
+void ThreadNotifyWallets(CBlockIndex *pindexLastTip);
 
 #endif // BITCOIN_VALIDATIONINTERFACE_H
