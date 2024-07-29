@@ -56,7 +56,7 @@ public:
 
     virtual ~SaplingNote() {};
 
-    std::optional<uint256> cm() const;
+    std::optional<uint256> cmu() const;
     std::optional<uint256> nullifier(const SaplingFullViewingKey &vk, const uint64_t position) const;
 };
 

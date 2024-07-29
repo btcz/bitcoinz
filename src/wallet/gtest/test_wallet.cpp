@@ -388,7 +388,7 @@ TEST(WalletTests, SetSaplingNoteAddrsInCWalletTx) {
     auto pk = sk.DefaultAddress();
 
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cmu().value();
     SaplingMerkleTree tree;
     tree.append(cm);
     auto anchor = tree.root();
@@ -650,7 +650,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
 
     // Generate note A
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cmu().value();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
@@ -696,7 +696,7 @@ TEST(WalletTests, GetConflictedSaplingNotes) {
             wtx.vShieldedOutput[0].encCiphertext,
             ivk,
             wtx.vShieldedOutput[0].ephemeralKey,
-            wtx.vShieldedOutput[0].cm);
+            wtx.vShieldedOutput[0].cmu);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.value().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
@@ -1008,7 +1008,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
 
     // Generate Sapling note A
     libzcash::SaplingNote note(pk, 50000);
-    auto cm = note.cm().value();
+    auto cm = note.cmu().value();
     SaplingMerkleTree saplingTree;
     saplingTree.append(cm);
     auto anchor = saplingTree.root();
@@ -1067,7 +1067,7 @@ TEST(WalletTests, SpentSaplingNoteIsFromMe) {
         wtx.vShieldedOutput[0].encCiphertext,
         ivk,
         wtx.vShieldedOutput[0].ephemeralKey,
-        wtx.vShieldedOutput[0].cm);
+        wtx.vShieldedOutput[0].cmu);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.value().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);
@@ -1976,7 +1976,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
 
     // Prepare to spend the note that was just created
     auto maybe_pt = libzcash::SaplingNotePlaintext::decrypt(
-            tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey, tx1.vShieldedOutput[0].cm);
+            tx1.vShieldedOutput[0].encCiphertext, ivk, tx1.vShieldedOutput[0].ephemeralKey, tx1.vShieldedOutput[0].cmu);
     ASSERT_EQ(static_cast<bool>(maybe_pt), true);
     auto maybe_note = maybe_pt.value().note(ivk);
     ASSERT_EQ(static_cast<bool>(maybe_note), true);

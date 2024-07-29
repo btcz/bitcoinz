@@ -597,12 +597,12 @@ double benchmark_create_sapling_spend()
     auto address = sk.default_address();
     SaplingNote note(address, GetRand(MAX_MONEY));
     SaplingMerkleTree tree;
-    auto maybe_cm = note.cm();
-    tree.append(maybe_cm.value());
+    auto maybe_cmu = note.cmu();
+    tree.append(maybe_cmu.value());
     auto anchor = tree.root();
     auto witness = tree.witness();
     auto maybe_nf = note.nullifier(expsk.full_viewing_key(), witness.position());
-    if (!(maybe_cm && maybe_nf)) {
+    if (!(maybe_cmu && maybe_nf)) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Could not create note commitment and nullifier");
     }
 
@@ -733,7 +733,7 @@ double benchmark_verify_sapling_output()
     bool result = librustzcash_sapling_check_output(
                 ctx,
                 output.cv.begin(),
-                output.cm.begin(),
+                output.cmu.begin(),
                 output.ephemeralKey.begin(),
                 output.zkproof.begin()
             );

@@ -1295,7 +1295,7 @@ void CWallet::IncrementNoteWitnesses(const CBlockIndex* pindex,
             nullifiersSapling.emplace_back(spend.nullifier);
         }
         for (uint32_t i = 0; i < tx.vShieldedOutput.size(); i++) {
-            const uint256& note_commitment = tx.vShieldedOutput[i].cm;
+            const uint256& note_commitment = tx.vShieldedOutput[i].cmu;
             saplingTree.append(note_commitment);
 
             noteCommitmentsSapling.emplace_back(note_commitment);
@@ -1656,7 +1656,7 @@ void CWallet::UpdateSaplingNullifierNoteMapWithTx(CWalletTx& wtx) {
             uint64_t position = nd.witnesses.front().position();
             auto extfvk = mapSaplingFullViewingKeys.at(nd.ivk);
             OutputDescription output = wtx.vShieldedOutput[op.n];
-            auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cm);
+            auto optPlaintext = SaplingNotePlaintext::decrypt(output.encCiphertext, nd.ivk, output.ephemeralKey, output.cmu);
             if (!optPlaintext) {
                 // An item in mapSaplingNoteData must have already been successfully decrypted,
                 // otherwise the item would not exist in the first place.
@@ -2062,7 +2062,7 @@ std::pair<mapSaplingNoteData_t, SaplingIncomingViewingKeyMap> CWallet::FindMySap
         const OutputDescription output = tx.vShieldedOutput[i];
         for (auto it = mapSaplingFullViewingKeys.begin(); it != mapSaplingFullViewingKeys.end(); ++it) {
             SaplingIncomingViewingKey ivk = it->first;
-            auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cm);
+            auto result = SaplingNotePlaintext::decrypt(output.encCiphertext, ivk, output.ephemeralKey, output.cmu);
             if (!result) {
                 continue;
             }
@@ -2476,7 +2476,7 @@ std::optional<std::pair<
         output.encCiphertext,
         nd.ivk,
         output.ephemeralKey,
-        output.cm);
+        output.cmu);
     assert(static_cast<bool>(maybe_pt));
     auto notePt = maybe_pt.value();
 
@@ -2499,7 +2499,7 @@ std::optional<std::pair<
             output.outCiphertext,
             ovk,
             output.cv,
-            output.cm,
+            output.cmu,
             output.ephemeralKey);
         if (!outPt) {
             continue;
@@ -2510,7 +2510,7 @@ std::optional<std::pair<
             output.ephemeralKey,
             outPt->esk,
             outPt->pk_d,
-            output.cm);
+            output.cmu);
         assert(static_cast<bool>(maybe_pt));
         auto notePt = maybe_pt.value();
 
@@ -5149,7 +5149,7 @@ void CWallet::GetFilteredNotes(
                 wtx.vShieldedOutput[op.n].encCiphertext,
                 nd.ivk,
                 wtx.vShieldedOutput[op.n].ephemeralKey,
-                wtx.vShieldedOutput[op.n].cm);
+                wtx.vShieldedOutput[op.n].cmu);
             assert(static_cast<bool>(maybe_pt));
             auto notePt = maybe_pt.value();
 
