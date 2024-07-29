@@ -20,6 +20,7 @@ TEST(WalletZkeysTest, StoreAndLoadSaplingZkeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
+    LOCK(wallet.cs_wallet);
 
     // wallet should be empty
     std::set<libzcash::SaplingPaymentAddress> addrs;
@@ -114,6 +115,7 @@ TEST(WalletZkeysTest, StoreAndLoadZkeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
+    LOCK(wallet.cs_wallet);
 
     // wallet should be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
@@ -171,6 +173,7 @@ TEST(WalletZkeysTest, StoreAndLoadViewingKeys) {
     SelectParams(CBaseChainParams::MAIN);
 
     CWallet wallet;
+    LOCK(wallet.cs_wallet);
 
     // wallet should be empty
     std::set<libzcash::SproutPaymentAddress> addrs;
@@ -223,6 +226,7 @@ TEST(WalletZkeysTest, WriteZkeyDirectToDb) {
 
     bool fFirstRun;
     CWallet wallet("wallet.dat");
+    LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
     // No default CPubKey set
@@ -295,6 +299,7 @@ TEST(WalletZkeysTest, WriteViewingKeyDirectToDB) {
 
     bool fFirstRun;
     CWallet wallet("wallet-vkey.dat");
+    LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
     // No default CPubKey set
@@ -340,6 +345,7 @@ TEST(WalletZkeysTest, WriteCryptedzkeyDirectToDb) {
 
     bool fFirstRun;
     CWallet wallet("wallet_crypted.dat");
+    LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
     // No default CPubKey set
@@ -414,6 +420,7 @@ TEST(wallet_zkeys_tests, WriteCryptedSaplingZkeyDirectToDb) {
 
     bool fFirstRun;
     CWallet wallet("wallet_crypted_sapling.dat");
+    LOCK(wallet.cs_wallet);
     ASSERT_EQ(DB_LOAD_OK, wallet.LoadWallet(fFirstRun));
 
      // No default CPubKey set

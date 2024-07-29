@@ -27,9 +27,7 @@
 
 #include <array>
 #include <chrono>
-#include <optional>
 #include <thread>
-#include <variant>
 
 #include <fstream>
 #include <unordered_set>
@@ -63,7 +61,7 @@ BOOST_FIXTURE_TEST_SUITE(rpc_wallet_tests, WalletTestingSetup)
 
 BOOST_AUTO_TEST_CASE(rpc_addmultisig)
 {
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     rpcfn_type addmultisig = tableRPC["addmultisigaddress"]->actor;
 
@@ -340,7 +338,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_getbalance)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
 
     BOOST_CHECK_THROW(CallRPC("z_getbalance too many args"), runtime_error);
@@ -993,7 +991,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     BOOST_CHECK_THROW(CallRPC("z_sendmany"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_sendmany toofewargs"), runtime_error);
@@ -1119,7 +1117,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_internals)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
 
@@ -1326,7 +1324,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 {
     RegtestActivateSapling();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     if (!pwalletMain->HaveHDSeed()) {
         pwalletMain->GenerateNewSeed();
@@ -1546,7 +1544,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_listunspent_parameters)
 {
     SelectParams(CBaseChainParams::TESTNET);
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
 
@@ -1596,7 +1594,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase toofewargs"), runtime_error);
@@ -1676,7 +1674,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     // Mutable tx containing contextual information we need to build tx
     // We removed the ability to create pre-Sapling Sprout proofs, so we can
@@ -1732,7 +1730,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress"), runtime_error);
     BOOST_CHECK_THROW(CallRPC("z_mergetoaddress toofewargs"), runtime_error);
@@ -1882,7 +1880,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
     SelectParams(CBaseChainParams::TESTNET);
     auto consensusParams = Params().GetConsensus();
 
-    LOCK(pwalletMain->cs_wallet);
+    LOCK2(cs_main, pwalletMain->cs_wallet);
 
     UniValue retValue;
 
