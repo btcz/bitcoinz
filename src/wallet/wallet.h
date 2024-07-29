@@ -1291,6 +1291,18 @@ public:
     void AddPendingSaplingMigrationTx(const CTransaction& tx);
     /** Saves witness caches and best block locator to disk. */
     void SetBestChain(const CBlockLocator& loc);
+    /**
+     * Returns the block hash corresponding to the wallet's most recently
+     * persisted best block. This is the state to which the wallet will revert
+     * if restarted immediately, and does not necessarily match the current
+     * in-memory state.
+     *
+     * Returns std::nullopt if the wallet has never written a best block,
+     * i.e. this is a brand new wallet, or the node was shut down before
+     * SetBestChain was ever called to persist wallet state.
+     */
+    std::optional<uint256> GetPersistedBestBlock();
+
     std::set<std::pair<libzcash::PaymentAddress, uint256>> GetNullifiersForAddresses(const std::set<libzcash::PaymentAddress> & addresses);
     bool IsNoteSproutChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const JSOutPoint & entry);
     bool IsNoteSaplingChange(const std::set<std::pair<libzcash::PaymentAddress, uint256>> & nullifierSet, const libzcash::PaymentAddress & address, const SaplingOutPoint & entry);

@@ -176,11 +176,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Read block from disk.
             CBlock block;
             if (!ReadBlockFromDisk(block, pindexLastTip, chainParams.GetConsensus())) {
-                LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block disconnects");
+                LogPrintf(
+                        "*** %s: Failed to read block %s while notifying wallets of block disconnects",
+                        __func__, pindexLastTip->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
+                return;
             }
 
             // Let wallets know transactions went from 1-confirmed to
@@ -207,11 +210,14 @@ void ThreadNotifyWallets(CBlockIndex *pindexLastTip)
             // Read block from disk.
             CBlock block;
             if (!ReadBlockFromDisk(block, blockData.pindex, chainParams.GetConsensus())) {
-                LogPrintf("*** %s\n", "Failed to read block while notifying wallets of block connects");
+                LogPrintf(
+                        "*** %s: Failed to read block %s while notifying wallets of block connects",
+                        __func__, blockData.pindex->GetBlockHash().GetHex());
                 uiInterface.ThreadSafeMessageBox(
                     _("Error: A fatal internal error occurred, see debug.log for details"),
                     "", CClientUIInterface::MSG_ERROR);
                 StartShutdown();
+                return;
             }
 
             // Tell wallet about transactions that went from mempool

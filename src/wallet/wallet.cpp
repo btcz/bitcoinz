@@ -682,6 +682,21 @@ void CWallet::SetBestChain(const CBlockLocator& loc)
     SetBestChainINTERNAL(walletdb, loc);
 }
 
+std::optional<uint256> CWallet::GetPersistedBestBlock()
+{
+    AssertLockHeld(cs_wallet);
+
+    CWalletDB walletdb(strWalletFile);
+    CBlockLocator locator;
+    if (walletdb.ReadBestBlock(locator)) {
+        if (!locator.vHave.empty()) {
+            return locator.vHave[0];
+        }
+    }
+
+    return std::nullopt;
+}
+
 std::set<std::pair<libzcash::PaymentAddress, uint256>> CWallet::GetNullifiersForAddresses(
         const std::set<libzcash::PaymentAddress> & addresses)
 {
