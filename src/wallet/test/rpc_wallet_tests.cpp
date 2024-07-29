@@ -1643,7 +1643,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
         mtx.nVersion = 2;
     }
 
-    // Test constructor of AsyncRPCOperation_sendmany
+    // Test constructor of AsyncRPCOperation_shieldcoinbase
     std::string testnetzaddr = "ztjiDe569DPNbyTE6TSdJTaSDhoXEHLGvYoUnBU1wfVNU52TEyT6berYtySkd21njAeEoh8fFJUT42kua9r8EnhBaEKqCpP";
     std::string mainnetzaddr = "zcMuhvq8sEkHALuSU2i4NbNQxshSAYrpCExec45ZjtivYPbuiFPwk6WHy4SvsbeZ4siy1WheuRGjtaJmoD1J8bFqNXhsG6U";
 
@@ -1668,7 +1668,6 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     }
 
 }
-
 
 
 BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_internals)
