@@ -77,7 +77,7 @@ static const size_t HD_WALLET_SEED_LENGTH = 32;
 //! -anchorconfirmations default
 static const unsigned int DEFAULT_ANCHOR_CONFIRMATIONS = 3;
 //! Default minimum number of confirmations for note selection
-static const unsigned int DEFAULT_NOTE_CONFIRMATIONS = 10;
+static const unsigned int DEFAULT_NOTE_CONFIRMATIONS = 1;
 
 extern const char * DEFAULT_WALLET_DAT;
 
