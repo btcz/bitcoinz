@@ -5217,6 +5217,16 @@ void CWallet::GetFilteredNotes(
             SaplingOutPoint op = pair.first;
             SaplingNoteData nd = pair.second;
 
+            // skip note which has been spent
+            if (ignoreSpent && nd.nullifier && IsSaplingSpent(*nd.nullifier)) {
+                continue;
+            }
+
+            // skip locked notes
+            if (ignoreLocked && IsLockedNote(op)) {
+                continue;
+            }
+
             auto maybe_pt = SaplingNotePlaintext::decrypt(
                 wtx.vShieldedOutput[op.n].encCiphertext,
                 nd.ivk,
@@ -5234,17 +5244,8 @@ void CWallet::GetFilteredNotes(
                 continue;
             }
 
-            if (ignoreSpent && nd.nullifier && IsSaplingSpent(*nd.nullifier)) {
-                continue;
-            }
-
             // skip notes which cannot be spent
             if (requireSpendingKey && !HaveSpendingKeyForPaymentAddress(this)(pa)) {
-                continue;
-            }
-
-            // skip locked notes
-            if (ignoreLocked && IsLockedNote(op)) {
                 continue;
             }
 
