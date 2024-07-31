@@ -18,9 +18,8 @@
 
 #include <univalue.h>
 
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/shared_ptr.hpp>
@@ -30,6 +29,7 @@
 
 using namespace RPCServer;
 using namespace std;
+using namespace boost::placeholders;
 
 static bool fRPCRunning = false;
 static bool fRPCInWarmup = true;
@@ -49,22 +49,22 @@ static struct CRPCSignals
     boost::signals2::signal<void (const CRPCCommand&)> PostCommand;
 } g_rpcSignals;
 
-void RPCServer::OnStarted(boost::function<void ()> slot)
+void RPCServer::OnStarted(std::function<void ()> slot)
 {
     g_rpcSignals.Started.connect(slot);
 }
 
-void RPCServer::OnStopped(boost::function<void ()> slot)
+void RPCServer::OnStopped(std::function<void ()> slot)
 {
     g_rpcSignals.Stopped.connect(slot);
 }
 
-void RPCServer::OnPreCommand(boost::function<void (const CRPCCommand&)> slot)
+void RPCServer::OnPreCommand(std::function<void (const CRPCCommand&)> slot)
 {
     g_rpcSignals.PreCommand.connect(boost::bind(slot, _1));
 }
 
-void RPCServer::OnPostCommand(boost::function<void (const CRPCCommand&)> slot)
+void RPCServer::OnPostCommand(std::function<void (const CRPCCommand&)> slot)
 {
     g_rpcSignals.PostCommand.connect(boost::bind(slot, _1));
 }
@@ -74,7 +74,7 @@ void RPCTypeCheck(const UniValue& params,
                   bool fAllowNull)
 {
     size_t i = 0;
-    BOOST_FOREACH(UniValue::VType t, typesExpected)
+    for (UniValue::VType t : typesExpected)
     {
         if (params.size() <= i)
             break;
@@ -94,7 +94,7 @@ void RPCTypeCheckObj(const UniValue& o,
                   const map<string, UniValue::VType>& typesExpected,
                   bool fAllowNull)
 {
-    BOOST_FOREACH(const PAIRTYPE(string, UniValue::VType)& t, typesExpected)
+    for (const std::pair<string, UniValue::VType>& t : typesExpected)
     {
         const UniValue& v = find_value(o, t.first);
         if (!fAllowNull && v.isNull())
@@ -175,7 +175,7 @@ std::string CRPCTable::help(const std::string& strCommand) const
         vCommands.push_back(make_pair(mi->second->category + mi->first, mi->second));
     sort(vCommands.begin(), vCommands.end());
 
-    BOOST_FOREACH(const PAIRTYPE(string, const CRPCCommand*)& command, vCommands)
+    for (const std::pair<string, const CRPCCommand*>& command : vCommands)
     {
         const CRPCCommand *pcmd = command.second;
         string strMethod = pcmd->name;
@@ -464,17 +464,35 @@ std::string HelpExampleCli(const std::string& methodname, const std::string& arg
 std::string HelpExampleRpc(const std::string& methodname, const std::string& args)
 {
     return "> curl --user myusername --data-binary '{\"jsonrpc\": \"1.0\", \"id\":\"curltest\", "
-        "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:8032/\n";
+        "\"method\": \"" + methodname + "\", \"params\": [" + args + "] }' -H 'content-type: text/plain;' http://127.0.0.1:8232/\n";
 }
 
-string experimentalDisabledHelpMsg(const string& rpc, const string& enableArg)
+std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vector<string>& enableArgs)
 {
-    return "\nWARNING: " + rpc + " is disabled.\n"
-        "To enable it, restart zcashd with the -experimentalfeatures and\n"
-        "-" + enableArg + " commandline options, or add these two lines\n"
-        "to the zcash.conf file:\n\n"
-        "experimentalfeatures=1\n"
-        + enableArg + "=1\n";
+    std::string cmd, config = "";
+    const auto size = enableArgs.size();
+    assert(size > 0);
+
+    for (size_t i = 0; i < size; ++i)
+    {
+        if (size == 1 || i == 0)
+        {
+            cmd += "-experimentalfeatures and -" + enableArgs.at(i);
+            config += "experimentalfeatures=1\n";
+            config += enableArgs.at(i) + "=1\n";
+        }
+        else {
+            cmd += " or:\n-experimentalfeatures and -" + enableArgs.at(i);
+            config += "\nor:\n\n";
+            config += "experimentalfeatures=1\n";
+            config += enableArgs.at(i) + "=1\n";
+        }
+    }
+    return "\nWARNING: " + rpc + " is disabled.\n" +
+        "To enable it, restart zcashd with the following command line options:\n"
+        + cmd + "\n\n" +
+        "Alternatively add these two lines to the zcash.conf file:\n\n"
+        + config;
 }
 
 void RPCRegisterTimerInterface(RPCTimerInterface *iface)
@@ -489,7 +507,7 @@ void RPCUnregisterTimerInterface(RPCTimerInterface *iface)
     timerInterfaces.erase(i);
 }
 
-void RPCRunLater(const std::string& name, boost::function<void(void)> func, int64_t nSeconds)
+void RPCRunLater(const std::string& name, std::function<void(void)> func, int64_t nSeconds)
 {
     if (timerInterfaces.empty())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No timer handler registered for RPC");

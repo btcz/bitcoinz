@@ -20,61 +20,11 @@ from decimal import Decimal
 class WalletSaplingTest(BitcoinTestFramework):
 
     def setup_nodes(self):
-        return start_nodes(4, self.options.tmpdir, [[
-            '-nuparams=5ba81b19:201', # Overwinter
-            '-nuparams=76b809bb:203', # Sapling
-            '-experimentalfeatures', '-zmergetoaddress',
-        ]] * 4)
+        return start_nodes(4, self.options.tmpdir)
 
     def run_test(self):
         # Sanity-check the test harness
         assert_equal(self.nodes[0].getblockcount(), 200)
-
-        # Activate Overwinter
-        self.nodes[2].generate(1)
-        self.sync_all()
-
-        # Verify RPCs disallow Sapling value transfer if Sapling is not active
-        tmp_taddr = get_coinbase_address(self.nodes[3])
-        tmp_zaddr = self.nodes[3].z_getnewaddress('sapling')
-        try:
-            recipients = []
-            recipients.append({"address": tmp_zaddr, "amount": Decimal('10')})
-            self.nodes[3].z_sendmany(tmp_taddr, recipients, 1, 0)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            recipients = []
-            recipients.append({"address": tmp_taddr, "amount": Decimal('10')})
-            self.nodes[3].z_sendmany(tmp_zaddr, recipients, 1, 0)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            self.nodes[3].z_shieldcoinbase(tmp_taddr, tmp_zaddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-
-        # Verify z_mergetoaddress RPC does not support Sapling yet
-        try:
-            self.nodes[3].z_mergetoaddress([tmp_taddr], tmp_zaddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            assert_equal("Invalid parameter, Sapling has not activated", e.error['message'])
-        try:
-            self.nodes[3].z_mergetoaddress([tmp_zaddr], tmp_taddr)
-            raise AssertionError("Should have thrown an exception")
-        except JSONRPCException as e:
-            # When sending from a zaddr we check for sapling activation only if
-            # we find notes belonging to that address. Since sapling is not active
-            # none can be generated and none will be found.
-            assert_equal("Could not find any funds to merge.", e.error['message'])
-
-        # Activate Sapling
-        self.nodes[2].generate(2)
-        self.sync_all()
 
         taddr1 = self.nodes[1].getnewaddress()
         saplingAddr0 = self.nodes[0].z_getnewaddress('sapling')
@@ -188,19 +138,25 @@ class WalletSaplingTest(BitcoinTestFramework):
         sk0 = self.nodes[0].z_exportkey(saplingAddr0)
         saplingAddrInfo0 = self.nodes[2].z_importkey(sk0, "yes")
         assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(saplingAddrInfo0["address"], saplingAddr0)
         assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         sk1 = self.nodes[1].z_exportkey(saplingAddr1)
         saplingAddrInfo1 = self.nodes[2].z_importkey(sk1, "yes")
         assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(saplingAddrInfo1["address"], saplingAddr1)
         assert_equal(self.nodes[2].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
         # Verify importing a viewing key will update the nullifiers and witnesses correctly
         extfvk0 = self.nodes[0].z_exportviewingkey(saplingAddr0)
-        self.nodes[3].z_importviewingkey(extfvk0, "yes")
-        assert_equal(self.nodes[3].z_getbalance(saplingAddr0), Decimal('10'))
+        saplingAddrInfo0 = self.nodes[3].z_importviewingkey(extfvk0, "yes")
+        assert_equal(saplingAddrInfo0["type"], "sapling")
+        assert_equal(saplingAddrInfo0["address"], saplingAddr0)
+        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo0["address"]), Decimal('10'))
         extfvk1 = self.nodes[1].z_exportviewingkey(saplingAddr1)
-        self.nodes[3].z_importviewingkey(extfvk1, "yes")
-        assert_equal(self.nodes[3].z_getbalance(saplingAddr1), Decimal('5'))
+        saplingAddrInfo1 = self.nodes[3].z_importviewingkey(extfvk1, "yes")
+        assert_equal(saplingAddrInfo1["type"], "sapling")
+        assert_equal(saplingAddrInfo1["address"], saplingAddr1)
+        assert_equal(self.nodes[3].z_getbalance(saplingAddrInfo1["address"]), Decimal('5'))
 
         # Verify that z_gettotalbalance only includes watch-only addresses when requested
         assert_equal(self.nodes[3].z_gettotalbalance()['private'], '0.00')

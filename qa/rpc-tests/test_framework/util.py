@@ -110,11 +110,15 @@ def initialize_chain(test_dir):
     """
 
     if not os.path.isdir(os.path.join("cache", "node0")):
-        devnull = open("/dev/null", "w+")
+        devnull = open(os.devnull, "w+")
         # Create cache directories, run bitcoinds:
         for i in range(4):
             datadir=initialize_datadir("cache", i)
             args = [ os.getenv("BITCOIND", "bitcoind"), "-keypool=1", "-datadir="+datadir, "-discover=0" ]
+            args.extend([
+                '-nuparams=5ba81b19:1', # Overwinter
+                '-nuparams=76b809bb:1', # Sapling
+            ])
             if i > 0:
                 args.append("-connect=127.0.0.1:"+str(p2p_port(0)))
             bitcoind_processes[i] = subprocess.Popen(args)
@@ -200,9 +204,13 @@ def start_node(i, dirname, extra_args=None, rpchost=None, timewait=None, binary=
     if binary is None:
         binary = os.getenv("BITCOIND", "bitcoind")
     args = [ binary, "-datadir="+datadir, "-keypool=1", "-discover=0", "-rest" ]
+    args.extend([
+        '-nuparams=5ba81b19:1', # Overwinter
+        '-nuparams=76b809bb:1', # Sapling
+    ])
     if extra_args is not None: args.extend(extra_args)
     bitcoind_processes[i] = subprocess.Popen(args)
-    devnull = open("/dev/null", "w+")
+    devnull = open(os.devnull, "w+")
     if os.getenv("PYTHON_DEBUG", ""):
         print "start_node: bitcoind started, calling bitcoin-cli -rpcwait getblockcount"
     subprocess.check_call([ os.getenv("BITCOINCLI", "bitcoin-cli"), "-datadir="+datadir] +
@@ -410,7 +418,7 @@ def wait_and_assert_operationid_status_result(node, myopid, in_status='success',
             break
         time.sleep(1)
 
-    assert_true(result is not None, "timeout occured")
+    assert_true(result is not None, "timeout occurred")
     status = result['status']
 
     debug = os.getenv("PYTHON_DEBUG", "")

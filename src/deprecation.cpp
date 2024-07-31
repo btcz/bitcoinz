@@ -20,7 +20,6 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
     if (networkID != "main") return;
 
     int blocksToDeprecation = DEPRECATION_HEIGHT - nHeight;
-    bool disableDeprecation = (GetArg("-disabledeprecation", "") == CLIENT_VERSION_STR);
     if (blocksToDeprecation <= 0) {
         // In order to ensure we only log once per process when deprecation is
         // disabled (to avoid log spam), we only need to log in two cases:
@@ -32,10 +31,6 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
             auto msg = strprintf(_("This version has been deprecated as of block height %d."),
                                  DEPRECATION_HEIGHT) + " " +
                        _("You should upgrade to the latest version of BitcoinZ.");
-            if (!disableDeprecation) {
-                msg += " " + strprintf(_("To disable deprecation for this version, set %s%s."),
-                                       "-disabledeprecation=", CLIENT_VERSION_STR);
-            }
             LogPrintf("*** %s\n", msg);
             CAlert::Notify(msg, fThread);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);

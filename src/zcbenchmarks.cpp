@@ -17,6 +17,7 @@
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
+#include "policy/policy.h"
 #include "pow.h"
 #include "rpc/server.h"
 #include "script/sign.h"
@@ -91,24 +92,6 @@ double benchmark_sleep()
     return timer_stop(tv_start);
 }
 
-double benchmark_parameter_loading()
-{
-    // FIXME: this is duplicated with the actual loading code
-    boost::filesystem::path pk_path = ZC_GetParamsDir() / "sprout-proving.key";
-    boost::filesystem::path vk_path = ZC_GetParamsDir() / "sprout-verifying.key";
-
-    struct timeval tv_start;
-    timer_start(tv_start);
-
-    auto newParams = ZCJoinSplit::Prepared(vk_path.string(), pk_path.string());
-
-    double ret = timer_stop(tv_start);
-
-    delete newParams;
-
-    return ret;
-}
-
 double benchmark_create_joinsplit()
 {
     uint256 joinSplitPubKey;
@@ -118,8 +101,7 @@ double benchmark_create_joinsplit()
 
     struct timeval tv_start;
     timer_start(tv_start);
-    JSDescription jsdesc(true,
-                         *pzcashParams,
+    JSDescription jsdesc(*pzcashParams,
                          joinSplitPubKey,
                          anchor,
                          {JSInput(), JSInput()},
@@ -396,7 +378,7 @@ CWalletTx CreateSaplingTxWithNoteData(const Consensus::Params& consensusParams,
     auto wtx = GetValidSaplingReceive(consensusParams, keyStore, sk, 10);
     auto testNote = GetTestSaplingNote(sk.DefaultAddress(), 10);
     auto fvk = sk.expsk.full_viewing_key();
-    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).get();
+    auto nullifier = testNote.note.nullifier(fvk, testNote.tree.witness().position()).value();
 
     mapSaplingNoteData_t noteDataMap;
     SaplingOutPoint outPoint {wtx.GetHash(), 0};
@@ -454,7 +436,7 @@ double benchmark_increment_sapling_note_witnesses(size_t nTxs)
 
 // Fake the input of a given block
 // This class is based on the class CCoinsViewDB, but with limited functionality.
-// The construtor and the functions `GetCoins` and `HaveCoins` come directly from
+// The constructor and the functions `GetCoins` and `HaveCoins` come directly from
 // CCoinsViewDB, but the rest are either mocks and/or don't really do anything.
 
 // The following constant is a duplicate of the one found in txdb.cpp
@@ -563,7 +545,7 @@ double benchmark_connectblock_slow()
 
     // Undo alterations to global state
     mapBlockIndex.erase(hashPrev);
-    SelectParamsFromCommandLine();
+    SelectParams(ChainNameFromCommandLine());
 
     return duration;
 }
@@ -616,12 +598,12 @@ double benchmark_create_sapling_spend()
     auto address = sk.default_address();
     SaplingNote note(address, GetRand(MAX_MONEY));
     SaplingMerkleTree tree;
-    auto maybe_cm = note.cm();
-    tree.append(maybe_cm.get());
+    auto maybe_cmu = note.cmu();
+    tree.append(maybe_cmu.value());
     auto anchor = tree.root();
     auto witness = tree.witness();
     auto maybe_nf = note.nullifier(expsk.full_viewing_key(), witness.position());
-    if (!(maybe_cm && maybe_nf)) {
+    if (!(maybe_cmu && maybe_nf)) {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Could not create note commitment and nullifier");
     }
 
@@ -674,7 +656,7 @@ double benchmark_create_sapling_output()
         throw JSONRPCError(RPC_INTERNAL_ERROR, "SaplingNotePlaintext::encrypt() failed");
     }
 
-    auto enc = res.get();
+    auto enc = res.value();
     auto encryptor = enc.second;
 
     auto ctx = librustzcash_sapling_proving_ctx_init();
@@ -752,7 +734,7 @@ double benchmark_verify_sapling_output()
     bool result = librustzcash_sapling_check_output(
                 ctx,
                 output.cv.begin(),
-                output.cm.begin(),
+                output.cmu.begin(),
                 output.ephemeralKey.begin(),
                 output.zkproof.begin()
             );

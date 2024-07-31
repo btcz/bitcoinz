@@ -19,6 +19,9 @@
 
 #include <univalue.h>
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
+static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
 static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 static const int CONTINUE_EXECUTION=-1;
 
@@ -27,12 +30,10 @@ std::string HelpMessageCli()
     std::string strUsage;
     strUsage += HelpMessageGroup(_("Options:"));
     strUsage += HelpMessageOpt("-?", _("This help message"));
-    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), "bitcoinz.conf"));
+    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME));
     strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
-    strUsage += HelpMessageOpt("-testnet", _("Use the test network"));
-    strUsage += HelpMessageOpt("-regtest", _("Enter regression test mode, which uses a special chain in which blocks can be "
-                                             "solved instantly. This is intended for regression testing tools and app development."));
-    strUsage += HelpMessageOpt("-rpcconnect=<ip>", strprintf(_("Send commands to node running on <ip> (default: %s)"), "127.0.0.1"));
+    AppendParamsHelpMessages(strUsage);
+    strUsage += HelpMessageOpt("-rpcconnect=<ip>", strprintf(_("Send commands to node running on <ip> (default: %s)"), DEFAULT_RPCCONNECT));
     strUsage += HelpMessageOpt("-rpcport=<port>", strprintf(_("Connect to JSON-RPC on <port> (default: %u or testnet: %u)"), 1979, 11979));
     strUsage += HelpMessageOpt("-rpcwait", _("Wait for RPC server to start"));
     strUsage += HelpMessageOpt("-rpcuser=<user>", _("Username for JSON-RPC connections"));
@@ -101,14 +102,16 @@ static int AppInitRPC(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     try {
-        ReadConfigFile(mapArgs, mapMultiArgs);
+        ReadConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME), mapArgs, mapMultiArgs);
     } catch (const std::exception& e) {
         fprintf(stderr,"Error reading configuration file: %s\n", e.what());
         return EXIT_FAILURE;
     }
     // Check for -testnet or -regtest parameter (BaseParams() calls are only valid after this clause)
-    if (!SelectBaseParamsFromCommandLine()) {
-        fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
+    try {
+        SelectBaseParams(ChainNameFromCommandLine());
+    } catch(std::exception &e) {
+        fprintf(stderr, "Error: %s\n", e.what());
         return EXIT_FAILURE;
     }
     if (GetBoolArg("-rpcssl", false))
@@ -187,7 +190,7 @@ static void http_error_cb(enum evhttp_request_error err, void *ctx)
 
 UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 {
-    std::string host = GetArg("-rpcconnect", "127.0.0.1");
+    std::string host = GetArg("-rpcconnect", DEFAULT_RPCCONNECT);
     int port = GetArg("-rpcport", BaseParams().RPCPort());
 
     // Obtain event base
@@ -213,7 +216,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
             throw std::runtime_error(strprintf(
                 _("Could not locate RPC credentials. No authentication cookie could be found,\n"
                   "and no rpcpassword is set in the configuration file (%s)."),
-                    GetConfigFile().string().c_str()));
+                    GetConfigFile(GetArg("-conf", BITCOIN_CONF_FILENAME)).string().c_str()));
 
         }
     } else {
@@ -244,6 +247,8 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
         throw CConnectionFailed(strprintf("couldn't connect to server: %s (code %d)\n(make sure server is running and you are connecting to the correct RPC port)", http_errorstring(response.error), response.error));
     else if (response.status == HTTP_UNAUTHORIZED)
         throw std::runtime_error("incorrect rpcuser or rpcpassword (authorization failed)");
+    else if (response.status == HTTP_SERVICE_UNAVAILABLE)
+        throw std::runtime_error(strprintf("Server response: %s", response.body));
     else if (response.status >= 400 && response.status != HTTP_BAD_REQUEST && response.status != HTTP_NOT_FOUND && response.status != HTTP_INTERNAL_SERVER_ERROR)
         throw std::runtime_error(strprintf("server returned HTTP error %d", response.status));
     else if (response.body.empty())
@@ -327,9 +332,6 @@ int CommandLineRPC(int argc, char *argv[])
                     throw;
             }
         } while (fWait);
-    }
-    catch (const boost::thread_interrupted&) {
-        throw;
     }
     catch (const std::exception& e) {
         strPrint = std::string("error: ") + e.what();

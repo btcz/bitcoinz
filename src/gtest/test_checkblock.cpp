@@ -48,7 +48,7 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
     mtx.vout[0].scriptPubKey = CScript() << OP_TRUE;
     mtx.vout[0].nValue = 0;
     mtx.vout.push_back(CTxOut(
-        GetBlockSubsidy(1, Params().GetConsensus())/5,
+        GetBlockSubsidy(1, Params().GetConsensus()) * 0.05,
         Params().GetCommunityFeeScriptAtHeight(1)));
     mtx.fOverwintered = false;
     mtx.nVersion = -1;
@@ -70,11 +70,11 @@ TEST(CheckBlock, BlockSproutRejectsBadVersion) {
 
 class ContextualCheckBlockTest : public ::testing::Test {
 protected:
-    virtual void SetUp() {
+    void SetUp() override {
         SelectParams(CBaseChainParams::MAIN);
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         // Revert to test default. No-op on mainnet params.
         RegtestDeactivateSapling();
     }
@@ -97,7 +97,7 @@ protected:
 
         // Give it a Founder's Reward vout for height 1.
         mtx.vout.push_back(CTxOut(
-                    GetBlockSubsidy(1, Params().GetConsensus())/5,
+                    GetBlockSubsidy(1, Params().GetConsensus()) * 0.05,
                     Params().GetCommunityFeeScriptAtHeight(1)));
 
         return mtx;
@@ -156,7 +156,7 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
 
     // Give the transaction a Founder's Reward vout
     mtx.vout.push_back(CTxOut(
-                GetBlockSubsidy(1, Params().GetConsensus())/5,
+                GetBlockSubsidy(1, Params().GetConsensus()) * 0.05,
                 Params().GetCommunityFeeScriptAtHeight(1)));
 
     // Treating block as non-genesis should fail
@@ -164,19 +164,19 @@ TEST_F(ContextualCheckBlockTest, BadCoinbaseHeight) {
     block.vtx[0] = tx2;
     CBlock prev;
     CBlockIndex indexPrev {prev};
-    indexPrev.nHeight = 0;
+    indexPrev.nHeight = 50;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev));
 
     // Setting to an incorrect height should fail
-    mtx.vin[0].scriptSig = CScript() << 2 << OP_0;
+    mtx.vin[0].scriptSig = CScript() << 52 << OP_0;
     CTransaction tx3 {mtx};
     block.vtx[0] = tx3;
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-cb-height", false)).Times(1);
     EXPECT_FALSE(ContextualCheckBlock(block, state, Params(), &indexPrev));
 
     // After correcting the scriptSig, should pass
-    mtx.vin[0].scriptSig = CScript() << 1 << OP_0;
+    mtx.vin[0].scriptSig = CScript() << 51 << OP_0;
     CTransaction tx4 {mtx};
     block.vtx[0] = tx4;
     EXPECT_TRUE(ContextualCheckBlock(block, state, Params(), &indexPrev));

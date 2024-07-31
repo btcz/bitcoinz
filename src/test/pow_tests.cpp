@@ -1,5 +1,5 @@
 // Copyright (c) 2015 The Bitcoin Core developers
-// Distributed under the MIT/X11 software license, see the accompanying
+// Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "main.h"
@@ -25,8 +25,8 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     int64_t nThisTime = 1000003570;
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1d00ffff);
-    BOOST_CHECK_EQUAL(0x1d011998,
-                    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    BOOST_CHECK_EQUAL(0x1d01352a,
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 
@@ -39,8 +39,8 @@ BOOST_AUTO_TEST_CASE(get_next_work_blossom)
     int64_t nThisTime = 1000001445;
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1d00ffff);
-    BOOST_CHECK_GT(0x1d011998,
-                   CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    BOOST_CHECK_GT(0x1d011eb8,
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
     RegtestDeactivateBlossom();
 }
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1f07ffff);
     BOOST_CHECK_EQUAL(0x1f07ffff,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_pow_limit_blossom)
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit_blossom)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1f07ffff);
     BOOST_CHECK_EQUAL(0x1f07ffff,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
     RegtestDeactivateBlossom();
 }
@@ -85,22 +85,22 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     int64_t nThisTime = 100000917;
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1c05a3f4);
-    BOOST_CHECK_EQUAL(0x1c04bceb,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    BOOST_CHECK_EQUAL(0x1c03b902,
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual_blossom)
 {
-  const Consensus::Params& params = RegtestActivateBlossom(true);
+    const Consensus::Params& params = RegtestActivateBlossom(true);
 
-  int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
-  int64_t nThisTime = 1000000458;
-  arith_uint256 bnAvg;
-  bnAvg.SetCompact(0x1c05a3f4);
-  BOOST_CHECK_EQUAL(0x1c04bceb,
-        CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
+    int64_t nThisTime = 1000000458;
+    arith_uint256 bnAvg;
+    bnAvg.SetCompact(0x1c05a3f4);
+    BOOST_CHECK_EQUAL(0x1c04e4e8,
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
-  RegtestDeactivateBlossom();
+    RegtestDeactivateBlossom();
 }
 
 /* Test the constraint on the upper bound for actual time taken */
@@ -114,8 +114,8 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
     int64_t nThisTime = 1000005815;
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1c387f6f);
-    BOOST_CHECK_EQUAL(0x1c4a93bb,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    BOOST_CHECK_EQUAL(0x1c4bb500,
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
     arith_uint256 bnAvg;
     bnAvg.SetCompact(0x1c387f6f);
     BOOST_CHECK_EQUAL(0x1c4a93bb,
-                      CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
+    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 
     RegtestDeactivateBlossom();
 }

@@ -102,70 +102,6 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     EXPECT_EQ(dPriority, MAX_PRIORITY);
 }
 
-TEST(Mempool, TxInputLimit) {
-    SelectParams(CBaseChainParams::REGTEST);
-
-    CTxMemPool pool(::minRelayTxFee);
-    bool missingInputs;
-
-    // Create an obviously-invalid transaction
-    // We intentionally set tx.nVersion = 0 to reliably trigger an error, as
-    // it's the first check that occurs after the -mempooltxinputlimit check,
-    // and it means that we don't have to mock out a lot of global state.
-    CMutableTransaction mtx;
-    mtx.nVersion = 0;
-    mtx.vin.resize(10);
-
-    // Check it fails as expected
-    CValidationState state1;
-    CTransaction tx1(mtx);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
-    EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
-
-    // Set a limit
-    mapArgs["-mempooltxinputlimit"] = "10";
-
-    // Check it still fails as expected
-    CValidationState state2;
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state2, tx1, false, &missingInputs));
-    EXPECT_EQ(state2.GetRejectReason(), "bad-txns-version-too-low");
-
-    // Resize the transaction
-    mtx.vin.resize(11);
-
-    // Check it now fails due to exceeding the limit
-    CValidationState state3;
-    CTransaction tx3(mtx);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state3, tx3, false, &missingInputs));
-    // The -mempooltxinputlimit check doesn't set a reason
-    EXPECT_EQ(state3.GetRejectReason(), "");
-
-    // Activate Overwinter
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
-
-    // Check it no longer fails due to exceeding the limit
-    CValidationState state4;
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state4, tx3, false, &missingInputs));
-    EXPECT_EQ(state4.GetRejectReason(), "bad-txns-version-too-low");
-
-    // Deactivate Overwinter
-    UpdateNetworkUpgradeParameters(Consensus::UPGRADE_OVERWINTER, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT);
-
-    // Check it now fails due to exceeding the limit
-    CValidationState state5;
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state5, tx3, false, &missingInputs));
-    // The -mempooltxinputlimit check doesn't set a reason
-    EXPECT_EQ(state5.GetRejectReason(), "");
-
-    // Clear the limit
-    mapArgs.erase("-mempooltxinputlimit");
-
-    // Check it no longer fails due to exceeding the limit
-    CValidationState state6;
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state6, tx3, false, &missingInputs));
-    EXPECT_EQ(state6.GetRejectReason(), "bad-txns-version-too-low");
-}
-
 // Valid overwinter v3 format tx gets rejected because overwinter hasn't activated yet.
 TEST(Mempool, OverwinterNotActiveYet) {
     SelectParams(CBaseChainParams::REGTEST);
@@ -182,6 +118,7 @@ TEST(Mempool, OverwinterNotActiveYet) {
     CValidationState state1;
 
     CTransaction tx1(mtx);
+    LOCK(cs_main);
     EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-not-active");
 
@@ -206,6 +143,7 @@ TEST(Mempool, SproutV3TxFailsAsExpected) {
     CValidationState state1;
     CTransaction tx1(mtx);
 
+    LOCK(cs_main);
     EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "version");
 }
@@ -227,6 +165,7 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
     CValidationState state1;
     CTransaction tx1(mtx);
 
+    LOCK(cs_main);
     EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-flag-not-set");
 
@@ -248,7 +187,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
     mtx.vJoinSplit.resize(0); // no joinsplits
     mtx.fOverwintered = false;
 
-    // A Sprout transaction with version -3 is created using Sprout code (as found in zcashd <= 1.0.14).
+    // A Sprout transaction with version -3 is created using Sprout code (as found in bitcoinzd <= 1.0.14).
     // First four bytes of transaction, parsed as an uint32_t, has the value: 0xfffffffd
     // This test simulates an Overwinter node receiving this transaction, but incorrectly deserializing the
     // transaction due to a (pretend) bug of not detecting the most significant bit, which leads
@@ -262,11 +201,12 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
         EXPECT_EQ(tx1.nVersion, -3);
 
         CValidationState state1;
+        LOCK(cs_main);
         EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
-    // A Sprout transaction with version -3 created using Overwinter code (as found in zcashd >= 1.0.15).
+    // A Sprout transaction with version -3 created using Overwinter code (as found in bitcoinzd >= 1.0.15).
     // First four bytes of transaction, parsed as an uint32_t, has the value: 0x80000003
     // This test simulates the same pretend bug described above.
     // The resulting Sprout tx with nVersion -2147483645 should be rejected by the Overwinter node's mempool.
@@ -278,6 +218,7 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
         EXPECT_EQ(tx1.nVersion, -2147483645);
 
         CValidationState state1;
+        LOCK(cs_main);
         EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
@@ -310,6 +251,7 @@ TEST(Mempool, ExpiringSoonTxRejection) {
         CValidationState state1;
         CTransaction tx1(mtx);
 
+        LOCK(cs_main);
         EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
         EXPECT_EQ(state1.GetRejectReason(), "tx-expiring-soon");
     }

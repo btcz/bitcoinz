@@ -1,20 +1,23 @@
 #include <gtest/gtest.h>
 
+#include "consensus/merkle.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "utiltest.h"
 
+#include <optional>
+
 extern ZCJoinSplit* params;
 
 extern bool ReceivedBlockTransactions(
-   const CBlock &block,
-   CValidationState& state,
-   const CChainParams& chainparams,
-   CBlockIndex *pindexNew,
-   const CDiskBlockPos& pos);
+    const CBlock &block,
+    CValidationState& state,
+    const CChainParams& chainparams,
+    CBlockIndex *pindexNew,
+    const CDiskBlockPos& pos);
 
-void ExpectOptionalAmount(CAmount expected, boost::optional<CAmount> actual) {
+void ExpectOptionalAmount(CAmount expected, std::optional<CAmount> actual) {
     EXPECT_TRUE((bool)actual);
     if (actual) {
         EXPECT_EQ(expected, *actual);
@@ -98,14 +101,14 @@ TEST(Validation, ReceivedBlockTransactions) {
     // Create a fake genesis block
     CBlock block1;
     block1.vtx.push_back(GetValidSproutReceive(*params, sk, 5, true));
-    block1.hashMerkleRoot = block1.BuildMerkleTree();
+    block1.hashMerkleRoot = BlockMerkleRoot(block1);
     CBlockIndex fakeIndex1 {block1};
 
     // Create a fake child block
     CBlock block2;
     block2.hashPrevBlock = block1.GetHash();
     block2.vtx.push_back(GetValidSproutReceive(*params, sk, 10, true));
-    block2.hashMerkleRoot = block2.BuildMerkleTree();
+    block2.hashMerkleRoot = BlockMerkleRoot(block2);
     CBlockIndex fakeIndex2 {block2};
     fakeIndex2.pprev = &fakeIndex1;
 

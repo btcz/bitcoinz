@@ -14,10 +14,8 @@
 #include <set>
 #include <stdlib.h>
 
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/signals2/signal.hpp>
-#include <boost/foreach.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
@@ -28,6 +26,8 @@
 #include <event2/util.h>
 #include <event2/event.h>
 #include <event2/thread.h>
+
+using namespace boost::placeholders;
 
 /** Default control port */
 const std::string DEFAULT_TOR_CONTROL = "127.0.0.1:9051";
@@ -73,8 +73,8 @@ public:
 class TorControlConnection
 {
 public:
-    typedef boost::function<void(TorControlConnection&)> ConnectionCB;
-    typedef boost::function<void(TorControlConnection &,const TorControlReply &)> ReplyHandlerCB;
+    typedef std::function<void(TorControlConnection&)> ConnectionCB;
+    typedef std::function<void(TorControlConnection &,const TorControlReply &)> ReplyHandlerCB;
 
     /** Create a new TorControlConnection.
      */
@@ -105,9 +105,9 @@ public:
     boost::signals2::signal<void(TorControlConnection &,const TorControlReply &)> async_handler;
 private:
     /** Callback when ready for use */
-    boost::function<void(TorControlConnection&)> connected;
+    std::function<void(TorControlConnection&)> connected;
     /** Callback when connection lost */
-    boost::function<void(TorControlConnection&)> disconnected;
+    std::function<void(TorControlConnection&)> disconnected;
     /** Libevent event base */
     struct event_base *base;
     /** Connection to control socket */
@@ -360,7 +360,7 @@ static std::map<std::string,std::string> ParseTorReplyMapping(const std::string 
 
 /** Read full contents of a file and return them in a std::string.
  * Returns a pair <status, string>.
- * If an error occured, status will be false, otherwise status will be true and the data will be returned in string.
+ * If an error occurred, status will be false, otherwise status will be true and the data will be returned in string.
  *
  * @param maxsize Puts a maximum size limit on the file that is read. If the file is larger than this, truncated data
  *         (with len > maxsize) will be returned.
@@ -407,7 +407,7 @@ static bool WriteBinaryFile(const std::string &filename, const std::string &data
 /****** Bitcoin specific TorController implementation ********/
 
 /** Controller that connects to Tor control socket, authenticate, then create
- * and maintain a ephemeral hidden service.
+ * and maintain an ephemeral hidden service.
  */
 class TorController
 {
@@ -488,7 +488,7 @@ void TorController::add_onion_cb(TorControlConnection& conn, const TorControlRep
 {
     if (reply.code == 250) {
         LogPrint("tor", "tor: ADD_ONION successful\n");
-        BOOST_FOREACH(const std::string &s, reply.lines) {
+        for (const std::string &s : reply.lines) {
             std::map<std::string,std::string> m = ParseTorReplyMapping(s);
             std::map<std::string,std::string>::iterator i;
             if ((i = m.find("ServiceID")) != m.end())
@@ -618,7 +618,7 @@ void TorController::protocolinfo_cb(TorControlConnection& conn, const TorControl
          * 250-AUTH METHODS=NULL
          * 250-AUTH METHODS=HASHEDPASSWORD
          */
-        BOOST_FOREACH(const std::string &s, reply.lines) {
+        for (const std::string &s : reply.lines) {
             std::pair<std::string,std::string> l = SplitTorReplyLine(s);
             if (l.first == "AUTH") {
                 std::map<std::string,std::string> m = ParseTorReplyMapping(l.second);
@@ -635,7 +635,7 @@ void TorController::protocolinfo_cb(TorControlConnection& conn, const TorControl
                 }
             }
         }
-        BOOST_FOREACH(const std::string &s, methods) {
+        for (const std::string &s : methods) {
             LogPrint("tor", "tor: Supported authentication method: %s\n", s);
         }
         // Prefer NULL, otherwise SAFECOOKIE. If a password is provided, use HASHEDPASSWORD

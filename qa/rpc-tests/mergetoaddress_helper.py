@@ -27,7 +27,7 @@ def assert_mergetoaddress_exception(expected_error_msg, merge_to_address_lambda)
 
 class MergeToAddressHelper:
 
-    def __init__(self, addr_type, any_zaddr, utxos_to_generate, utxos_in_tx1, utxos_in_tx2, test_mempooltxinputlimit):
+    def __init__(self, addr_type, any_zaddr, utxos_to_generate, utxos_in_tx1, utxos_in_tx2):
         self.addr_type = addr_type
         self.any_zaddr = [any_zaddr]
         self.any_zaddr_or_utxo = [any_zaddr, "ANY_TADDR"]
@@ -35,19 +35,18 @@ class MergeToAddressHelper:
         self.utxos_to_generate = utxos_to_generate
         self.utxos_in_tx1 = utxos_in_tx1
         self.utxos_in_tx2 = utxos_in_tx2
-        self.test_mempooltxinputlimit = test_mempooltxinputlimit
 
     def setup_chain(self, test):
         print("Initializing test directory "+test.options.tmpdir)
         initialize_chain_clean(test.options.tmpdir, 4)
 
     def setup_network(self, test, additional_args=[]):
-        args = ['-debug=zrpcunsafe', '-experimentalfeatures', '-zmergetoaddress']
+        args = ['-debug=zrpcunsafe']
         args += additional_args
         test.nodes = []
         test.nodes.append(start_node(0, test.options.tmpdir, args))
         test.nodes.append(start_node(1, test.options.tmpdir, args))
-        args2 = ['-debug=zrpcunsafe', '-experimentalfeatures', '-zmergetoaddress', '-mempooltxinputlimit=7']
+        args2 = ['-debug=zrpcunsafe']
         args2 += additional_args
         test.nodes.append(start_node(2, test.options.tmpdir, args2))
         connect_nodes_bi(test.nodes, 0, 1)
@@ -283,16 +282,10 @@ class MergeToAddressHelper:
             test.nodes[1].generate(1)
         test.sync_all()
 
-        # Verify maximum number of UTXOs which node 2 can shield is limited by option -mempooltxinputlimit
-        # This option is used when the limit parameter is set to 0.
-
-        # -mempooltxinputlimit is not used after overwinter activation
-        if self.test_mempooltxinputlimit:
-            expected_to_merge = 7
-            expected_remaining = 13
-        else:
-            expected_to_merge = 20
-            expected_remaining = 0
+        # Verify maximum number of UTXOs which node 2 can shield is not limited
+        # when the limit parameter is set to 0.
+        expected_to_merge = 20
+        expected_remaining = 0
 
         result = test.nodes[2].z_mergetoaddress([n2taddr], myzaddr, Decimal('0.0001'), 0)
         assert_equal(result["mergingUTXOs"], expected_to_merge)
@@ -326,9 +319,7 @@ class MergeToAddressHelper:
         # Remaining notes are only counted if we are trying to merge any notes
         assert_equal(result["remainingNotes"], Decimal('0'))
         wait_and_assert_operationid_status(test.nodes[0], result['opid'])
-        # Don't sync node 2 which rejects the tx due to its mempooltxinputlimit
-        sync_blocks(test.nodes[:2])
-        sync_mempools(test.nodes[:2])
+        test.sync_all()
         test.nodes[1].generate(1)
         test.sync_all()
 

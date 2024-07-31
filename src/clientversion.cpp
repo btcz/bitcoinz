@@ -19,12 +19,12 @@
  * for both bitcoind and bitcoin-core, to make it harder for attackers to
  * target servers or GUI users specifically.
  */
-const std::string CLIENT_NAME("YODA-EXT");
+const std::string CLIENT_NAME("BB-8");
 
 /**
  * Client version number
  */
-#define CLIENT_VERSION_SUFFIX "1"
+#define CLIENT_VERSION_SUFFIX ""
 
 
 /**

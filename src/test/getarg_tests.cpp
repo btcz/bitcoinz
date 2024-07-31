@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/foreach.hpp>
 #include <boost/test/unit_test.hpp>
 
 BOOST_FIXTURE_TEST_SUITE(getarg_tests, BasicTestingSetup)
@@ -25,7 +24,7 @@ static void ResetArgs(const std::string& strArg)
 
     // Convert to char*:
     std::vector<const char*> vecChar;
-    BOOST_FOREACH(std::string& s, vecArg)
+    for (std::string& s : vecArg)
         vecChar.push_back(s.c_str());
 
     ParseParameters(vecChar.size(), &vecChar[0]);
@@ -60,17 +59,17 @@ BOOST_AUTO_TEST_CASE(boolarg)
     BOOST_CHECK(!GetBoolArg("-foo", false));
     BOOST_CHECK(!GetBoolArg("-foo", true));
 
-    ResetArgs("-foo -nofoo");  // -foo should win
-    BOOST_CHECK(GetBoolArg("-foo", false));
-    BOOST_CHECK(GetBoolArg("-foo", true));
-
-    ResetArgs("-foo=1 -nofoo=1");  // -foo should win
-    BOOST_CHECK(GetBoolArg("-foo", false));
-    BOOST_CHECK(GetBoolArg("-foo", true));
-
-    ResetArgs("-foo=0 -nofoo=0");  // -foo should win
+    ResetArgs("-foo -nofoo");  // -nofoo should win
     BOOST_CHECK(!GetBoolArg("-foo", false));
     BOOST_CHECK(!GetBoolArg("-foo", true));
+
+    ResetArgs("-foo=1 -nofoo=1");  // -nofoo should win
+    BOOST_CHECK(!GetBoolArg("-foo", false));
+    BOOST_CHECK(!GetBoolArg("-foo", true));
+
+    ResetArgs("-foo=0 -nofoo=0");  // -nofoo=0 should win
+    BOOST_CHECK(GetBoolArg("-foo", false));
+    BOOST_CHECK(GetBoolArg("-foo", true));
 
     // New 0.6 feature: treat -- same as -:
     ResetArgs("--foo=1");
@@ -150,9 +149,9 @@ BOOST_AUTO_TEST_CASE(boolargno)
     BOOST_CHECK(GetBoolArg("-foo", true));
     BOOST_CHECK(GetBoolArg("-foo", false));
 
-    ResetArgs("-foo --nofoo");
-    BOOST_CHECK(GetBoolArg("-foo", true));
-    BOOST_CHECK(GetBoolArg("-foo", false));
+    ResetArgs("-foo --nofoo"); // --nofoo should win
+    BOOST_CHECK(!GetBoolArg("-foo", true));
+    BOOST_CHECK(!GetBoolArg("-foo", false));
 
     ResetArgs("-nofoo -foo"); // foo always wins:
     BOOST_CHECK(GetBoolArg("-foo", true));

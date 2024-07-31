@@ -11,11 +11,27 @@
 #include "pow.h"
 #include "tinyformat.h"
 #include "uint256.h"
+#include "utilstrencodings.h"
 
+#include <optional>
 #include <vector>
 
 static const int SPROUT_VALUE_VERSION = 1001400;
 static const int SAPLING_VALUE_VERSION = 1010100;
+
+/**
+ * Maximum amount of time that a block timestamp is allowed to exceed the
+ * current network-adjusted time before the block will be accepted.
+ */
+static const int64_t MAX_FUTURE_BLOCK_TIME = 2 * 60 * 60;
+
+/**
+ * Timestamp window used as a grace period by code that compares external
+ * timestamps (such as timestamps passed to RPCs, or wallet key creation times)
+ * to block timestamps. This should be set at least as high as
+ * MAX_FUTURE_BLOCK_TIME.
+ */
+static const int64_t TIMESTAMP_WINDOW = MAX_FUTURE_BLOCK_TIME;
 
 class CBlockFileInfo
 {
@@ -202,7 +218,7 @@ public:
     //! Branch ID corresponding to the consensus rules used to validate this block.
     //! Only cached if block validity is BLOCK_VALID_CONSENSUS.
     //! Persisted at each activation height, memory-only for intervening blocks.
-    boost::optional<uint32_t> nCachedBranchId;
+    std::optional<uint32_t> nCachedBranchId;
 
     //! The anchor for the tree state up to the start of this block
     uint256 hashSproutAnchor;
@@ -211,22 +227,22 @@ public:
     uint256 hashFinalSproutRoot;
 
     //! Change in value held by the Sprout circuit over this block.
-    //! Will be boost::none for older blocks on old nodes until a reindex has taken place.
-    boost::optional<CAmount> nSproutValue;
+    //! Will be std::nullopt for older blocks on old nodes until a reindex has taken place.
+    std::optional<CAmount> nSproutValue;
 
     //! (memory only) Total value held by the Sprout circuit up to and including this block.
-    //! Will be boost::none for on old nodes until a reindex has taken place.
-    //! Will be boost::none if nChainTx is zero.
-    boost::optional<CAmount> nChainSproutValue;
+    //! Will be std::nullopt for on old nodes until a reindex has taken place.
+    //! Will be std::nullopt if nChainTx is zero.
+    std::optional<CAmount> nChainSproutValue;
 
     //! Change in value held by the Sapling circuit over this block.
-    //! Not a boost::optional because this was added before Sapling activated, so we can
+    //! Not a std::optional because this was added before Sapling activated, so we can
     //! rely on the invariant that every block before this was added had nSaplingValue = 0.
     CAmount nSaplingValue;
 
     //! (memory only) Total value held by the Sapling circuit up to and including this block.
-    //! Will be boost::none if nChainTx is zero.
-    boost::optional<CAmount> nChainSaplingValue;
+    //! Will be std::nullopt if nChainTx is zero.
+    std::optional<CAmount> nChainSaplingValue;
 
     //! block header
     int nVersion;
@@ -235,8 +251,13 @@ public:
     unsigned int nTime;
     unsigned int nBits;
     uint256 nNonce;
+protected:
+    // The Equihash solution, if it is stored. Once we know that the block index
+    // entry is present in leveldb, this field can be cleared via the TrimSolution
+    // method to save memory.
     std::vector<unsigned char> nSolution;
 
+public:
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     uint32_t nSequenceId;
 
@@ -253,14 +274,14 @@ public:
         nTx = 0;
         nChainTx = 0;
         nStatus = 0;
-        nCachedBranchId = boost::none;
+        nCachedBranchId = std::nullopt;
         hashSproutAnchor = uint256();
         hashFinalSproutRoot = uint256();
         nSequenceId = 0;
-        nSproutValue = boost::none;
-        nChainSproutValue = boost::none;
+        nSproutValue = std::nullopt;
+        nChainSproutValue = std::nullopt;
         nSaplingValue = 0;
-        nChainSaplingValue = boost::none;
+        nChainSaplingValue = std::nullopt;
 
         nVersion       = 0;
         hashMerkleRoot = uint256();
@@ -307,23 +328,15 @@ public:
         return ret;
     }
 
-    CBlockHeader GetBlockHeader() const
-    {
-        CBlockHeader block;
-        block.nVersion       = nVersion;
-        if (pprev)
-            block.hashPrevBlock = pprev->GetBlockHash();
-        block.hashMerkleRoot = hashMerkleRoot;
-        block.hashFinalSaplingRoot   = hashFinalSaplingRoot;
-        block.nTime          = nTime;
-        block.nBits          = nBits;
-        block.nNonce         = nNonce;
-        block.nSolution      = nSolution;
-        return block;
-    }
+    //! Get the block header for this block index. Requires cs_main.
+    CBlockHeader GetBlockHeader() const;
+
+    //! Clear the Equihash solution to save memory. Requires cs_main.
+    void TrimSolution();
 
     uint256 GetBlockHash() const
     {
+        assert(phashBlock);
         return *phashBlock;
     }
 
@@ -350,10 +363,10 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(pprev=%p, nHeight=%d, merkle=%s, hashBlock=%s, HasSolution=%s)",
             pprev, nHeight,
             hashMerkleRoot.ToString(),
-            GetBlockHash().ToString());
+            phashBlock ? GetBlockHash().ToString() : "(nil)", HasSolution());
     }
 
     //! Check whether this block index entry is valid up to the passed validity level.
@@ -363,6 +376,13 @@ public:
         if (nStatus & BLOCK_FAILED_MASK)
             return false;
         return ((nStatus & BLOCK_VALID_MASK) >= nUpTo);
+    }
+
+    //! Is the Equihash solution stored?
+    bool HasSolution() const
+    {
+        if (nHeight == 0) return true; // BitcoinZ has empty nSolution inside the genesis block
+        return !nSolution.empty();
     }
 
     //! Raise the validity level of this block index entry.
@@ -397,8 +417,11 @@ public:
         hashPrev = uint256();
     }
 
-    explicit CDiskBlockIndex(const CBlockIndex* pindex) : CBlockIndex(*pindex) {
+    explicit CDiskBlockIndex(const CBlockIndex* pindex, std::function<std::vector<unsigned char>()> getSolution) : CBlockIndex(*pindex) {
         hashPrev = (pprev ? pprev->GetBlockHash() : uint256());
+        if (!HasSolution()) {
+            nSolution = getSolution();
+        }
     }
 
     ADD_SERIALIZE_METHODS;
@@ -458,20 +481,31 @@ public:
         // them to CBlockTreeDB::LoadBlockIndexGuts() in txdb.cpp :)
     }
 
-    uint256 GetBlockHash() const
+    //! Get the block header for this block index.
+    CBlockHeader GetBlockHeader() const
     {
-        CBlockHeader block;
-        block.nVersion        = nVersion;
-        block.hashPrevBlock   = hashPrev;
-        block.hashMerkleRoot  = hashMerkleRoot;
-        block.hashFinalSaplingRoot    = hashFinalSaplingRoot;
-        block.nTime           = nTime;
-        block.nBits           = nBits;
-        block.nNonce          = nNonce;
-        block.nSolution       = nSolution;
-        return block.GetHash();
+        CBlockHeader header;
+        header.nVersion             = nVersion;
+        header.hashPrevBlock        = hashPrev;
+        header.hashMerkleRoot       = hashMerkleRoot;
+        header.hashFinalSaplingRoot = hashFinalSaplingRoot;
+        header.nTime                = nTime;
+        header.nBits                = nBits;
+        header.nNonce               = nNonce;
+        header.nSolution            = nSolution;
+        return header;
     }
 
+    uint256 GetBlockHash() const
+    {
+        return GetBlockHeader().GetHash();
+    }
+
+    std::vector<unsigned char> GetSolution() const
+    {
+        assert(HasSolution());
+        return nSolution;
+    }
 
     std::string ToString() const
     {
@@ -481,6 +515,13 @@ public:
             GetBlockHash().ToString(),
             hashPrev.ToString());
         return str;
+    }
+
+private:
+    //! This method should not be called on a CDiskBlockIndex.
+    void TrimSolution()
+    {
+        assert(!"called CDiskBlockIndex::TrimSolution");
     }
 };
 

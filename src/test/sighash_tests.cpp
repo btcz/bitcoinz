@@ -6,7 +6,7 @@
 #include "consensus/validation.h"
 #include "data/sighash.json.h"
 #include "main.h"
-#include "random.h"
+#include "test_random.h"
 #include "script/interpreter.h"
 #include "script/script.h"
 #include "serialize.h"
@@ -159,7 +159,7 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
         for (int out = 0; out < shielded_outs; out++) {
             OutputDescription odesc;
             odesc.cv = GetRandHash();
-            odesc.cm = GetRandHash();
+            odesc.cmu = GetRandHash();
             odesc.ephemeralKey = GetRandHash();
             randombytes_buf(odesc.encCiphertext.begin(), odesc.encCiphertext.size());
             randombytes_buf(odesc.outCiphertext.begin(), odesc.outCiphertext.size());
@@ -167,7 +167,8 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             tx.vShieldedOutput.push_back(odesc);
         }
     }
-    if (tx.nVersion >= 2) {
+    // We have removed pre-Sapling Sprout support.
+    if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
         for (int js = 0; js < joinsplits; js++) {
             JSDescription jsdesc;
             if (insecure_rand() % 2 == 0) {
@@ -183,12 +184,10 @@ void static RandomTransaction(CMutableTransaction &tx, bool fSingle, uint32_t co
             jsdesc.randomSeed = GetRandHash();
             randombytes_buf(jsdesc.ciphertexts[0].begin(), jsdesc.ciphertexts[0].size());
             randombytes_buf(jsdesc.ciphertexts[1].begin(), jsdesc.ciphertexts[1].size());
-            if (tx.fOverwintered && tx.nVersion >= SAPLING_TX_VERSION) {
+            {
                 libzcash::GrothProof zkproof;
                 randombytes_buf(zkproof.begin(), zkproof.size());
                 jsdesc.proof = zkproof;
-            } else {
-                jsdesc.proof = libzcash::PHGRProof::random_invalid();
             }
             jsdesc.macs[0] = GetRandHash();
             jsdesc.macs[1] = GetRandHash();

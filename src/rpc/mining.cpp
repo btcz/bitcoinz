@@ -6,6 +6,7 @@
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/merkle.h"
 #include "consensus/validation.h"
 #include "core_io.h"
 #ifdef ENABLE_MINING
@@ -22,6 +23,9 @@
 #include "txmempool.h"
 #include "util.h"
 #include "validationinterface.h"
+#ifdef ENABLE_WALLET
+#include "wallet/wallet.h"
+#endif
 
 #include <stdint.h>
 
@@ -144,7 +148,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
         throw runtime_error(
             "getgenerate\n"
             "\nReturn if the server is set to generate coins or not. The default is false.\n"
-            "It is set with the command line argument -gen (or bitcoinz.conf setting gen)\n"
+            "It is set with the command line argument -gen (or " + std::string(BITCOIN_CONF_FILENAME) + " setting gen)\n"
             "It can also be set with the setgenerate call.\n"
             "\nResult\n"
             "true|false      (boolean) If the server is set to generate coins or not\n"
@@ -154,7 +158,7 @@ UniValue getgenerate(const UniValue& params, bool fHelp)
         );
 
     LOCK(cs_main);
-    return GetBoolArg("-gen", false);
+    return GetBoolArg("-gen", DEFAULT_GENERATE);
 }
 
 UniValue generate(const UniValue& params, bool fHelp)
@@ -165,7 +169,7 @@ UniValue generate(const UniValue& params, bool fHelp)
             "\nMine blocks immediately (before the RPC call returns)\n"
             "\nNote: this function can only be used on the regtest network\n"
             "\nArguments:\n"
-            "1. numblocks    (numeric) How many blocks are generated immediately.\n"
+            "1. numblocks    (numeric, required) How many blocks are generated immediately.\n"
             "\nResult\n"
             "[ blockhashes ]     (array) hashes of blocks generated\n"
             "\nExamples:\n"
@@ -204,9 +208,9 @@ UniValue generate(const UniValue& params, bool fHelp)
 
     while (nHeight < nHeightEnd)
     {
-            validEHparameterList(ehparams,nHeight+1,chainparams);
-            unsigned int n = ehparams[0].n;
-            unsigned int k = ehparams[0].k;
+        validEHparameterList(ehparams,nHeight+1,chainparams);
+        unsigned int n = ehparams[0].n;
+        unsigned int k = ehparams[0].k;
 
         std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), coinbaseScript->reserveScript));
         if (!pblocktemplate.get())
@@ -347,7 +351,7 @@ UniValue getmininginfo(const UniValue& params, bool fHelp)
     obj.push_back(Pair("currentblocktx",   (uint64_t)nLastBlockTx));
     obj.push_back(Pair("difficulty",       (double)GetNetworkDifficulty()));
     obj.push_back(Pair("errors",           GetWarnings("statusbar")));
-    obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", -1)));
+    obj.push_back(Pair("genproclimit",     (int)GetArg("-genproclimit", DEFAULT_GENERATE_THREADS)));
     obj.push_back(Pair("localsolps"  ,     getlocalsolps(params, false)));
     obj.push_back(Pair("networksolps",     getnetworksolps(params, false)));
     obj.push_back(Pair("networkhashps",    getnetworksolps(params, false)));
@@ -437,6 +441,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
             "  \"version\" : n,                     (numeric) The block version\n"
             "  \"previousblockhash\" : \"xxxx\",    (string) The hash of current highest block\n"
             "  \"finalsaplingroothash\" : \"xxxx\", (string) The hash of the final sapling root\n"
+            "  \"merkleroot\" : \"xxxx\"           (string) The hash of the transactions in the block header\n"
             "  \"transactions\" : [                 (array) contents of non-coinbase transactions that should be included in the next block\n"
             "      {\n"
             "         \"data\" : \"xxxx\",          (string) transaction data encoded in hexadecimal (byte-for-byte)\n"
@@ -645,7 +650,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
     int i = 0;
-    BOOST_FOREACH (const CTransaction& tx, pblock->vtx) {
+    for (const CTransaction& tx : pblock->vtx) {
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
@@ -659,7 +664,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
         entry.push_back(Pair("hash", txHash.GetHex()));
 
         UniValue deps(UniValue::VARR);
-        BOOST_FOREACH (const CTxIn &in, tx.vin)
+        for (const CTxIn &in : tx.vin)
         {
             if (setTxIndex.count(in.prevout.hash))
                 deps.push_back(setTxIndex[in.prevout.hash]);
@@ -677,17 +682,17 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 entry.push_back(Pair("foundersreward", (int64_t)tx.vout[1].nValue));
 
                 // GITHUB issue #66 - Add founderaddress to gbt
-                const CScript & scriptPublicKey = tx.vout[1].scriptPubKey  ;
+                const CScript & scriptPublicKey = tx.vout[1].scriptPubKey;
                 std::vector<CTxDestination> addresses;
                 txnouttype whichType;
                 int nRequired;
 
                 ExtractDestinations(scriptPublicKey, whichType, addresses, nRequired);
-                //entry.push_back(Pair("script", GetTxnOutputType(whichType)));
-                //entry.push_back(Pair("hex", HexStr(scriptPublicKey.begin(), scriptPublicKey.end())));
-                UniValue a(UniValue::VARR);
-                for (const CTxDestination& addr : addresses) {a.push_back(EncodeDestination(addr));}
-                entry.push_back(Pair("foundersraddress", a));
+                UniValue o(UniValue::VARR);
+                for (const CTxDestination& addr : addresses) {
+                    o.push_back(EncodeDestination(addr));
+                }
+                entry.push_back(Pair("foundersraddress", o));
 
             }
             entry.push_back(Pair("required", true));
@@ -715,6 +720,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     result.push_back(Pair("version", pblock->nVersion));
     result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
     result.push_back(Pair("finalsaplingroothash", pblock->hashFinalSaplingRoot.GetHex()));
+    result.push_back(Pair("merkleroot", BlockMerkleRoot(*pblock).GetHex()));
     result.push_back(Pair("transactions", transactions));
     if (coinbasetxn) {
         assert(txCoinbase.isObject());
@@ -902,13 +908,12 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
 
     LOCK(cs_main);
     int nHeight = (params.size()==1) ? params[0].get_int() : chainActive.Height();
-    int nextBlockHeight = nHeight + 1;
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CAmount nReward = GetBlockSubsidy(nextBlockHeight, Params().GetConsensus());
+    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
     CAmount nCommunityFee = 0;
-    if (nextBlockHeight >= Params().GetCommunityFeeStartHeight()) {
+    if ((nHeight > Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
         nCommunityFee = nReward * 0.05;
         nReward -= nCommunityFee;
     }

@@ -2,9 +2,6 @@
 
 #include "utilstrencodings.h"
 
-#include <boost/foreach.hpp>
-#include <boost/variant/get.hpp>
-
 #include "zcash/prf.h"
 #include "util.h"
 #include "streams.h"
@@ -22,10 +19,9 @@ using namespace libzcash;
 
 extern ZCJoinSplit* params;
 
-typedef std::array<JSDescription, 2> SproutProofs;
-// Make both the PHGR and Groth proof for a Sprout statement,
-// and store the results in JSDescription objects.
-SproutProofs makeSproutProofs(
+// Make the Groth proof for a Sprout statement,
+// and store the result in a JSDescription object.
+JSDescription makeSproutProof(
         ZCJoinSplit& js,
         const std::array<JSInput, 2>& inputs,
         const std::array<JSOutput, 2>& outputs,
@@ -34,25 +30,17 @@ SproutProofs makeSproutProofs(
         uint64_t vpub_new,
         const uint256& rt
 ){
-    //Making the PHGR proof
-    JSDescription phgr(false, js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
-    //Making the Groth proof
-    JSDescription groth(true, js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
-
-    return {phgr, groth};
-
+    return JSDescription(js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
 }
 
-bool verifySproutProofs(
+bool verifySproutProof(
         ZCJoinSplit& js,
-        const SproutProofs& jsdescs,
+        const JSDescription& jsdesc,
         const uint256& joinSplitPubKey
 )
 {
     auto verifier = libzcash::ProofVerifier::Strict();
-    bool phgrPassed = jsdescs[0].Verify(js, verifier, joinSplitPubKey);
-    bool grothPassed = jsdescs[1].Verify(js, verifier, joinSplitPubKey);
-    return phgrPassed && grothPassed;
+    return jsdesc.Verify(js, verifier, joinSplitPubKey);
 }
 
 
@@ -73,7 +61,7 @@ void test_full_api(ZCJoinSplit* js)
     uint64_t vpub_new = 0;
     uint256 joinSplitPubKey = random_uint256();
     uint256 rt = tree.root();
-    SproutProofs jsdescs;
+    JSDescription jsdesc;
 
     {
         std::array<JSInput, 2> inputs = {
@@ -89,7 +77,7 @@ void test_full_api(ZCJoinSplit* js)
         std::array<SproutNote, 2> output_notes;
 
         // Perform the proofs
-        jsdescs = makeSproutProofs(
+        jsdesc = makeSproutProof(
             *js,
             inputs,
             outputs,
@@ -101,13 +89,11 @@ void test_full_api(ZCJoinSplit* js)
     }
 
     // Verify both PHGR and Groth Proof:
-    ASSERT_TRUE(verifySproutProofs(*js, jsdescs, joinSplitPubKey));
+    ASSERT_TRUE(verifySproutProof(*js, jsdesc, joinSplitPubKey));
 
-    // Run tests using both phgr and groth as basis for field values
-    for (auto jsdesc : jsdescs)
     {
         SproutMerkleTree tree;
-        SproutProofs jsdescs2;
+        JSDescription jsdesc2;
         // Recipient should decrypt
         // Now the recipient should spend the money again
         auto h_sig = js->h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
@@ -153,7 +139,7 @@ void test_full_api(ZCJoinSplit* js)
 
 
             // Perform the proofs
-            jsdescs2 = makeSproutProofs(
+            jsdesc2 = makeSproutProof(
                 *js,
                 inputs,
                 outputs,
@@ -166,8 +152,8 @@ void test_full_api(ZCJoinSplit* js)
         }
 
 
-        // Verify both PHGR and Groth Proof:
-        ASSERT_TRUE(verifySproutProofs(*js, jsdescs2, joinSplitPubKey2));
+        // Verify Groth Proof:
+        ASSERT_TRUE(verifySproutProof(*js, jsdesc2, joinSplitPubKey2));
     }
 }
 
@@ -191,28 +177,8 @@ void invokeAPI(
 
     std::array<SproutNote, 2> output_notes;
 
-    // PHGR
-    SproutProof proof = js->prove(
-        false,
-        inputs,
-        outputs,
-        output_notes,
-        ciphertexts,
-        ephemeralKey,
-        joinSplitPubKey,
-        randomSeed,
-        macs,
-        nullifiers,
-        commitments,
-        vpub_old,
-        vpub_new,
-        rt,
-        false
-    );
-
     // Groth
-    proof = js->prove(
-        true,
+    SproutProof proof = js->prove(
         inputs,
         outputs,
         output_notes,
@@ -250,7 +216,7 @@ void invokeAPIFailure(
     }
 }
 
-TEST(joinsplit, h_sig)
+TEST(Joinsplit, HSig)
 {
 /*
 // by Taylor Hornby
@@ -314,7 +280,7 @@ for test_input in TEST_VECTORS:
         }
     };
 
-    BOOST_FOREACH(std::vector<std::string>& v, tests) {
+    for (std::vector<std::string>& v : tests) {
         auto expected = ZCJoinSplit::h_sig(
             uint256S(v[0]),
             {uint256S(v[1]), uint256S(v[2])},
@@ -338,7 +304,7 @@ void increment_note_witnesses(
     witnesses.push_back(tree.witness());
 }
 
-TEST(joinsplit, full_api_test)
+TEST(Joinsplit, FullApiTest)
 {
     {
         std::vector<SproutWitness> witnesses;
@@ -540,7 +506,7 @@ TEST(joinsplit, full_api_test)
     test_full_api(params);
 }
 
-TEST(joinsplit, note_plaintexts)
+TEST(Joinsplit, NotePlaintexts)
 {
     uint252 a_sk = uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516840e"));
     uint256 a_pk = PRF_addr_a_pk(a_sk);
@@ -593,7 +559,7 @@ TEST(joinsplit, note_plaintexts)
     ASSERT_EQ(note_pt.r, note_pt2.r);
 }
 
-TEST(joinsplit, note_class)
+TEST(Joinsplit, NoteClass)
 {
     uint252 a_sk = uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516840e"));
     uint256 a_pk = PRF_addr_a_pk(a_sk);

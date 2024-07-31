@@ -12,6 +12,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <fstream>
 
+using namespace boost::placeholders;
 using ::testing::StrictMock;
 
 static const std::string CLIENT_VERSION_STR = FormatVersion(CLIENT_VERSION);
@@ -34,14 +35,14 @@ static bool ThreadSafeMessageBox(MockUIInterface *mock,
 
 class DeprecationTest : public ::testing::Test {
 protected:
-    virtual void SetUp() {
+    void SetUp() override {
         uiInterface.ThreadSafeMessageBox.disconnect_all_slots();
         uiInterface.ThreadSafeMessageBox.connect(boost::bind(ThreadSafeMessageBox, &mock_, _1, _2, _3));
         SelectParams(CBaseChainParams::MAIN);
         
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         fRequestShutdown = false;
         mapArgs.clear();
     }
@@ -121,22 +122,6 @@ TEST_F(DeprecationTest, DeprecatedNodeIgnoredOnTestnet) {
     EXPECT_FALSE(ShutdownRequested());
 }
 
-TEST_F(DeprecationTest, DeprecatedNodeShutsDownIfOldVersionDisabled) {
-    EXPECT_FALSE(ShutdownRequested());
-    mapArgs["-disabledeprecation"] = "1.0.0";
-    EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_ERROR));
-    EnforceNodeDeprecation(DEPRECATION_HEIGHT);
-    EXPECT_TRUE(ShutdownRequested());
-}
-
-TEST_F(DeprecationTest, DeprecatedNodeKeepsRunningIfCurrentVersionDisabled) {
-    EXPECT_FALSE(ShutdownRequested());
-    mapArgs["-disabledeprecation"] = CLIENT_VERSION_STR;
-    EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_ERROR));
-    EnforceNodeDeprecation(DEPRECATION_HEIGHT);
-    EXPECT_FALSE(ShutdownRequested());
-}
-
 TEST_F(DeprecationTest, AlertNotify) {
     boost::filesystem::path temp = GetTempPath() /
         boost::filesystem::unique_path("alertnotify-%%%%.txt");
@@ -151,7 +136,7 @@ TEST_F(DeprecationTest, AlertNotify) {
 
     // -alertnotify restricts the message to safe characters.
     auto expectedMsg = strprintf(
-        "This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of Zcash.",
+        "This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of BitcoinZ.",
         DEPRECATION_HEIGHT);
 
     // Windows built-in echo semantics are different than posixy shells. Quotes and

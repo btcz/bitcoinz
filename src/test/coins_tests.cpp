@@ -3,7 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "coins.h"
-#include "random.h"
+#include "test_random.h"
 #include "script/standard.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
@@ -836,7 +836,7 @@ BOOST_AUTO_TEST_CASE(coins_cache_simulation_test)
                     missed_an_entry = true;
                 }
             }
-            BOOST_FOREACH(const CCoinsViewCacheTest *test, stack) {
+            for (const CCoinsViewCacheTest *test : stack) {
                 test->SelfTest();
             }
         }

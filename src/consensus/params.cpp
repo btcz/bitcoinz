@@ -33,32 +33,6 @@ namespace Consensus {
         }
     }
 
-     int Params::GetLastCommunityFeeBlockHeight(int nHeight) const {
-        // zip208
-        // CommunityFeeLastBlockHeight := max({ height ⦂ N | Halving(height) < 1 })
-        // Halving(h) is defined as floor(f(h)) where f is a strictly increasing rational
-        // function, so it's sufficient to solve for f(height) = 1 in the rationals and
-        // then take ceiling(height - 1).
-        // H := blossom activation height; SS := SubsidySlowStartShift(); R := BLOSSOM_POW_TARGET_SPACING_RATIO
-        // preBlossom:
-        // 1 = (height - SS) / preInterval
-        // height = preInterval + SS
-        // postBlossom:
-        // 1 = (H - SS) / preInterval + (height - H) / postInterval
-        // height = H + postInterval - (H - SS) * (postInterval / preInterval)
-        // height = H + postInterval - (H - SS) * R
-        // Note: This depends on R being an integer
-        bool blossomActive = NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
-        if (blossomActive) {
-            int blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-            // The following calculation depends on BLOSSOM_POW_TARGET_SPACING_RATIO being an integer.
-            return blossomActivationHeight + nPostBlossomSubsidyHalvingInterval
-                - (blossomActivationHeight - SubsidySlowStartShift()) * BLOSSOM_POW_TARGET_SPACING_RATIO - 1;
-        } else {
-            return nPreBlossomSubsidyHalvingInterval + SubsidySlowStartShift() - 1;
-        }
-    }
-
     int64_t Params::PoWTargetSpacing(int nHeight) const {
         // zip208
         // PoWTargetSpacing(height) :=

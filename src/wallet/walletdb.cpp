@@ -17,7 +17,6 @@
 #include "zcash/Proof.hpp"
 
 #include <boost/filesystem.hpp>
-#include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
 
@@ -231,12 +230,14 @@ bool CWalletDB::EraseWatchOnly(const CScript &dest)
 bool CWalletDB::WriteBestBlock(const CBlockLocator& locator)
 {
     nWalletDBUpdated++;
-    return Write(std::string("bestblock"), locator);
+    Write(std::string("bestblock"), CBlockLocator()); // Write empty block locator so versions that require a merkle branch automatically rescan
+    return Write(std::string("bestblock_nomerkle"), locator);
 }
 
 bool CWalletDB::ReadBestBlock(CBlockLocator& locator)
 {
-    return Read(std::string("bestblock"), locator);
+    if (Read(std::string("bestblock"), locator) && !locator.vHave.empty()) return true;
+    return Read(std::string("bestblock_nomerkle"), locator);
 }
 
 bool CWalletDB::WriteOrderPosNext(int64_t nOrderPosNext)
@@ -306,7 +307,7 @@ CAmount CWalletDB::GetAccountCreditDebit(const string& strAccount)
     ListAccountCreditDebit(strAccount, entries);
 
     CAmount nCreditDebit = 0;
-    BOOST_FOREACH (const CAccountingEntry& entry, entries)
+    for (const CAccountingEntry& entry : entries)
         nCreditDebit += entry.nCreditDebit;
 
     return nCreditDebit;
@@ -373,7 +374,7 @@ DBErrors CWalletDB::ReorderTransactions(CWallet* pwallet)
     }
     list<CAccountingEntry> acentries;
     ListAccountCreditDebit("", acentries);
-    BOOST_FOREACH(CAccountingEntry& entry, acentries)
+    for (CAccountingEntry& entry : acentries)
     {
         txByTime.insert(make_pair(entry.nTime, TxPair((CWalletTx*)0, &entry)));
     }
@@ -404,7 +405,7 @@ DBErrors CWalletDB::ReorderTransactions(CWallet* pwallet)
         else
         {
             int64_t nOrderPosOff = 0;
-            BOOST_FOREACH(const int64_t& nOffsetStart, nOrderPosOffsets)
+            for (const int64_t& nOffsetStart : nOrderPosOffsets)
             {
                 if (nOrderPos >= nOffsetStart)
                     ++nOrderPosOff;
@@ -982,7 +983,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
     if ((wss.nKeys + wss.nCKeys) != wss.nKeyMeta)
         pwallet->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
-    BOOST_FOREACH(uint256 hash, wss.vWalletUpgrade)
+    for (uint256 hash : wss.vWalletUpgrade)
         WriteTx(hash, pwallet->mapWallet[hash]);
 
     // Rewrite encrypted wallets of versions 0.4.0 and 0.5.0rc:
@@ -1082,7 +1083,7 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet, vector<CWalletTx>& vWtx)
         return err;
 
     // erase each wallet TX
-    BOOST_FOREACH (uint256& hash, vTxHash) {
+    for (uint256& hash : vTxHash) {
         if (!EraseTx(hash))
             return DB_CORRUPT;
     }
@@ -1093,13 +1094,13 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet, vector<CWalletTx>& vWtx)
 void ThreadFlushWalletDB(const string& strFile)
 {
     // Make this thread recognisable as the wallet flushing thread
-    RenameThread("zcash-wallet");
+    RenameThread("bitcoinz-wallet");
 
     static bool fOneThread;
     if (fOneThread)
         return;
     fOneThread = true;
-    if (!GetBoolArg("-flushwallet", true))
+    if (!GetBoolArg("-flushwallet", DEFAULT_FLUSHWALLET))
         return;
 
     unsigned int nLastSeen = nWalletDBUpdated;
@@ -1135,16 +1136,16 @@ void ThreadFlushWalletDB(const string& strFile)
                     map<string, int>::iterator mi = bitdb.mapFileUseCount.find(strFile);
                     if (mi != bitdb.mapFileUseCount.end())
                     {
-                        LogPrint("db", "Flushing wallet.dat\n");
+                        LogPrint("db", "Flushing %s\n", strFile);
                         nLastFlushed = nWalletDBUpdated;
                         int64_t nStart = GetTimeMillis();
 
-                        // Flush wallet.dat so it's self contained
+                        // Flush wallet file so it's self contained
                         bitdb.CloseDb(strFile);
                         bitdb.CheckpointLSN(strFile);
 
                         bitdb.mapFileUseCount.erase(mi++);
-                        LogPrint("db", "Flushed wallet.dat %dms\n", GetTimeMillis() - nStart);
+                        LogPrint("db", "Flushed %s %dms\n", strFile, GetTimeMillis() - nStart);
                     }
                 }
             }
@@ -1167,7 +1168,7 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
                 bitdb.CheckpointLSN(wallet.strWalletFile);
                 bitdb.mapFileUseCount.erase(wallet.strWalletFile);
 
-                // Copy wallet.dat
+                // Copy wallet file
                 boost::filesystem::path pathSrc = GetDataDir() / wallet.strWalletFile;
                 boost::filesystem::path pathDest(strDest);
                 if (boost::filesystem::is_directory(pathDest))
@@ -1175,10 +1176,10 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
 
                 try {
                     boost::filesystem::copy_file(pathSrc, pathDest, boost::filesystem::copy_option::overwrite_if_exists);
-                    LogPrintf("copied wallet.dat to %s\n", pathDest.string());
+                    LogPrintf("copied %s to %s\n", wallet.strWalletFile, pathDest.string());
                     return true;
                 } catch (const boost::filesystem::filesystem_error& e) {
-                    LogPrintf("error copying wallet.dat to %s - %s\n", pathDest.string(), e.what());
+                    LogPrintf("error copying %s to %s - %s\n", wallet.strWalletFile, pathDest.string(), e.what());
                     return false;
                 }
             }
@@ -1189,15 +1190,15 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
 }
 
 //
-// Try to (very carefully!) recover wallet.dat if there is a problem.
+// Try to (very carefully!) recover wallet file if there is a problem.
 //
 bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKeys)
 {
     // Recovery procedure:
-    // move wallet.dat to wallet.timestamp.bak
+    // move wallet file to wallet.timestamp.bak
     // Call Salvage with fAggressive=true to
     // get as much data as possible.
-    // Rewrite salvaged data to wallet.dat
+    // Rewrite salvaged data to fresh wallet file
     // Set -rescan so any missing transactions will be
     // found.
     int64_t now = GetTime();
@@ -1238,7 +1239,7 @@ bool CWalletDB::Recover(CDBEnv& dbenv, const std::string& filename, bool fOnlyKe
     CWalletScanState wss;
 
     DbTxn* ptxn = dbenv.TxnBegin();
-    BOOST_FOREACH(CDBEnv::KeyValPair& row, salvagedData)
+    for (CDBEnv::KeyValPair& row : salvagedData)
     {
         if (fOnlyKeys)
         {

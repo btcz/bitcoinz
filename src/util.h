@@ -21,25 +21,17 @@
 #include <atomic>
 #include <exception>
 #include <map>
+#include <optional>
 #include <stdint.h>
 #include <string>
 #include <vector>
 
 #include <boost/filesystem/path.hpp>
-#include <boost/signals2/signal.hpp>
 #include <boost/thread/exceptions.hpp>
 
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
-
-/** Signals for translation. */
-class CTranslationInterface
-{
-public:
-    /** Translate a message to the native language of the user. */
-    boost::signals2::signal<std::string (const char* psz)> Translate;
-};
 
 extern std::map<std::string, std::string> mapArgs;
 extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
@@ -51,18 +43,22 @@ extern bool fServer;
 extern bool fLogTimestamps;
 extern bool fLogIPs;
 extern std::atomic<bool> fReopenDebugLog;
-extern CTranslationInterface translationInterface;
 
 [[noreturn]] extern void new_handler_terminate();
 
+extern const char * const BITCOIN_CONF_FILENAME;
+extern const char * const BITCOIN_PID_FILENAME;
+
+/** Translate a message to the native language of the user. */
+const extern std::function<std::string(const char*)> G_TRANSLATION_FUN;
+
 /**
- * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
- * If no translation slot is registered, nothing is returned, and simply return the input.
+ * Translation function.
+ * If no translation function is set, simply return the input.
  */
 inline std::string _(const char* psz)
 {
-    boost::optional<std::string> rv = translationInterface.Translate(psz);
-    return rv ? (*rv) : psz;
+    return G_TRANSLATION_FUN ? (G_TRANSLATION_FUN)(psz) : psz;
 }
 
 void SetupEnvironment();
@@ -125,7 +121,7 @@ bool TryCreateDirectory(const boost::filesystem::path& p);
 boost::filesystem::path GetDefaultDataDir();
 const boost::filesystem::path &GetDataDir(bool fNetSpecific = true);
 void ClearDatadirCache();
-boost::filesystem::path GetConfigFile();
+boost::filesystem::path GetConfigFile(const std::string& confPath);
 #ifndef WIN32
 boost::filesystem::path GetPidFile();
 void CreatePidFile(const boost::filesystem::path &path, pid_t pid);
@@ -134,7 +130,7 @@ class missing_zcash_conf : public std::runtime_error {
 public:
     missing_zcash_conf() : std::runtime_error("Missing bitcoinz.conf") { }
 };
-void ReadConfigFile(std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
+void ReadConfigFile(const std::string& confPath, std::map<std::string, std::string>& mapSettingsRet, std::map<std::string, std::vector<std::string> >& mapMultiSettingsRet);
 #ifdef WIN32
 boost::filesystem::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
@@ -236,7 +232,7 @@ void RenameThread(const char* name);
  */
 template <typename Callable> void TraceThread(const char* name,  Callable func)
 {
-    std::string s = strprintf("zcash-%s", name);
+    std::string s = strprintf("bitcoinz-%s", name);
     RenameThread(s.c_str());
     try
     {
