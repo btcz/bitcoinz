@@ -15,8 +15,7 @@
 #include "consensus/consensus.h"
 
 #include <array>
-
-#include <boost/variant.hpp>
+#include <variant>
 
 #include "zcash/NoteEncryption.hpp"
 #include "zcash/Zcash.h"
@@ -36,6 +35,14 @@ static_assert(SAPLING_TX_VERSION >= SAPLING_MIN_TX_VERSION,
     "Sapling tx version must not be lower than minimum");
 static_assert(SAPLING_TX_VERSION <= SAPLING_MAX_TX_VERSION,
     "Sapling tx version must not be higher than maximum");
+
+// These constants are defined in the protocol § 7.1:
+// https://zips.z.cash/protocol/protocol.pdf#txnencoding
+#define OUTPUTDESCRIPTION_SIZE 948
+#define SPENDDESCRIPTION_SIZE 384
+static inline size_t JOINSPLIT_SIZE(int transactionVersion) {
+    return transactionVersion >= SAPLING_TX_VERSION ? 1698 : 1802;
+}
 
 /**
  * A shielded input to a transaction. It contains data that describes a Spend transfer.
@@ -91,7 +98,7 @@ class OutputDescription
 {
 public:
     uint256 cv;                     //!< A value commitment to the value of the output note.
-    uint256 cm;                     //!< The note commitment for the output note.
+    uint256 cmu;                    //!< The u-coordinate of the note commitment for the output note.
     uint256 ephemeralKey;           //!< A Jubjub public key.
     libzcash::SaplingEncCiphertext encCiphertext; //!< A ciphertext component for the encrypted output note.
     libzcash::SaplingOutCiphertext outCiphertext; //!< A ciphertext component for the encrypted output note.
@@ -104,7 +111,7 @@ public:
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action) {
         READWRITE(cv);
-        READWRITE(cm);
+        READWRITE(cmu);
         READWRITE(ephemeralKey);
         READWRITE(encCiphertext);
         READWRITE(outCiphertext);
@@ -115,7 +122,7 @@ public:
     {
         return (
             a.cv == b.cv &&
-            a.cm == b.cm &&
+            a.cmu == b.cmu &&
             a.ephemeralKey == b.ephemeralKey &&
             a.encCiphertext == b.encCiphertext &&
             a.outCiphertext == b.outCiphertext &&
@@ -130,7 +137,7 @@ public:
 };
 
 template <typename Stream>
-class SproutProofSerializer : public boost::static_visitor<>
+class SproutProofSerializer
 {
     Stream& s;
     bool useGroth;
@@ -159,7 +166,7 @@ template<typename Stream, typename T>
 inline void SerReadWriteSproutProof(Stream& s, const T& proof, bool useGroth, CSerActionSerialize ser_action)
 {
     auto ps = SproutProofSerializer<Stream>(s, useGroth);
-    boost::apply_visitor(ps, proof);
+    std::visit(ps, proof);
 }
 
 template<typename Stream, typename T>
@@ -227,7 +234,6 @@ public:
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
     JSDescription(
-            bool makeGrothProof,
             ZCJoinSplit& params,
             const uint256& joinSplitPubKey,
             const uint256& rt,
@@ -240,7 +246,6 @@ public:
     );
 
     static JSDescription Randomized(
-            bool makeGrothProof,
             ZCJoinSplit& params,
             const uint256& joinSplitPubKey,
             const uint256& rt,
@@ -457,8 +462,8 @@ public:
         // to spend something, then we consider it dust.
         // A typical spendable txout is 34 bytes big, and will
         // need a CTxIn of at least 148 bytes to spend:
-        // so dust is a spendable txout less than 54 satoshis
-        // with default minRelayTxFee.
+        // so dust is a spendable txout less than
+        // 54*minRelayTxFee/1000 (in satoshis)
         if (scriptPubKey.IsUnspendable())
             return 0;
 

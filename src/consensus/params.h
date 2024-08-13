@@ -8,7 +8,8 @@
 
 #include "uint256.h"
 
-#include <boost/optional.hpp>
+#include <optional>
+#include <variant>
 
 namespace Consensus {
 
@@ -59,6 +60,18 @@ struct NetworkUpgrade {
      * should remain disabled on mainnet.
      */
     static constexpr int NO_ACTIVATION_HEIGHT = -1;
+
+    /**
+     * The hash of the block at height nActivationHeight, if known. This is set manually
+     * after a network upgrade activates.
+     *
+     * We use this in IsInitialBlockDownload to detect whether we are potentially being
+     * fed a fake alternate chain. We use NU activation blocks for this purpose instead of
+     * the checkpoint blocks, because network upgrades (should) have significantly more
+     * scrutiny than regular releases. nMinimumChainWork MUST be set to at least the chain
+     * work of this block, otherwise this detection will have false positives.
+     */
+    std::optional<uint256> hashActivationBlock;
 };
 
 /** ZIP208 block target interval in seconds. */
@@ -85,7 +98,7 @@ struct Params {
 
     uint256 hashGenesisBlock;
 
-    bool fCoinbaseMustBeProtected;
+    bool fCoinbaseMustBeShielded;
 
     /** Needs to evenly divide MAX_SUBSIDY to avoid rounding errors. */
     int nSubsidySlowStartInterval;
@@ -97,17 +110,14 @@ struct Params {
      *
      * t_s = nSubsidySlowStartInterval
      * t_r = number of blocks between end of slow start and first halving
-     * t_h = nSubsidyHalvingInterval
+     * t_h = nPreBlossomSubsidyHalvingInterval
      * t_c = SubsidySlowStartShift()
      */
     int SubsidySlowStartShift() const { return nSubsidySlowStartInterval / 2; }
-    int nSubsidyHalvingInterval;
     int nPreBlossomSubsidyHalvingInterval;
     int nPostBlossomSubsidyHalvingInterval;
 
     int Halving(int nHeight) const;
-
-    int GetLastCommunityFeeBlockHeight(int nHeight) const;
 
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
@@ -118,12 +128,13 @@ struct Params {
     unsigned int nEquihashN = 144;
     unsigned int nEquihashK = 5;
     uint256 powLimit;
-    boost::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
+    std::optional<uint32_t> nPowAllowMinDifficultyBlocksAfterHeight;
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
     int64_t nPreBlossomPowTargetSpacing;
     int64_t nPostBlossomPowTargetSpacing;
+
     int64_t PoWTargetSpacing(int nHeight) const;
     int64_t AveragingWindowTimespan(int nHeight) const;
     int64_t MinActualTimespan(int nHeight) const;

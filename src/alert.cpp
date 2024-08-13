@@ -18,7 +18,6 @@
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/foreach.hpp>
 #include <boost/thread.hpp>
 
 using namespace std;
@@ -47,10 +46,10 @@ void CUnsignedAlert::SetNull()
 std::string CUnsignedAlert::ToString() const
 {
     std::string strSetCancel;
-    BOOST_FOREACH(int n, setCancel)
+    for (int n : setCancel)
         strSetCancel += strprintf("%d ", n);
     std::string strSetSubVer;
-    BOOST_FOREACH(const std::string& str, setSubVer)
+    for (const std::string& str : setSubVer)
         strSetSubVer += "\"" + str + "\" ";
     return strprintf(
         "CAlert(\n"
@@ -114,10 +113,28 @@ bool CAlert::Cancels(const CAlert& alert) const
 
 bool CAlert::AppliesTo(int nVersion, const std::string& strSubVerIn) const
 {
+    // Get a subversion without comments
+    std::string strSubVer = "";
+    auto start = 0;
+    auto end = 0;
+    while (start < strSubVerIn.length() && end < strSubVerIn.length()) {
+        end = strSubVerIn.find('(', start);
+        if (end == std::string::npos) {
+            // Ensure we get the section of strSubVerIn after the final comment
+            end = strSubVerIn.length();
+        }
+        strSubVer.append(strSubVerIn.substr(start, end - start));
+        start = strSubVerIn.find(')', end);
+        if (start != std::string::npos) {
+            // Finish with start pointing at the next character we want
+            start += 1;
+        }
+    }
+    // Check against both the commented and uncommented subversion
     // TODO: rework for client-version-embedded-in-strSubVer ?
     return (IsInEffect() &&
             nMinVer <= nVersion && nVersion <= nMaxVer &&
-            (setSubVer.empty() || setSubVer.count(strSubVerIn)));
+            (setSubVer.empty() || setSubVer.count(strSubVerIn) || setSubVer.count(strSubVer)));
 }
 
 bool CAlert::AppliesToMe() const
@@ -222,7 +239,7 @@ bool CAlert::ProcessAlert(const std::vector<unsigned char>& alertKey, bool fThre
         }
 
         // Check if this alert has been cancelled
-        BOOST_FOREACH(PAIRTYPE(const uint256, CAlert)& item, mapAlerts)
+        for (std::pair<const uint256, CAlert>& item : mapAlerts)
         {
             const CAlert& alert = item.second;
             if (alert.Cancels(*this))

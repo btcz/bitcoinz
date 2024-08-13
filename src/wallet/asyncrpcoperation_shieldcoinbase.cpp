@@ -9,6 +9,7 @@
 #include "asyncrpcqueue.h"
 #include "consensus/upgrades.h"
 #include "core_io.h"
+#include "experimental_features.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -31,8 +32,10 @@
 #include <array>
 #include <iostream>
 #include <chrono>
+#include <optional>
 #include <thread>
 #include <string>
+#include <variant>
 
 using namespace libzcash;
 
@@ -91,7 +94,7 @@ AsyncRPCOperation_shieldcoinbase::AsyncRPCOperation_shieldcoinbase(
     lock_utxos();
 
     // Enable payment disclosure if requested
-    paymentDisclosureMode = fExperimentalMode && GetBoolArg("-paymentdisclosure", false);
+    paymentDisclosureMode = fExperimentalPaymentDisclosure;
 }
 
 AsyncRPCOperation_shieldcoinbase::~AsyncRPCOperation_shieldcoinbase() {
@@ -177,20 +180,6 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
 
     size_t numInputs = inputs_.size();
 
-    // Check mempooltxinputlimit to avoid creating a transaction which the local mempool rejects
-    size_t limit = (size_t)GetArg("-mempooltxinputlimit", 0);
-    {
-        LOCK(cs_main);
-        if (Params().GetConsensus().NetworkUpgradeActive(chainActive.Height() + 1, Consensus::UPGRADE_OVERWINTER)) {
-            limit = 0;
-        }
-    }
-    if (limit>0 && numInputs > limit) {
-        throw JSONRPCError(RPC_WALLET_ERROR,
-            strprintf("Number of inputs %d is greater than mempooltxinputlimit of %d",
-            numInputs, limit));
-    }
-
     CAmount targetAmount = 0;
     for (ShieldCoinbaseUTXO & utxo : inputs_) {
         targetAmount += utxo.amount;
@@ -206,7 +195,7 @@ bool AsyncRPCOperation_shieldcoinbase::main_impl() {
     LogPrint("zrpc", "%s: spending %s to shield %s with fee %s\n",
             getId(), FormatMoney(targetAmount), FormatMoney(sendAmount), FormatMoney(minersFee));
 
-    return boost::apply_visitor(ShieldToAddress(this, sendAmount), tozaddr_);
+    return std::visit(ShieldToAddress(this, sendAmount), tozaddr_);
 }
 
 bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) const {
@@ -232,7 +221,7 @@ bool ShieldToAddress::operator()(const libzcash::SproutPaymentAddress &zaddr) co
     info.vjsout.push_back(jso);
     UniValue obj = m_op->perform_joinsplit(info);
 
-    auto txAndResult = SignSendRawTransaction(obj, boost::none, m_op->testmode);
+    auto txAndResult = SignSendRawTransaction(obj, std::nullopt, m_op->testmode);
     m_op->tx_ = txAndResult.first;
     m_op->set_result(txAndResult.second);
     return true;
@@ -260,7 +249,7 @@ bool ShieldToAddress::operator()(const libzcash::SaplingPaymentAddress &zaddr) c
     // Build the transaction
     m_op->tx_ = m_op->builder_.Build().GetTxOrThrow();
 
-    UniValue sendResult = SendTransaction(m_op->tx_, boost::none, m_op->testmode);
+    UniValue sendResult = SendTransaction(m_op->tx_, std::nullopt, m_op->testmode);
     m_op->set_result(sendResult);
 
     return true;
@@ -318,8 +307,8 @@ UniValue AsyncRPCOperation_shieldcoinbase::perform_joinsplit(ShieldCoinbaseJSInf
 
     uint256 esk; // payment disclosure - secret
 
+    assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
     JSDescription jsdesc = JSDescription::Randomized(
-            mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION),
             *pzcashParams,
             joinSplitPubKey_,
             anchor,

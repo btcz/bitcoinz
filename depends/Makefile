@@ -15,6 +15,8 @@ DOWNLOAD_CONNECT_TIMEOUT:=10
 DOWNLOAD_RETRIES:=3
 CRATE_REGISTRY:=vendored-sources
 
+LIBRUSTZCASH_OVERRIDE ?=
+
 host:=$(BUILD)
 ifneq ($(HOST),)
 host:=$(HOST)
@@ -38,6 +40,7 @@ build_vendor=$(word 2,$(subst -, ,$(build)))
 full_build_os:=$(subst $(build_arch)-$(build_vendor)-,,$(build))
 build_os:=$(findstring linux,$(full_build_os))
 build_os+=$(findstring darwin,$(full_build_os))
+build_os+=$(findstring freebsd,$(full_build_os))
 build_os:=$(strip $(build_os))
 ifeq ($(build_os),)
 build_os=$(full_build_os)
@@ -48,6 +51,7 @@ host_vendor=$(word 2,$(subst -, ,$(canonical_host)))
 full_host_os:=$(subst $(host_arch)-$(host_vendor)-,,$(canonical_host))
 host_os:=$(findstring linux,$(full_host_os))
 host_os+=$(findstring darwin,$(full_host_os))
+host_os+=$(findstring freebsd,$(full_host_os))
 host_os+=$(findstring mingw32,$(full_host_os))
 host_os:=$(strip $(host_os))
 ifeq ($(host_os),)
@@ -73,7 +77,9 @@ include builders/default.mk
 include packages/packages.mk
 
 wallet_packages_$(NO_WALLET) = $(wallet_packages)
-proton_packages_$(NO_PROTON) = $(proton_packages)
+
+NO_PROTON_$(WITH_PROTON) = 1
+proton_packages_$(NO_PROTON_) = $(proton_packages)
 
 packages += $($(host_arch)_$(host_os)_packages) $($(host_os)_packages) $(rust_packages) $(proton_packages_) $(wallet_packages_)
 native_packages += $($(host_arch)_$(host_os)_native_packages) $($(host_os)_native_packages)
@@ -146,7 +152,7 @@ install: check-packages $(host_prefix)/share/config.site
 download-one: check-sources $(all_sources)
 
 download-osx:
-	@$(MAKE) -s HOST=x86_64-apple-darwin11 download-one
+	@$(MAKE) -s HOST=x86_64-apple-darwin18 download-one
 download-linux:
 	@$(MAKE) -s HOST=x86_64-unknown-linux-gnu download-one
 download-win:

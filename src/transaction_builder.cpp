@@ -10,7 +10,6 @@
 #include "script/sign.h"
 #include "utilmoneystr.h"
 
-#include <boost/variant.hpp>
 #include <librustzcash.h>
 
 SpendDescriptionInfo::SpendDescriptionInfo(
@@ -26,13 +25,13 @@ TransactionBuilderResult::TransactionBuilderResult(const CTransaction& tx) : may
 
 TransactionBuilderResult::TransactionBuilderResult(const std::string& error) : maybeError(error) {}
 
-bool TransactionBuilderResult::IsTx() { return maybeTx != boost::none; }
+bool TransactionBuilderResult::IsTx() { return maybeTx != std::nullopt; }
 
-bool TransactionBuilderResult::IsError() { return maybeError != boost::none; }
+bool TransactionBuilderResult::IsError() { return maybeError != std::nullopt; }
 
 CTransaction TransactionBuilderResult::GetTxOrThrow() {
     if (maybeTx) {
-        return maybeTx.get();
+        return maybeTx.value();
     } else {
         throw JSONRPCError(RPC_WALLET_ERROR, "Failed to build transaction: " + GetError());
     }
@@ -40,7 +39,7 @@ CTransaction TransactionBuilderResult::GetTxOrThrow() {
 
 std::string TransactionBuilderResult::GetError() {
     if (maybeError) {
-        return maybeError.get();
+        return maybeError.value();
     } else {
         // This can only happen if isTx() is true in which case we should not call getError()
         throw std::runtime_error("getError() was called in TransactionBuilderResult, but the result was not initialized as an error.");
@@ -181,15 +180,15 @@ void TransactionBuilder::SetFee(CAmount fee)
 void TransactionBuilder::SendChangeTo(libzcash::SaplingPaymentAddress changeAddr, uint256 ovk)
 {
     saplingChangeAddr = std::make_pair(ovk, changeAddr);
-    sproutChangeAddr = boost::none;
-    tChangeAddr = boost::none;
+    sproutChangeAddr = std::nullopt;
+    tChangeAddr = std::nullopt;
 }
 
 void TransactionBuilder::SendChangeTo(libzcash::SproutPaymentAddress changeAddr)
 {
     sproutChangeAddr = changeAddr;
-    saplingChangeAddr = boost::none;
-    tChangeAddr = boost::none;
+    saplingChangeAddr = std::nullopt;
+    tChangeAddr = std::nullopt;
 }
 
 void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
@@ -199,8 +198,8 @@ void TransactionBuilder::SendChangeTo(CTxDestination& changeAddr)
     }
 
     tChangeAddr = changeAddr;
-    saplingChangeAddr = boost::none;
-    sproutChangeAddr = boost::none;
+    saplingChangeAddr = std::nullopt;
+    sproutChangeAddr = std::nullopt;
 }
 
 TransactionBuilderResult TransactionBuilder::Build()
@@ -239,7 +238,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         if (saplingChangeAddr) {
             AddSaplingOutput(saplingChangeAddr->first, saplingChangeAddr->second, change);
         } else if (sproutChangeAddr) {
-            AddSproutOutput(sproutChangeAddr.get(), change);
+            AddSproutOutput(sproutChangeAddr.value(), change);
         } else if (tChangeAddr) {
             // tChangeAddr has already been validated.
             AddTransparentOutput(tChangeAddr.value(), change);
@@ -264,7 +263,7 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Create Sapling SpendDescriptions
     for (auto spend : spends) {
-        auto cm = spend.note.cm();
+        auto cm = spend.note.cmu();
         auto nf = spend.note.nullifier(
             spend.expsk.full_viewing_key(), spend.witness.position());
         if (!cm || !nf) {
@@ -301,8 +300,8 @@ TransactionBuilderResult TransactionBuilder::Build()
 
     // Create Sapling OutputDescriptions
     for (auto output : outputs) {
-        auto cm = output.note.cm();
-        if (!cm) {
+        auto cmu = output.note.cmu();
+        if (!cmu) {
             librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult("Output is invalid");
         }
@@ -314,7 +313,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             librustzcash_sapling_proving_ctx_free(ctx);
             return TransactionBuilderResult("Failed to encrypt note");
         }
-        auto enc = res.get();
+        auto enc = res.value();
         auto encryptor = enc.second;
 
         OutputDescription odesc;
@@ -331,7 +330,7 @@ TransactionBuilderResult TransactionBuilder::Build()
             return TransactionBuilderResult("Output proof failed");
         }
 
-        odesc.cm = *cm;
+        odesc.cmu = *cmu;
         odesc.ephemeralKey = encryptor.get_epk();
         odesc.encCiphertext = enc.first;
 
@@ -339,7 +338,7 @@ TransactionBuilderResult TransactionBuilder::Build()
         odesc.outCiphertext = outPlaintext.encrypt(
             output.ovk,
             odesc.cv,
-            odesc.cm,
+            odesc.cmu,
             encryptor);
         mtx.vShieldedOutput.push_back(odesc);
     }
@@ -547,7 +546,7 @@ void TransactionBuilder::CreateJSDescriptions()
 
             assert(changeOutputIndex != -1);
             assert(changeOutputIndex < prevJoinSplit.commitments.size());
-            boost::optional<SproutWitness> changeWitness;
+            std::optional<SproutWitness> changeWitness;
             int n = 0;
             for (const uint256& commitment : prevJoinSplit.commitments) {
                 tree.append(commitment);
@@ -555,7 +554,7 @@ void TransactionBuilder::CreateJSDescriptions()
                 if (!changeWitness && changeOutputIndex == n++) {
                     changeWitness = tree.witness();
                 } else if (changeWitness) {
-                    changeWitness.get().append(commitment);
+                    changeWitness.value().append(commitment);
                 }
             }
             assert(changeWitness.has_value());
@@ -574,7 +573,7 @@ void TransactionBuilder::CreateJSDescriptions()
                     (unsigned char)changeOutputIndex);
 
                 auto note = plaintext.note(changeAddress);
-                vjsin[0] = libzcash::JSInput(changeWitness.get(), note, changeKey);
+                vjsin[0] = libzcash::JSInput(changeWitness.value(), note, changeKey);
 
                 jsInputValue += plaintext.value();
 
@@ -694,8 +693,8 @@ void TransactionBuilder::CreateJSDescription(
     uint256 esk; // payment disclosure - secret
 
     // Generate the proof, this can take over a minute.
+    assert(mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION));
     JSDescription jsdesc = JSDescription::Randomized(
-            mtx.fOverwintered && (mtx.nVersion >= SAPLING_TX_VERSION),
             *sproutParams,
             mtx.joinSplitPubKey,
             vjsin[0].witness.root(),

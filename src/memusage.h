@@ -11,7 +11,6 @@
 #include <set>
 #include <vector>
 
-#include <boost/foreach.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -88,8 +87,8 @@ static inline size_t DynamicUsage(const std::set<X>& s)
     return MallocUsage(sizeof(stl_tree_node<X>)) * s.size();
 }
 
-template<typename X, typename Y>
-static inline size_t DynamicUsage(const std::map<X, Y>& m)
+template<typename X, typename Y, typename C>
+static inline size_t DynamicUsage(const std::map<X, Y, C>& m)
 {
     return MallocUsage(sizeof(stl_tree_node<std::pair<const X, Y> >)) * m.size();
 }
@@ -117,4 +116,4 @@ static inline size_t DynamicUsage(const boost::unordered_map<X, Y, Z>& m)
 
 }
 
-#endif
+#endif // BITCOIN_MEMUSAGE_H

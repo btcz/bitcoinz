@@ -143,11 +143,6 @@ const char* GetOpName(opcodetype opcode)
 
     case OP_INVALIDOPCODE          : return "OP_INVALIDOPCODE";
 
-    // Note:
-    //  The template matching params OP_SMALLDATA/etc are defined in opcodetype enum
-    //  as kind of implementation hack, they are *NOT* real opcodes.  If found in real
-    //  Script, just let the default: case deal with them.
-
     default:
         return "OP_UNKNOWN";
     }
@@ -223,9 +218,8 @@ bool CScript::IsPayToScriptHash() const
             (*this)[22] == OP_EQUAL);
 }
 
-bool CScript::IsPushOnly() const
+bool CScript::IsPushOnly(const_iterator pc) const
 {
-    const_iterator pc = begin();
     while (pc < end())
     {
         opcodetype opcode;
@@ -241,6 +235,11 @@ bool CScript::IsPushOnly() const
     return true;
 }
 
+bool CScript::IsPushOnly() const
+{
+    return this->IsPushOnly(begin());
+}
+
 // insightexplorer
 CScript::ScriptType CScript::GetType() const
 {
@@ -248,7 +247,7 @@ CScript::ScriptType CScript::GetType() const
         return CScript::P2PKH;
     if (this->IsPayToScriptHash())
         return CScript::P2SH;
-    // We don't know this script
+    // We don't know this script type
     return CScript::UNKNOWN;
 }
 

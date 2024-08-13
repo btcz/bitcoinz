@@ -3,7 +3,7 @@
 
 #include <array>
 #include <deque>
-#include <boost/optional.hpp>
+#include <optional>
 #include <boost/static_assert.hpp>
 
 #include "uint256.h"
@@ -57,14 +57,9 @@ public:
 template<size_t Depth, typename Hash>
 class EmptyMerkleRoots {
 public:
-    EmptyMerkleRoots() {
-        empty_roots.at(0) = Hash::uncommitted();
-        for (size_t d = 1; d <= Depth; d++) {
-            empty_roots.at(d) = Hash::combine(empty_roots.at(d-1), empty_roots.at(d-1), d-1);
-        }
-    }
-    Hash empty_root(size_t depth) {
-        return empty_roots.at(depth);
+    EmptyMerkleRoots() { }
+    Hash empty_root(size_t depth) const {
+        return Hash::EmptyRoot(depth);
     }
     template <size_t D, typename H>
     friend bool operator==(const EmptyMerkleRoots<D, H>& a,
@@ -131,11 +126,11 @@ public:
 
 private:
     static EmptyMerkleRoots<Depth, Hash> emptyroots;
-    boost::optional<Hash> left;
-    boost::optional<Hash> right;
+    std::optional<Hash> left;
+    std::optional<Hash> right;
 
     // Collapsed "left" subtrees ordered toward the root of the tree.
-    std::vector<boost::optional<Hash>> parents;
+    std::vector<std::optional<Hash>> parents;
     MerklePath path(std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
     Hash root(size_t depth, std::deque<Hash> filler_hashes = std::deque<Hash>()) const;
     bool is_complete(size_t depth = Depth) const;
@@ -198,7 +193,7 @@ public:
 private:
     IncrementalMerkleTree<Depth, Hash> tree;
     std::vector<Hash> filled;
-    boost::optional<IncrementalMerkleTree<Depth, Hash>> cursor;
+    std::optional<IncrementalMerkleTree<Depth, Hash>> cursor;
     size_t cursor_depth = 0;
     std::deque<Hash> partial_path() const;
     IncrementalWitness(IncrementalMerkleTree<Depth, Hash> tree) : tree(tree) {}
@@ -227,6 +222,7 @@ public:
     static SHA256Compress uncommitted() {
         return SHA256Compress();
     }
+    static SHA256Compress EmptyRoot(size_t);
 };
 
 class PedersenHash : public uint256 {
@@ -241,6 +237,7 @@ public:
     );
 
     static PedersenHash uncommitted();
+    static PedersenHash EmptyRoot(size_t);
 };
 
 template<size_t Depth, typename Hash>

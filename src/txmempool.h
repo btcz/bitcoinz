@@ -10,8 +10,10 @@
 
 #include "amount.h"
 #include "coins.h"
+#include "mempool_limit.h"
 #include "primitives/transaction.h"
 #include "sync.h"
+#include "random.h"
 #include "addressindex.h"
 #include "spentindex.h"
 
@@ -139,6 +141,8 @@ private:
 
     std::map<uint256, const CTransaction*> mapSproutNullifiers;
     std::map<uint256, const CTransaction*> mapSaplingNullifiers;
+    RecentlyEvictedList* recentlyEvicted = new RecentlyEvictedList(DEFAULT_MEMPOOL_EVICTION_MEMORY_MINUTES * 60);
+    WeightedTxTree* weightedTxTree = new WeightedTxTree(DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
 
     void checkNullifiers(ShieldedType type) const;
 
@@ -199,7 +203,7 @@ public:
     void removeWithAnchor(const uint256 &invalidRoot, ShieldedType type);
     void removeForReorg(const CCoinsViewCache *pcoins, unsigned int nMemPoolHeight, int flags);
     void removeConflicts(const CTransaction &tx, std::list<CTransaction>& removed);
-    void removeExpired(unsigned int nBlockHeight);
+    std::vector<uint256> removeExpired(unsigned int nBlockHeight);
     void removeForBlock(const std::vector<CTransaction>& vtx, unsigned int nBlockHeight,
                         std::list<CTransaction>& conflicts, bool fCurrentEstimate = true);
     void removeWithoutBranchId(uint32_t nMemPoolBranchId);
@@ -261,6 +265,12 @@ public:
     uint32_t GetCheckFrequency() const {
         return nCheckFrequency;
     }
+
+    void SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds);
+    // Returns true if a transaction has been recently evicted
+    bool IsRecentlyEvicted(const uint256& txId);
+    // If the mempool size limit is exceeded, this evicts transactions from the mempool until it is below capacity
+    void EnsureSizeLimit();
 };
 
 /**

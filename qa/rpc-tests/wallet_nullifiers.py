@@ -124,10 +124,14 @@ class WalletNullifiersTest (BitcoinTestFramework):
             'total': node3mined + zsendmany2notevalue,
         })
 
-        # add node 1 address and node 2 viewing key to node 3
+        # Add node 1 address and node 2 viewing key to node 3
         myzvkey = self.nodes[2].z_exportviewingkey(myzaddr)
         self.nodes[3].importaddress(mytaddr1)
-        self.nodes[3].z_importviewingkey(myzvkey, 'whenkeyisnew', 1)
+        importvk_result = self.nodes[3].z_importviewingkey(myzvkey, 'whenkeyisnew', 1)
+
+        # Check results of z_importviewingkey
+        assert_equal(importvk_result["type"], "sprout")
+        assert_equal(importvk_result["address"], myzaddr)
 
         # Check the address has been imported
         assert_equal(myzaddr in self.nodes[3].z_listaddresses(), False)
@@ -135,7 +139,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # Node 3 should see the same received notes as node 2; however,
         # some of the notes were change for node 2 but not for node 3.
-        # Aside from that the recieved notes should be the same. So,
+        # Aside from that the received notes should be the same. So,
         # group by txid and then check that all properties aside from
         # change are equal.
         node2Received = dict([r['txid'], r] for r in self.nodes[2].z_listreceivedbyaddress(myzaddr))

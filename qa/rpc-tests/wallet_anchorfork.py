@@ -8,7 +8,8 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     start_nodes, stop_nodes, connect_nodes_bi, \
-    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address
+    wait_and_assert_operationid_status, wait_bitcoinds, get_coinbase_address, \
+    sync_blocks, sync_mempools
 from decimal import Decimal
 
 class WalletAnchorForkTest (BitcoinTestFramework):
@@ -17,9 +18,9 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         print("Initializing test directory "+self.options.tmpdir)
         initialize_chain_clean(self.options.tmpdir, 4)
 
-    # Start nodes with -regtestprotectcoinbase to set fCoinbaseMustBeProtected to true.
+    # Start nodes with -regtestshieldcoinbase to set fCoinbaseMustBeShielded to true.
     def setup_network(self, split=False):
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpc']] * 3 )
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpc']] * 3 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)
         connect_nodes_bi(self.nodes,0,2)
@@ -65,7 +66,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         # Relaunch nodes and partition network into two:
         # A: node 0
         # B: node 1, 2
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpc']] * 3 )
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpc']] * 3 )
         connect_nodes_bi(self.nodes,1,2)
 
         # Partition B, node 1 mines an empty block
@@ -80,11 +81,16 @@ class WalletAnchorForkTest (BitcoinTestFramework):
 
         # Partition A, node 0 mines a block with the transaction
         self.nodes[0].generate(1)
+        # Same as self.sync_all() but only for node 0
+        sync_blocks(self.nodes[:1])
+        sync_mempools(self.nodes[:1])
 
         # Partition B, node 1 mines the same joinsplit transaction
         txid2 = self.nodes[1].sendrawtransaction(rawhex)
         assert_equal(txid, txid2)
         self.nodes[1].generate(1)
+        sync_blocks(self.nodes[1:])
+        sync_mempools(self.nodes[1:])
 
         # Check that Partition B is one block ahead and that they have different tips
         assert_equal(self.nodes[0].getblockcount() + 1, self.nodes[1].getblockcount())
@@ -95,7 +101,7 @@ class WalletAnchorForkTest (BitcoinTestFramework):
         wait_bitcoinds()
 
         # Relaunch nodes and reconnect the entire network
-        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestprotectcoinbase', '-debug=zrpc']] * 3 )
+        self.nodes = start_nodes(3, self.options.tmpdir, extra_args=[['-regtestshieldcoinbase', '-debug=zrpc']] * 3 )
         connect_nodes_bi(self.nodes,0, 1)
         connect_nodes_bi(self.nodes,1, 2)
         connect_nodes_bi(self.nodes,0, 2)

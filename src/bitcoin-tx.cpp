@@ -9,6 +9,7 @@
 #include "core_io.h"
 #include "key_io.h"
 #include "keystore.h"
+#include "policy/policy.h"
 #include "primitives/transaction.h"
 #include "script/script.h"
 #include "script/sign.h"
@@ -26,6 +27,8 @@ static bool fCreateBlank;
 static std::map<std::string,UniValue> registers;
 static const int CONTINUE_EXECUTION=-1;
 
+const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
+
 //
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
@@ -38,8 +41,10 @@ static int AppInitRawTx(int argc, char* argv[])
     ParseParameters(argc, argv);
 
     // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-    if (!SelectParamsFromCommandLine()) {
-        fprintf(stderr, "Error: Invalid combination of -regtest and -testnet.\n");
+    try {
+        SelectParams(ChainNameFromCommandLine());
+    } catch(std::exception &e) {
+        fprintf(stderr, "Error: %s\n", e.what());
         return false;
     }
 
@@ -61,8 +66,7 @@ static int AppInitRawTx(int argc, char* argv[])
         strUsage += HelpMessageOpt("-create", _("Create new, empty TX."));
         strUsage += HelpMessageOpt("-json", _("Select JSON output"));
         strUsage += HelpMessageOpt("-txid", _("Output only the hex-encoded transaction id of the resultant transaction."));
-        strUsage += HelpMessageOpt("-regtest", _("Enter regression test mode, which uses a special chain in which blocks can be solved instantly."));
-        strUsage += HelpMessageOpt("-testnet", _("Use the test network"));
+        AppendParamsHelpMessages(strUsage);
 
         fprintf(stdout, "%s", strUsage.c_str());
 
@@ -174,7 +178,7 @@ static void MutateTxVersion(CMutableTransaction& tx, const std::string& cmdVal)
 static void MutateTxExpiry(CMutableTransaction& tx, const std::string& cmdVal)
 {
     int64_t newExpiry = atoi64(cmdVal);
-    if (newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
+    if (newExpiry <= 0 || newExpiry >= TX_EXPIRY_HEIGHT_THRESHOLD) {
         throw std::runtime_error("Invalid TX expiry requested");
     }
     tx.nExpiryHeight = (int) newExpiry;
@@ -483,7 +487,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& strInput)
             ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
-        BOOST_FOREACH(const CTransaction& txv, txVariants)
+        for (const CTransaction& txv : txVariants)
             sigdata = CombineSignatures(prevPubKey, MutableTransactionSignatureChecker(&mergedTx, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         UpdateTransaction(mergedTx, i, sigdata);
 
@@ -653,10 +657,6 @@ static int CommandLineRawTx(int argc, char* argv[])
         }
 
         OutputTx(tx);
-    }
-
-    catch (const boost::thread_interrupted&) {
-        throw;
     }
     catch (const std::exception& e) {
         strPrint = std::string("error: ") + e.what();

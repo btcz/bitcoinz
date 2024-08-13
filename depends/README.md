@@ -22,7 +22,7 @@ Common `host-platform-triplets` for cross compilation are:
 
 - `i686-w64-mingw32` for Win32
 - `x86_64-w64-mingw32` for Win64
-- `x86_64-apple-darwin11` for MacOSX
+- `x86_64-apple-darwin18` for MacOSX
 - `arm-linux-gnueabihf` for Linux ARM
 
 No other options are needed, the paths are automatically configured.
@@ -36,6 +36,7 @@ The following can be set when running make: make FOO=bar
     PRIORITY_DOWNLOAD_PATH: Try fetching source files from here before using their own URLs
     NO_WALLET: Don't download/build/cache libs needed to enable the wallet
     DEBUG: disable some optimizations and enable more runtime checking
+    LIBRUSTZCASH_OVERRIDE: Path to a local librustzcash repository
 
 If some packages are not built, for example `make NO_WALLET=1`, the appropriate
 options will be passed to bitcoin's configure. In this case, `--disable-wallet`.

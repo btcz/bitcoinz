@@ -140,6 +140,7 @@ static bool rest_headers(HTTPRequest* req,
 
     std::vector<const CBlockIndex *> headers;
     headers.reserve(count);
+    CDataStream ssHeader(SER_NETWORK, PROTOCOL_VERSION);
     {
         LOCK(cs_main);
         BlockMap::const_iterator it = mapBlockIndex.find(hash);
@@ -150,11 +151,16 @@ static bool rest_headers(HTTPRequest* req,
                 break;
             pindex = chainActive.Next(pindex);
         }
-    }
 
-    CDataStream ssHeader(SER_NETWORK, PROTOCOL_VERSION);
-    BOOST_FOREACH(const CBlockIndex *pindex, headers) {
-        ssHeader << pindex->GetBlockHeader();
+        if (rf == RF_BINARY || rf == RF_HEX) {
+            try {
+                for (const CBlockIndex *pindex : headers) {
+                    ssHeader << pindex->GetBlockHeader();
+                }
+            } catch (const std::runtime_error&) {
+                return RESTERR(req, HTTP_INTERNAL_SERVER_ERROR, "Failed to read index entry");
+            }
+        }
     }
 
     switch (rf) {
@@ -173,7 +179,7 @@ static bool rest_headers(HTTPRequest* req,
     }
     case RF_JSON: {
         UniValue jsonHeaders(UniValue::VARR);
-        BOOST_FOREACH(const CBlockIndex *pindex, headers) {
+        for (const CBlockIndex *pindex : headers) {
             jsonHeaders.push_back(blockheaderToJSON(pindex));
         }
         string strJSON = jsonHeaders.write() + "\n";
@@ -562,7 +568,7 @@ static bool rest_getutxos(HTTPRequest* req, const std::string& strURIPart)
         objGetUTXOResponse.push_back(Pair("bitmap", bitmapStringRepresentation));
 
         UniValue utxos(UniValue::VARR);
-        BOOST_FOREACH (const CCoin& coin, outs) {
+        for (const CCoin& coin : outs) {
             UniValue utxo(UniValue::VOBJ);
             utxo.push_back(Pair("txvers", (int32_t)coin.nTxVer));
             utxo.push_back(Pair("height", (int32_t)coin.nHeight));

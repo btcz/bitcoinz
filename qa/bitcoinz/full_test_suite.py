@@ -132,25 +132,25 @@ def util_test():
 #
 
 STAGES = [
+    'check-depends',
     'btest',
     'gtest',
     'sec-hard',
     'no-dot-so',
     'util-test',
     'secp256k1',
-    'libsnark',
     'univalue',
     'rpc',
 ]
 
 STAGE_COMMANDS = {
-    'btest': [repofile('src/test/test_bitcoin'), '-p'],
+    'check-depends': ['qa/bitcoinz/test-depends-sources-mirror.py'],
+    'btest': [repofile('src/test/test_bitcoinz'), '-p'],
     'gtest': [repofile('src/bitcoinz-gtest')],
     'sec-hard': check_security_hardening,
     'no-dot-so': ensure_no_dot_so_in_depends,
     'util-test': util_test,
     'secp256k1': ['make', '-C', repofile('src/secp256k1'), 'check'],
-    'libsnark': ['make', '-C', repofile('src'), 'libsnark-tests'],
     'univalue': ['make', '-C', repofile('src/univalue'), 'check'],
     'rpc': [repofile('qa/pull-tester/rpc-tests.sh')],
 }

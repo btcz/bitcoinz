@@ -15,8 +15,6 @@
 #include "version.h"
 #include "deprecation.h"
 
-#include <boost/foreach.hpp>
-
 #include <univalue.h>
 
 using namespace std;
@@ -55,7 +53,7 @@ UniValue ping(const UniValue& params, bool fHelp)
     // Request that each node send a ping during next message processing pass
     LOCK2(cs_main, cs_vNodes);
 
-    BOOST_FOREACH(CNode* pNode, vNodes) {
+    for (CNode* pNode : vNodes) {
         pNode->fPingQueued = true;
     }
 
@@ -68,7 +66,7 @@ static void CopyNodeStats(std::vector<CNodeStats>& vstats)
 
     LOCK(cs_vNodes);
     vstats.reserve(vNodes.size());
-    BOOST_FOREACH(CNode* pnode, vNodes) {
+    for (CNode* pnode : vNodes) {
         CNodeStats stats;
         pnode->copyStats(stats);
         vstats.push_back(stats);
@@ -85,7 +83,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             "[\n"
             "  {\n"
             "    \"id\": n,                   (numeric) Peer index\n"
-            "    \"addr\":\"host:port\",      (string) The ip address and port of the peer\n"
+            "    \"addr\":\"host:port\",      (string) The IP address and port of the peer\n"
             "    \"addrlocal\":\"ip:port\",   (string) local address\n"
             "    \"services\":\"xxxxxxxxxxxxxxxx\",   (string) The services offered\n"
             "    \"lastsend\": ttt,           (numeric) The time in seconds since epoch (Jan 1 1970 GMT) of the last send\n"
@@ -122,7 +120,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
 
     UniValue ret(UniValue::VARR);
 
-    BOOST_FOREACH(const CNodeStats& stats, vstats) {
+    for (const CNodeStats& stats : vstats) {
         UniValue obj(UniValue::VOBJ);
         CNodeStateStats statestats;
         bool fStateStats = GetNodeStateStats(stats.nodeid, statestats);
@@ -152,7 +150,7 @@ UniValue getpeerinfo(const UniValue& params, bool fHelp)
             obj.push_back(Pair("synced_headers", statestats.nSyncHeight));
             obj.push_back(Pair("synced_blocks", statestats.nCommonHeight));
             UniValue heights(UniValue::VARR);
-            BOOST_FOREACH(int height, statestats.vHeightInFlight) {
+            for (int height : statestats.vHeightInFlight) {
                 heights.push_back(height);
             }
             obj.push_back(Pair("inflight", heights));
@@ -174,7 +172,7 @@ UniValue addnode(const UniValue& params, bool fHelp)
         (strCommand != "onetry" && strCommand != "add" && strCommand != "remove"))
         throw runtime_error(
             "addnode \"node\" \"add|remove|onetry\"\n"
-            "\nAttempts add or remove a node from the addnode list.\n"
+            "\nAttempts to add or remove a node from the addnode list.\n"
             "Or try a connection to a node once.\n"
             "\nArguments:\n"
             "1. \"node\"     (string, required) The node (see getpeerinfo for nodes)\n"
@@ -252,11 +250,11 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"addednode\" : \"192.168.0.201\",   (string) The node ip address\n"
+            "    \"addednode\" : \"192.168.0.201\",   (string) The node IP address\n"
             "    \"connected\" : true|false,          (boolean) If connected\n"
             "    \"addresses\" : [\n"
             "       {\n"
-            "         \"address\" : \"192.168.0.201:8233\",  (string) The Zcash server host and port\n"
+            "         \"address\" : \"192.168.0.201:8233\",  (string) The BitcoinZ server host and port\n"
             "         \"connected\" : \"outbound\"           (string) connection, inbound or outbound\n"
             "       }\n"
             "       ,...\n"
@@ -276,14 +274,14 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     if (params.size() == 1)
     {
         LOCK(cs_vAddedNodes);
-        BOOST_FOREACH(const std::string& strAddNode, vAddedNodes)
+        for (const std::string& strAddNode : vAddedNodes)
             laddedNodes.push_back(strAddNode);
     }
     else
     {
         string strNode = params[1].get_str();
         LOCK(cs_vAddedNodes);
-        BOOST_FOREACH(const std::string& strAddNode, vAddedNodes) {
+        for (const std::string& strAddNode : vAddedNodes) {
             if (strAddNode == strNode)
             {
                 laddedNodes.push_back(strAddNode);
@@ -297,7 +295,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     UniValue ret(UniValue::VARR);
     if (!fDns)
     {
-        BOOST_FOREACH (const std::string& strAddNode, laddedNodes) {
+        for (const std::string& strAddNode : laddedNodes) {
             UniValue obj(UniValue::VOBJ);
             obj.push_back(Pair("addednode", strAddNode));
             ret.push_back(obj);
@@ -306,7 +304,7 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
     }
 
     list<pair<string, vector<CService> > > laddedAddreses(0);
-    BOOST_FOREACH(const std::string& strAddNode, laddedNodes) {
+    for (const std::string& strAddNode : laddedNodes) {
         vector<CService> vservNode(0);
         if(Lookup(strAddNode.c_str(), vservNode, Params().GetDefaultPort(), fNameLookup, 0))
             laddedAddreses.push_back(make_pair(strAddNode, vservNode));
@@ -328,11 +326,11 @@ UniValue getaddednodeinfo(const UniValue& params, bool fHelp)
 
         UniValue addresses(UniValue::VARR);
         bool fConnected = false;
-        BOOST_FOREACH(const CService& addrNode, it->second) {
+        for (const CService& addrNode : it->second) {
             bool fFound = false;
             UniValue node(UniValue::VOBJ);
             node.push_back(Pair("address", addrNode.ToString()));
-            BOOST_FOREACH(CNode* pnode, vNodes) {
+            for (CNode* pnode : vNodes) {
                 if (pnode->addr == addrNode)
                 {
                     fFound = true;
@@ -479,7 +477,7 @@ UniValue getnetworkinfo(const UniValue& params, bool fHelp)
     UniValue localAddresses(UniValue::VARR);
     {
         LOCK(cs_mapLocalHost);
-        BOOST_FOREACH(const PAIRTYPE(CNetAddr, LocalServiceInfo) &item, mapLocalHost)
+        for (const std::pair<CNetAddr, LocalServiceInfo> &item : mapLocalHost)
         {
             UniValue rec(UniValue::VOBJ);
             rec.push_back(Pair("address", item.first.ToString()));
@@ -502,12 +500,12 @@ UniValue setban(const UniValue& params, bool fHelp)
         (strCommand != "add" && strCommand != "remove"))
         throw runtime_error(
                             "setban \"ip(/netmask)\" \"add|remove\" (bantime) (absolute)\n"
-                            "\nAttempts add or remove a IP/Subnet from the banned list.\n"
+                            "\nAttempts to add or remove an IP/Subnet from the banned list.\n"
                             "\nArguments:\n"
-                            "1. \"ip(/netmask)\" (string, required) The IP/Subnet (see getpeerinfo for nodes ip) with a optional netmask (default is /32 = single ip)\n"
-                            "2. \"command\"      (string, required) 'add' to add a IP/Subnet to the list, 'remove' to remove a IP/Subnet from the list\n"
-                            "3. \"bantime\"      (numeric, optional) time in seconds how long (or until when if [absolute] is set) the ip is banned (0 or empty means using the default time of 24h which can also be overwritten by the -bantime startup argument)\n"
-                            "4. \"absolute\"     (boolean, optional) If set, the bantime must be a absolute timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
+                            "1. \"ip(/netmask)\" (string, required) The IP/Subnet (see getpeerinfo for nodes IP) with an optional netmask (default is /32 = single IP)\n"
+                            "2. \"command\"      (string, required) 'add' to add an IP/Subnet to the list, 'remove' to remove an IP/Subnet from the list\n"
+                            "3. \"bantime\"      (numeric, optional) time in seconds how long (or until when if [absolute] is set) the IP is banned (0 or empty means using the default time of 24h which can also be overwritten by the -bantime startup argument)\n"
+                            "4. \"absolute\"     (boolean, optional) If set, the bantime must be an absolute timestamp in seconds since epoch (Jan 1 1970 GMT)\n"
                             "\nExamples:\n"
                             + HelpExampleCli("setban", "\"192.168.0.6\" \"add\" 86400")
                             + HelpExampleCli("setban", "\"192.168.0.0/24\" \"add\"")

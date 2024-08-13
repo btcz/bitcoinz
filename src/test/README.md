@@ -5,7 +5,7 @@ sense to simply use this framework rather than require developers to
 configure some other framework (we want as few impediments to creating
 unit tests as possible).
 
-The build system is setup to compile an executable called "test_bitcoin"
+The build system is setup to compile an executable called "test_bitcoinz"
 that runs all of the unit tests.  The main source file is called
 test_bitcoin.cpp, which simply includes other files that contain the
 actual unit tests (outside of a couple required preprocessor
@@ -21,3 +21,14 @@ Add the source files to /src/Makefile.test.include to add them to the build.
 For further reading, I found the following website to be helpful in
 explaining how the boost unit test framework works:
 [http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/](http://www.alittlemadness.com/2009/03/31/c-unit-testing-with-boosttest/).
+
+test_bitcoinz has some built-in command-line arguments; for
+example, to run just the getarg_tests verbosely:
+
+    test_bitcoinz --log_level=all --run_test=getarg_tests
+
+... or to run just the doubledash test:
+
+    test_bitcoinz --run_test=getarg_tests/doubledash
+
+Run  test_bitcoinz --help   for the full list.

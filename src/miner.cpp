@@ -4,23 +4,22 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "miner.h"
-#ifdef ENABLE_MINING
-#include "pow/tromp/equi_miner.h"
-#endif
 
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/merkle.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
+#include "hash.h"
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
-#include "hash.h"
 #include "key_io.h"
 #include "main.h"
 #include "metrics.h"
 #include "net.h"
+#include "policy/policy.h"
 #include "pow.h"
 #include "primitives/transaction.h"
 #include "random.h"
@@ -101,7 +100,7 @@ void UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParams, 
     pblock->nTime = std::max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
 
     // Updating time can change work required on testnet:
-    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != boost::none) {
+    if (consensusParams.nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt) {
         pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
     }
 }
@@ -126,7 +125,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
     // Largest block you're willing to create:
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", DEFAULT_BLOCK_MAX_SIZE);
-    // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
+    // Limit to between 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
 
     // How much of the block should be dedicated to high-priority transactions,
@@ -157,7 +156,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         // Priority order to process transactions
         list<COrphan> vOrphan; // list memory doesn't move
         map<uint256, vector<COrphan*> > mapDependers;
-        bool fPrintPriority = GetBoolArg("-printpriority", false);
+        bool fPrintPriority = GetBoolArg("-printpriority", DEFAULT_PRINTPRIORITY);
 
         // This vector will be sorted into a priority queue:
         vector<TxPriority> vecPriority;
@@ -178,7 +177,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             double dPriority = 0;
             CAmount nTotalIn = 0;
             bool fMissingInputs = false;
-            BOOST_FOREACH(const CTxIn& txin, tx.vin)
+            for (const CTxIn& txin : tx.vin)
             {
                 // Read prev transaction
                 if (!view.HaveCoins(txin.prevout.hash))
@@ -323,7 +322,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             // create only contains transactions that are valid in new blocks.
             CValidationState state;
             PrecomputedTransactionData txdata(tx);
-          if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
+            if (!ContextualCheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, txdata, chainparams.GetConsensus(), consensusBranchId))
                 continue;
 
             if (chainparams.ZIP209Enabled() && monitoring_pool_balances) {
@@ -354,8 +353,8 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
 
             UpdateCoins(tx, view, nHeight);
 
-            BOOST_FOREACH(const OutputDescription &outDescription, tx.vShieldedOutput) {
-                sapling_tree.append(outDescription.cm);
+            for (const OutputDescription &outDescription : tx.vShieldedOutput) {
+                sapling_tree.append(outDescription.cmu);
             }
 
             // Added
@@ -376,7 +375,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             // Add transactions that depend on this one to the priority queue
             if (mapDependers.count(hash))
             {
-                BOOST_FOREACH(COrphan* porphan, mapDependers[hash])
+                for (COrphan* porphan : mapDependers[hash])
                 {
                     if (!porphan->setDependsOn.empty())
                     {
@@ -405,12 +404,12 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         // Set to 0 so expiry height does not apply to coinbase txs
         txNew.nExpiryHeight = 0;
 
-        if (nHeight >= chainparams.GetCommunityFeeStartHeight()) {
+        if ((nHeight > chainparams.GetCommunityFeeStartHeight()) && (nHeight <= chainparams.GetLastCommunityFeeBlockHeight())) {
             // Community Fee is 5% of the block subsidy
             auto vCommunityFee = txNew.vout[0].nValue * 0.05;
             // Take some reward away from us
             txNew.vout[0].nValue -= vCommunityFee;
-             // And give it to the community
+            // And give it to the community
             txNew.vout.push_back(CTxOut(vCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight)));
         }
 
@@ -470,7 +469,7 @@ void GetScriptForMinerAddress(boost::shared_ptr<CReserveScript> &script)
     }
 
     boost::shared_ptr<MinerAddressScript> mAddr(new MinerAddressScript());
-    CKeyID keyID = boost::get<CKeyID>(addr);
+    CKeyID keyID = std::get<CKeyID>(addr);
 
     script = mAddr;
     script->reserveScript = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyID) << OP_EQUALVERIFY << OP_CHECKSIG;
@@ -492,7 +491,7 @@ void IncrementExtraNonce(CBlock* pblock, const CBlockIndex* pindexPrev, unsigned
     assert(txCoinbase.vin[0].scriptSig.size() <= 100);
 
     pblock->vtx[0] = txCoinbase;
-    pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+    pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
 }
 
 static bool ProcessBlockFound(const CBlock* pblock, const CChainParams& chainparams)
@@ -532,13 +531,29 @@ void static BitcoinMiner(const CChainParams& chainparams)
     boost::shared_ptr<CReserveScript> coinbaseScript;
     GetMainSignals().ScriptForMining(coinbaseScript);
 
+
+    // Get the height of current tip
+    int nHeight = chainActive.Height();
+    if (nHeight == -1) {
+        LogPrintf("Error in BitcoinZ Miner: chainActive.Height() returned -1\n");
+        return;
+    }
+
+    // Get equihash parameters for the next block to be mined.
+    EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
+    validEHparameterList(ehparams, nHeight + 1, chainparams);
+
+    unsigned int n = ehparams[0].n;
+    unsigned int k = ehparams[0].k;
+
     std::string solver = GetArg("-equihashsolver", "default");
     assert(solver == "tromp" || solver == "default");
+    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::mutex m_cs;
     bool cancelSolver = false;
     boost::signals2::connection c = uiInterface.NotifyBlockTip.connect(
-        [&m_cs, &cancelSolver](const uint256& hashNewTip) mutable {
+        [&m_cs, &cancelSolver](bool, const CBlockIndex *) mutable {
             std::lock_guard<std::mutex> lock{m_cs};
             cancelSolver = true;
         }
@@ -573,21 +588,6 @@ void static BitcoinMiner(const CChainParams& chainparams)
             //
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
             CBlockIndex* pindexPrev = chainActive.Tip();
-
-            // Get the height of current tip
-            int nHeight = chainActive.Height();
-            if (nHeight == -1) {
-                LogPrintf("Error in BitcoinZ Miner: chainActive.Height() returned -1\n");
-                return;
-            }
-
-            // Get equihash parameters for the next block to be mined.
-            EHparameters ehparams[MAX_EH_PARAM_LIST_LEN]; //allocate on-stack space for parameters list
-            validEHparameterList(ehparams, nHeight + 1, chainparams);
-
-            unsigned int n = ehparams[0].n;
-            unsigned int k = ehparams[0].k;
-            LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
             unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(chainparams, coinbaseScript->reserveScript));
             if (!pblocktemplate.get())
@@ -674,52 +674,17 @@ void static BitcoinMiner(const CChainParams& chainparams)
                     return cancelSolver;
                 };
 
-                // TODO: factor this out into a function with the same API for each solver.
-                if (solver == "tromp") {
-                    // Create solver and initialize it.
-                    equi eq(1);
-                    eq.setstate(&curr_state);
-
-                    // Initialization done, start algo driver.
-                    eq.digit0(0);
-                    eq.xfull = eq.bfull = eq.hfull = 0;
-                    eq.showbsizes(0);
-                    for (u32 r = 1; r < WK; r++) {
-                        (r&1) ? eq.digitodd(r, 0) : eq.digiteven(r, 0);
-                        eq.xfull = eq.bfull = eq.hfull = 0;
-                        eq.showbsizes(r);
-                    }
-                    eq.digitK(0);
+                try {
+                    // If we find a valid block, we rebuild
+                    bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
                     ehSolverRuns.increment();
-
-                    // Convert solution indices to byte array (decompress) and pass it to validBlock method.
-                    for (size_t s = 0; s < eq.nsols; s++) {
-                        LogPrint("pow", "Checking solution %d\n", s+1);
-                        std::vector<eh_index> index_vector(PROOFSIZE);
-                        for (size_t i = 0; i < PROOFSIZE; i++) {
-                            index_vector[i] = eq.sols[s][i];
-                        }
-                        std::vector<unsigned char> sol_char = GetMinimalFromIndices(index_vector, DIGITBITS);
-
-                        if (validBlock(sol_char)) {
-                            // If we find a POW solution, do not try other solutions
-                            // because they become invalid as we created a new block in blockchain.
-                            break;
-                        }
+                    if (found) {
+                        break;
                     }
-                } else {
-                    try {
-                        // If we find a valid block, we rebuild
-                        bool found = EhOptimisedSolve(n, k, curr_state, validBlock, cancelled);
-                        ehSolverRuns.increment();
-                        if (found) {
-                            break;
-                        }
-                    } catch (EhSolverCancelledException&) {
-                        LogPrint("pow", "Equihash solver cancelled\n");
-                        std::lock_guard<std::mutex> lock{m_cs};
-                        cancelSolver = false;
-                    }
+                } catch (EhSolverCancelledException&) {
+                    LogPrint("pow", "Equihash solver cancelled\n");
+                    std::lock_guard<std::mutex> lock{m_cs};
+                    cancelSolver = false;
                 }
 
                 // Check for stop or if block needs to be rebuilt
@@ -737,7 +702,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                 // Update nNonce and nTime
                 pblock->nNonce = ArithToUint256(UintToArith256(pblock->nNonce) + 1);
                 UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
-                if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != boost::none)
+                if (chainparams.GetConsensus().nPowAllowMinDifficultyBlocksAfterHeight != std::nullopt)
                 {
                     // Changing pblock->nTime can change work required on testnet:
                     hashTarget.SetCompact(pblock->nBits);

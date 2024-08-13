@@ -8,13 +8,11 @@ else
     PARAMS_DIR="$HOME/.zcash-params"
 fi
 
-SPROUT_PKEY_NAME='sprout-proving.key'
-SPROUT_VKEY_NAME='sprout-verifying.key'
 SAPLING_SPEND_NAME='sapling-spend.params'
 SAPLING_OUTPUT_NAME='sapling-output.params'
 SAPLING_SPROUT_GROTH16_NAME='sprout-groth16.params'
-SPROUT_URL="https://d.btcz.rocks"
-SPROUT_IPFS="/ipfs/QmZKKx7Xup7LiAtFRhYsE1M7waXcv9ir9eCECyXAFGxhEo"
+DOWNLOAD_URL="https://download.z.cash/downloads"
+IPFS_HASH="/ipfs/QmXRHVGLQBiKwvNq7c2vPxAKz1zRVmMYbmt7G5TQss7tY7"
 
 SHA256CMD="$(command -v sha256sum || echo shasum)"
 SHA256ARGS="$(command -v sha256sum >/dev/null || echo '-a 256')"
@@ -39,7 +37,7 @@ function fetch_aria2 {
     local dlname="$(basename "$2")"
 
     cat <<EOF
-Retrieving (aria2): $SPROUT_URL/$filename
+Retrieving (aria2): $DOWNLOAD_URL/$filename
 EOF
 
     aria2c \
@@ -55,7 +53,7 @@ EOF
         --allow-overwrite=true \
         --download-result=full \
         --summary-interval=10 \
-        "$SPROUT_URL/$filename" || \
+        "$DOWNLOAD_URL/$filename" || \
     {   echo -e "\n\nResume failed, downloading $filename from scratch.\n\n" \
         && aria2c \
             --out="$dlname" \
@@ -67,7 +65,7 @@ EOF
             --allow-overwrite=true \
             --download-result=full \
             --summary-interval=10 \
-            "$SPROUT_URL/$filename"
+            "$DOWNLOAD_URL/$filename"
     }
 }
 
@@ -80,7 +78,7 @@ function fetch_wget {
     local dlname="$2"
 
     cat <<EOF
-Retrieving (wget): $SPROUT_URL/$filename
+Retrieving (wget): $DOWNLOAD_URL/$filename
 EOF
 
     wget \
@@ -88,14 +86,14 @@ EOF
         --output-document="$dlname" \
         --continue --tries=3 \
         --retry-connrefused --waitretry=3 --timeout=90 \
-        "$SPROUT_URL/$filename" || \
+        "$DOWNLOAD_URL/$filename" || \
     {   echo -e "\n\nResume failed, downloading $filename from scratch.\n\n" \
         && wget \
             --progress=dot:giga \
             --output-document="$dlname" \
             --tries=3 \
             --retry-connrefused --waitretry=3 --timeout=30 \
-            "$SPROUT_URL/$filename"
+            "$DOWNLOAD_URL/$filename"
     }
 }
 
@@ -108,10 +106,10 @@ function fetch_ipfs {
     local dlname="$2"
 
     cat <<EOF
-Retrieving (ipfs): $SPROUT_IPFS/$filename
+Retrieving (ipfs): $IPFS_HASH/$filename
 EOF
 
-    ipfs get --output "$dlname" "$SPROUT_IPFS/$filename"
+    ipfs get --output "$dlname" "$IPFS_HASH/$filename"
 }
 
 function fetch_curl {
@@ -123,13 +121,13 @@ function fetch_curl {
     local dlname="$2"
 
     cat <<EOF
-Retrieving (curl): $SPROUT_URL/$filename
+Retrieving (curl): $DOWNLOAD_URL/$filename
 EOF
 
     curl \
         --output "$dlname" \
         -# -L -C - \
-        "$SPROUT_URL/$filename"
+        "$DOWNLOAD_URL/$filename"
 
 }
 
@@ -237,15 +235,18 @@ EOF
 
     cd "$PARAMS_DIR"
 
-    # Sprout parameters:
-    fetch_params "$SPROUT_PKEY_NAME" "$PARAMS_DIR/$SPROUT_PKEY_NAME" "8bc20a7f013b2b58970cddd2e7ea028975c88ae7ceb9259a5344a16bc2c0eef7"
-    fetch_params "$SPROUT_VKEY_NAME" "$PARAMS_DIR/$SPROUT_VKEY_NAME" "4bd498dae0aacfd8e98dc306338d017d9c08dd0918ead18172bd0aec2fc5df82"
-
     # Sapling parameters:
     fetch_params "$SAPLING_SPEND_NAME" "$PARAMS_DIR/$SAPLING_SPEND_NAME" "8e48ffd23abb3a5fd9c5589204f32d9c31285a04b78096ba40a79b75677efc13"
     fetch_params "$SAPLING_OUTPUT_NAME" "$PARAMS_DIR/$SAPLING_OUTPUT_NAME" "2f0ebbcbb9bb0bcffe95a397e7eba89c29eb4dde6191c339db88570e3f3fb0e4"
     fetch_params "$SAPLING_SPROUT_GROTH16_NAME" "$PARAMS_DIR/$SAPLING_SPROUT_GROTH16_NAME" "b685d700c60328498fbde589c8c7c484c722b788b265b72af448a5bf0ee55b50"
 }
+
+if [ "x${1:-}" = 'x--testnet' ]
+then
+    echo "NOTE: testnet now uses the mainnet parameters, so the --testnet argument"
+    echo "is no longer needed (ignored)"
+    echo ""
+fi
 
 main
 rm -f /tmp/fetch_params.lock

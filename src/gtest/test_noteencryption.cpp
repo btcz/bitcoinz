@@ -2,6 +2,7 @@
 #include "sodium.h"
 
 #include <array>
+#include <optional>
 #include <stdexcept>
 
 #include "zcash/Note.hpp"
@@ -20,7 +21,7 @@ public:
     }
 };
 
-TEST(noteencryption, NotePlaintext)
+TEST(Noteencryption, NotePlaintext)
 {
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
@@ -35,11 +36,11 @@ TEST(noteencryption, NotePlaintext)
     }
 
     SaplingNote note(addr, 39393);
-    auto cmu_opt = note.cm();
+    auto cmu_opt = note.cmu();
     if (!cmu_opt) {
         FAIL();
     }
-    uint256 cmu = cmu_opt.get();
+    uint256 cmu = cmu_opt.value();
     SaplingNotePlaintext pt(note, memo);
 
     auto res = pt.encrypt(addr.pk_d);
@@ -47,7 +48,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto enc = res.get();
+    auto enc = res.value();
 
     auto ct = enc.first;
     auto encryptor = enc.second;
@@ -73,7 +74,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto bar = foo.get();
+    auto bar = foo.value();
 
     ASSERT_TRUE(bar.value() == pt.value());
     ASSERT_TRUE(bar.memo() == pt.memo());
@@ -86,13 +87,13 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto new_note = foobar.get();
+    auto new_note = foobar.value();
 
     ASSERT_TRUE(note.value() == new_note.value());
     ASSERT_TRUE(note.d == new_note.d);
     ASSERT_TRUE(note.pk_d == new_note.pk_d);
     ASSERT_TRUE(note.r == new_note.r);
-    ASSERT_TRUE(note.cm() == new_note.cm());
+    ASSERT_TRUE(note.cmu() == new_note.cmu());
 
     SaplingOutgoingPlaintext out_pt;
     out_pt.pk_d = note.pk_d;
@@ -121,7 +122,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    auto decrypted_out_ct_unwrapped = decrypted_out_ct.get();
+    auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
 
     ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
     ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
@@ -150,7 +151,7 @@ TEST(noteencryption, NotePlaintext)
         FAIL();
     }
 
-    bar = foo.get();
+    bar = foo.value();
 
     ASSERT_TRUE(bar.value() == pt.value());
     ASSERT_TRUE(bar.memo() == pt.memo());
@@ -158,7 +159,7 @@ TEST(noteencryption, NotePlaintext)
     ASSERT_TRUE(bar.rcm == pt.rcm);
 }
 
-TEST(noteencryption, SaplingApi)
+TEST(Noteencryption, SaplingApi)
 {
     using namespace libzcash;
 
@@ -183,7 +184,7 @@ TEST(noteencryption, SaplingApi)
     }
 
     // Invalid diversifier
-    ASSERT_EQ(boost::none, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+    ASSERT_EQ(std::nullopt, SaplingNoteEncryption::FromDiversifier({1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
 
     // Encrypt to pk_1
     auto enc = *SaplingNoteEncryption::FromDiversifier(pk_1.d);
@@ -341,7 +342,7 @@ TEST(noteencryption, SaplingApi)
     ));
 }
 
-TEST(noteencryption, api)
+TEST(Noteencryption, api)
 {
     uint256 sk_enc = ZCNoteEncryption::generate_privkey(uint252(uint256S("21035d60bc1983e37950ce4803418a8fb33ea68d5b937ca382ecbae7564d6a07")));
     uint256 pk_enc = ZCNoteEncryption::generate_pubkey(sk_enc);
@@ -446,7 +447,7 @@ uint256 test_prf(
     return ret;
 }
 
-TEST(noteencryption, prf_addr)
+TEST(Noteencryption, PrfAddr)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -466,7 +467,7 @@ TEST(noteencryption, prf_addr)
     }
 }
 
-TEST(noteencryption, prf_nf)
+TEST(Noteencryption, PrfNf)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -477,7 +478,7 @@ TEST(noteencryption, prf_nf)
     }
 }
 
-TEST(noteencryption, prf_pk)
+TEST(Noteencryption, PrfPk)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 a_sk = libzcash::random_uint252();
@@ -500,7 +501,7 @@ TEST(noteencryption, prf_pk)
     ASSERT_THROW(PRF_pk(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, prf_rho)
+TEST(Noteencryption, PrfRho)
 {
     for (size_t i = 0; i < 100; i++) {
         uint252 phi = libzcash::random_uint252();
@@ -523,7 +524,7 @@ TEST(noteencryption, prf_rho)
     ASSERT_THROW(PRF_rho(dummy_a, 2, dummy_b), std::domain_error);
 }
 
-TEST(noteencryption, uint252)
+TEST(Noteencryption, uint252)
 {
     ASSERT_THROW(uint252(uint256S("f6da8716682d600f74fc16bd0187faad6a26b4aa4c24d5c055b216d94516847e")), std::domain_error);
 }

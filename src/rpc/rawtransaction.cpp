@@ -13,6 +13,7 @@
 #include "main.h"
 #include "merkleblock.h"
 #include "net.h"
+#include "policy/policy.h"
 #include "primitives/transaction.h"
 #include "rpc/server.h"
 #include "script/script.h"
@@ -25,6 +26,7 @@
 #endif
 
 #include <stdint.h>
+#include <variant>
 
 #include <boost/assign/list_of.hpp>
 
@@ -74,7 +76,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
         {
             UniValue nullifiers(UniValue::VARR);
-            BOOST_FOREACH(const uint256 nf, jsdescription.nullifiers) {
+            for (const uint256 nf : jsdescription.nullifiers) {
                 nullifiers.push_back(nf.GetHex());
             }
             joinsplit.push_back(Pair("nullifiers", nullifiers));
@@ -82,7 +84,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
         {
             UniValue commitments(UniValue::VARR);
-            BOOST_FOREACH(const uint256 commitment, jsdescription.commitments) {
+            for (const uint256 commitment : jsdescription.commitments) {
                 commitments.push_back(commitment.GetHex());
             }
             joinsplit.push_back(Pair("commitments", commitments));
@@ -93,7 +95,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
         {
             UniValue macs(UniValue::VARR);
-            BOOST_FOREACH(const uint256 mac, jsdescription.macs) {
+            for (const uint256 mac : jsdescription.macs) {
                 macs.push_back(mac.GetHex());
             }
             joinsplit.push_back(Pair("macs", macs));
@@ -101,7 +103,7 @@ UniValue TxJoinSplitToJSON(const CTransaction& tx) {
 
         CDataStream ssProof(SER_NETWORK, PROTOCOL_VERSION);
         auto ps = SproutProofSerializer<CDataStream>(ssProof, useGroth);
-        boost::apply_visitor(ps, jsdescription.proof);
+        std::visit(ps, jsdescription.proof);
         joinsplit.push_back(Pair("proof", HexStr(ssProof.begin(), ssProof.end())));
 
         {
@@ -137,7 +139,7 @@ UniValue TxShieldedOutputsToJSON(const CTransaction& tx) {
     for (const OutputDescription& outputDesc : tx.vShieldedOutput) {
         UniValue obj(UniValue::VOBJ);
         obj.push_back(Pair("cv", outputDesc.cv.GetHex()));
-        obj.push_back(Pair("cmu", outputDesc.cm.GetHex()));
+        obj.push_back(Pair("cmu", outputDesc.cmu.GetHex()));
         obj.push_back(Pair("ephemeralKey", outputDesc.ephemeralKey.GetHex()));
         obj.push_back(Pair("encCiphertext", HexStr(outputDesc.encCiphertext.begin(), outputDesc.encCiphertext.end())));
         obj.push_back(Pair("outCiphertext", HexStr(outputDesc.outCiphertext.begin(), outputDesc.outCiphertext.end())));
@@ -161,7 +163,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         entry.push_back(Pair("expiryheight", (int64_t)tx.nExpiryHeight));
     }
     UniValue vin(UniValue::VARR);
-    BOOST_FOREACH(const CTxIn& txin, tx.vin) {
+    for (const CTxIn& txin : tx.vin) {
         UniValue in(UniValue::VOBJ);
         if (tx.IsCoinBase())
             in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
@@ -296,7 +298,7 @@ UniValue getrawtransaction(const UniValue& params, bool fHelp)
             "         \"reqSigs\" : n,            (numeric) The required sigs\n"
             "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
             "         \"addresses\" : [           (json array of string)\n"
-            "           \"btczaddress\"          (string) BitcoinZ address\n"
+            "           \"address\"               (string) BitcoinZ address\n"
             "           ,...\n"
             "         ]\n"
             "       }\n"
@@ -435,7 +437,7 @@ UniValue gettxoutproof(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     unsigned int ntxFound = 0;
-    BOOST_FOREACH(const CTransaction&tx, block.vtx)
+    for (const CTransaction&tx : block.vtx)
         if (setTxids.count(tx.GetHash()))
             ntxFound++;
     if (ntxFound != setTxids.size())
@@ -476,7 +478,7 @@ UniValue verifytxoutproof(const UniValue& params, bool fHelp)
     if (!mapBlockIndex.count(merkleBlock.header.GetHash()) || !chainActive.Contains(mapBlockIndex[merkleBlock.header.GetHash()]))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found in chain");
 
-    BOOST_FOREACH(const uint256& hash, vMatch)
+    for (const uint256& hash : vMatch)
         res.push_back(hash.GetHex());
     return res;
 }
@@ -589,9 +591,9 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
 
       // Add data field acceptence
       if (name_ == "data") {
-        std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
-        CTxOut out(0, CScript() << OP_RETURN << data);
-        rawTx.vout.push_back(out);
+          std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
+          CTxOut out(0, CScript() << OP_RETURN << data);
+          rawTx.vout.push_back(out);
       } else {
           CTxDestination destination = DecodeDestination(name_);
           if (!IsValidDestination(destination)) {
@@ -861,7 +863,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         CCoinsViewMemPool viewMempool(&viewChain, mempool);
         view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
 
-        BOOST_FOREACH(const CTxIn& txin, mergedTx.vin) {
+        for (const CTxIn& txin : mergedTx.vin) {
             const uint256& prevHash = txin.prevout.hash;
             CCoins coins;
             view.AccessCoins(prevHash); // this is certainly allowed to fail
@@ -1005,7 +1007,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
             ProduceSignature(MutableTransactionSignatureCreator(&keystore, &mergedTx, i, amount, nHashType), prevPubKey, sigdata, consensusBranchId);
 
         // ... and merge in other signatures:
-        BOOST_FOREACH(const CMutableTransaction& txv, txVariants) {
+        for (const CMutableTransaction& txv : txVariants) {
             sigdata = CombineSignatures(prevPubKey, TransactionSignatureChecker(&txConst, i, amount), sigdata, DataFromTransaction(txv, i), consensusBranchId);
         }
 

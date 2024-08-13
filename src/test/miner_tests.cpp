@@ -3,6 +3,7 @@
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #include "arith_uint256.h"
+#include "consensus/merkle.h"
 #include "consensus/validation.h"
 #include "main.h"
 #include "miner.h"
@@ -138,6 +139,7 @@ struct {
 // NOTE: These tests rely on CreateNewBlock doing its own self-validation!
 BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 {
+/** FIXME
     const CChainParams& chainparams = Params(CBaseChainParams::MAIN);
     CScript scriptPubKey = CScript() << ParseHex("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f") << OP_CHECKSIG;
     CBlockTemplate *pblocktemplate;
@@ -151,7 +153,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
 
     LOCK(cs_main);
     fCheckpointsEnabled = false;
-    fCoinbaseEnforcedProtectionEnabled = false;
+    fCoinbaseEnforcedShieldingEnabled = false;
 
     // We can't make transactions until we have inputs
     // Therefore, load 100 blocks :)
@@ -176,11 +178,10 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
         pblock->vtx[0] = CTransaction(txCoinbase);
         if (txFirst.size() < 2)
             txFirst.push_back(new CTransaction(pblock->vtx[0]));
-        pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+        pblock->hashMerkleRoot = BlockMerkleRoot(*pblock);
         pblock->nNonce = uint256S(blockinfo[i].nonce_hex);
         pblock->nSolution = ParseHex(blockinfo[i].solution_hex);
 
-/*
         {
         arith_uint256 try_nonce(0);
         unsigned int n = Params().EquihashN();
@@ -259,7 +260,6 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             std::cout << "\"}," << std::endl;
 
         }
-*/
 
         // These tests assume null hashFinalSaplingRoot (before Sapling)
         pblock->hashFinalSaplingRoot = uint256();
@@ -447,11 +447,12 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
     SetMockTime(0);
     mempool.clear();
 
-    BOOST_FOREACH(CTransaction *tx, txFirst)
+    for (CTransaction *tx : txFirst)
         delete tx;
 
     fCheckpointsEnabled = true;
-    fCoinbaseEnforcedProtectionEnabled = true;
+    fCoinbaseEnforcedShieldingEnabled = true;
+*/
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -12,17 +12,22 @@
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
+#include <optional>
+#include <variant>
+
 // Sprout
 CWalletTx GetValidSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version = 2);
+                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+                                int32_t version = SAPLING_TX_VERSION);
 CWalletTx GetInvalidCommitmentSproutReceive(ZCJoinSplit& params,
                                 const libzcash::SproutSpendingKey& sk,
                                 CAmount value,
                                 bool randomInputs,
-                                int32_t version = 2);
+                                uint32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
+                                int32_t version = SAPLING_TX_VERSION);
 libzcash::SproutNote GetSproutNote(ZCJoinSplit& params,
                                    const libzcash::SproutSpendingKey& sk,
                                    const CTransaction& tx, size_t js, size_t n);

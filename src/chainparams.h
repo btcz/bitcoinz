@@ -67,7 +67,7 @@ public:
         EXT_PUBLIC_KEY,
         EXT_SECRET_KEY,
 
-        ZCPAYMENT_ADDRRESS,
+        ZCPAYMENT_ADDRESS,
         ZCSPENDING_KEY,
         ZCVIEWING_KEY,
 
@@ -101,7 +101,6 @@ public:
     bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
     /** Policy: Filter transactions that do not match well-defined patterns */
     bool RequireStandard() const { return fRequireStandard; }
-    int64_t MaxTipAge() const { return nMaxTipAge; }
     int64_t PruneAfterHeight() const { return nPruneAfterHeight; }
 
     EHparameters eh_epoch_1_params() const { return eh_epoch_1; }
@@ -129,7 +128,7 @@ public:
     int GetCommunityFeeStartHeight() const { return vCommunityFeeStartHeight; };
     int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
     /** Enforce coinbase consensus rule in regtest mode */
-    void SetRegTestCoinbaseMustBeProtected() { consensus.fCoinbaseMustBeProtected = true; }
+    void SetRegTestCoinbaseMustBeShielded() { consensus.fCoinbaseMustBeShielded = true; }
     int GetFutureBlockTimeWindow(int height) const;
     int GetRollingCheckpointStartHeight() const { return vRollingCheckpointStartHeight; }
 protected:
@@ -140,7 +139,6 @@ protected:
     //! Raw pub key bytes for the broadcast alert signing key.
     std::vector<unsigned char> vAlertPubKey;
     int nDefaultPort = 0;
-    long nMaxTipAge = 0;
     uint64_t nPruneAfterHeight = 0;
     EHparameters eh_epoch_1 = eh200_9;
     EHparameters eh_epoch_2 = eh144_5;
@@ -177,17 +175,16 @@ protected:
  */
 const CChainParams &Params();
 
-/** Return parameters for the given network. */
-CChainParams &Params(CBaseChainParams::Network network);
-
-/** Sets the params returned by Params() to those for the given network. */
-void SelectParams(CBaseChainParams::Network network);
+/**
+ * @returns CChainParams for the given BIP70 chain name.
+ */
+CChainParams& Params(const std::string& chain);
 
 /**
- * Looks for -regtest or -testnet and then calls SelectParams as appropriate.
- * Returns false if an invalid combination is given.
+ * Sets the params returned by Params() to those for the given BIP70 chain name.
+ * @throws std::runtime_error when the chain is not supported.
  */
-bool SelectParamsFromCommandLine();
+void SelectParams(const std::string& chain);
 
 /**
  * Allows modifying the network upgrade regtest parameters.

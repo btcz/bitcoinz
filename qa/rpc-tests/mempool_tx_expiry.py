@@ -4,7 +4,7 @@
 # file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 #
-# Test proper expiry for transactions >= version 3
+# Test proper expiry for transactions >= version 4
 #
 
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
@@ -17,7 +17,6 @@ from test_framework.util import assert_equal, \
 
 from decimal import Decimal
 
-SAPLING_ACTIVATION_HEIGHT = 300
 TX_EXPIRING_SOON_THRESHOLD = 3
 TX_EXPIRY_DELTA = 10
 
@@ -26,8 +25,6 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
     def setup_nodes(self):
         return start_nodes(4, self.options.tmpdir,
             [[
-                "-nuparams=5ba81b19:205", # Overwinter
-                "-nuparams=76b809bb:%d" % SAPLING_ACTIVATION_HEIGHT, # Sapling
                 "-txexpirydelta=%d" % TX_EXPIRY_DELTA,
                 "-debug=mempool"
             ]] * 4)
@@ -40,22 +37,13 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         bob = self.nodes[2].getnewaddress()
         z_bob = self.nodes[2].z_getnewaddress('sapling')
 
-        # When Overwinter not yet activated, no expiryheight in tx
-        tx = self.nodes[0].sendtoaddress(bob, 0.01)
-        rawtx = self.nodes[0].getrawtransaction(tx, 1)
-        assert_equal(rawtx["overwintered"], False)
-        assert("expiryheight" not in rawtx)
-
-        self.nodes[0].generate(6)
-        self.sync_all()
-
         print "Splitting network..."
         self.split_network()
 
-        # When Overwinter is activated, test dependent txs
+        # Test dependent txs
         firstTx = self.nodes[0].sendtoaddress(alice, 0.1)
         firstTxInfo = self.nodes[0].getrawtransaction(firstTx, 1)
-        assert_equal(firstTxInfo["version"], 3)
+        assert_equal(firstTxInfo["version"], 4)
         assert_equal(firstTxInfo["overwintered"], True)
         assert("expiryheight" in firstTxInfo)
         print "First tx expiry height:", firstTxInfo['expiryheight']
@@ -87,12 +75,6 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print "Blockheight node 2:", self.nodes[2].getblockchaininfo()['blocks']
         assert_equal(set(self.nodes[0].getrawmempool()), set())
         assert_equal(set(self.nodes[2].getrawmempool()), set())
-
-        # Activate Sapling
-        n = SAPLING_ACTIVATION_HEIGHT - self.nodes[0].getblockcount()
-        assert(n > 0)
-        self.nodes[0].generate(n)
-        self.sync_all()
 
         ## Shield one of Alice's coinbase funds to her zaddr
         res = self.nodes[0].z_shieldcoinbase("*", z_alice, 0.0001, 1)
@@ -130,7 +112,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         assert_equal(rawtx["overwintered"], True)
         assert_equal(rawtx["expiryheight"], blockheight + 1 + TX_EXPIRY_DELTA)
 
-        print "\n Blockheight advances to less than expiry block height. After reorg, txs should persist in mempool"
+        print "\nBlockheight advances to less than expiry block height. After reorg, txs should persist in mempool"
         assert(persist_transparent in self.nodes[0].getrawmempool())
         assert(persist_shielded in self.nodes[0].getrawmempool())
         assert_equal(set(self.nodes[2].getrawmempool()), set())
@@ -176,7 +158,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print "Splitting network..."
         self.split_network()
 
-        print "\n Blockheight advances to equal expiry block height. After reorg, txs should persist in mempool"
+        print "\nBlockheight advances to equal expiry block height. After reorg, txs should persist in mempool"
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         persist_shielded_2 = wait_and_assert_operationid_status(self.nodes[0], myopid)
         persist_transparent_2 = self.nodes[0].sendtoaddress(bob, 0.01)
@@ -210,7 +192,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print "Splitting network..."
         self.split_network()
 
-        print "\n Blockheight advances to greater than expiry block height. After reorg, txs should expire from mempool"
+        print "\nBlockheight advances to greater than expiry block height. After reorg, txs should expire from mempool"
         print "Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance()
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
@@ -241,7 +223,7 @@ class MempoolTxExpiryTest(BitcoinTestFramework):
         print "Splitting network..."
         self.split_network()
 
-        print "\n Blockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool."
+        print "\nBlockheight advances to just before expiring soon threshold.  Txs should be rejected from entering mempool."
         print "Balance before expire_shielded is sent: ", self.nodes[0].z_gettotalbalance()
         myopid = self.nodes[0].z_sendmany(z_alice, recipients)
         expire_shielded = wait_and_assert_operationid_status(self.nodes[0], myopid)
