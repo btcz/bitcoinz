@@ -367,13 +367,8 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-prune=<n>", strprintf(_("Reduce storage requirements by pruning (deleting) old blocks. This mode disables wallet support and is incompatible with -txindex. "
             "Warning: Reverting this setting requires re-downloading the entire blockchain. "
             "(default: 0 = disable pruning blocks, >%u = target size in MiB to use for block files)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
-#ifdef ENABLE_WALLET
-    strUsage += HelpMessageOpt("-reindex-chainstate", _("Rebuild chain state from the currently indexed blocks (implies -rescan)"));
-    strUsage += HelpMessageOpt("-reindex", _("Rebuild chain state and block index from the blk*.dat files on disk (implies -rescan)"));
-#else
     strUsage += HelpMessageOpt("-reindex-chainstate", _("Rebuild chain state from the currently indexed blocks"));
     strUsage += HelpMessageOpt("-reindex", _("Rebuild chain state and block index from the blk*.dat files on disk"));
-#endif
 #ifndef WIN32
     strUsage += HelpMessageOpt("-sysperms", _("Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)"));
 #endif
@@ -621,7 +616,7 @@ void ThreadStartWalletNotifier()
     if (pwalletMain)
     {
         std::optional<uint256> walletBestBlockHash;
-        if (!fReindex) {
+        {
             LOCK(pwalletMain->cs_wallet);
             walletBestBlockHash = pwalletMain->GetPersistedBestBlock();
         }
@@ -928,6 +923,7 @@ void InitParameterInteraction()
             LogPrintf("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
     }
 
+#ifdef ENABLE_WALLET
     if (GetBoolArg("-salvagewallet", false)) {
         // Rewrite just private keys: rescan to find transactions
         if (SoftSetBoolArg("-rescan", true))
@@ -939,6 +935,7 @@ void InitParameterInteraction()
         if (SoftSetBoolArg("-rescan", true))
             LogPrintf("%s: parameter interaction: -zapwallettxes=<mode> -> setting -rescan=1\n", __func__);
     }
+#endif
 }
 
 void InitLogging()
@@ -1523,9 +1520,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
                 // Check for changed -txindex state
                 if (fTxIndex != GetBoolArg("-txindex", DEFAULT_TXINDEX)) {
-                    // TODO: Recommend `-reindex-chainstate` instead of
-                    //      `-reindex` after #5964 and/or #5977 are fixed.
-                    strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
+                    strLoadError = _("You need to rebuild the database using -reindex-chainstate to change -txindex");
                     break;
                 }
 
@@ -1593,8 +1588,6 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
             if (!fReset) {
                 bool fRet = uiInterface.ThreadSafeQuestion(
                     strLoadError + ".\n\n" + _("Do you want to rebuild the block database now?"),
-                    // TODO: Recommend `-reindex or -reindex-chainstate` after
-                    //       #5964 and/or #5977 are fixed.
                     strLoadError + ".\nPlease restart with -reindex to recover.",
                     "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);
                 if (fRet) {
@@ -1710,6 +1703,12 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
 
     if (mapArgs.count("-txexpirynotify"))
         uiInterface.NotifyTxExpiration.connect(TxExpiryNotifyCallback);
+
+    uiInterface.InitMessage(_("Activating best chain..."));
+    // scan for better chains in the block chain database, that are not yet connected in the active best chain
+    CValidationState state;
+    if (!ActivateBestChain(state, chainparams))
+        strErrors << "Failed to connect best block";
 
     std::vector<boost::filesystem::path> vImportFiles;
     if (mapArgs.count("-loadblock"))

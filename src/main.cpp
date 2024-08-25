@@ -4879,6 +4879,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                         {
                             LogPrint("reindex", "%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
+                            LOCK(cs_main);
                             CValidationState dummy;
                             if (AcceptBlock(block, dummy, chainparams, NULL, true, &(range.first->second)))
                             {
@@ -5036,7 +5037,6 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
                 }
             }
         }
-        // assert(pindex->GetBlockHash() == pindex->GetBlockHeader().GetHash()); // Perhaps too slow
         // try {
         //     assert(pindex->GetBlockHash() == pindex->GetBlockHeader().GetHash()); // Perhaps too slow
         // } catch (const runtime_error&) {
