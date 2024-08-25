@@ -282,7 +282,7 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
                 // then the index entry is rewritten. In that case we must read the solution from the old entry.
                 CDiskBlockIndex dbindex_old;
                 if (!Read(key, dbindex_old)) {
-                    LogPrintf("%s: Failed to read index entry", __func__);
+                    LogPrintf("%s: Failed to read index entry\n", __func__);
                     throw runtime_error("Failed to read index entry");
                 }
                 return dbindex_old.GetSolution();

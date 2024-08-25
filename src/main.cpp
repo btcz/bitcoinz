@@ -2626,7 +2626,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
-        pindex->hashFinalSaplingRoot = sapling_tree.root();
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
@@ -3456,7 +3455,6 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     {
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
-        pindexNew->hashFinalSaplingRoot = pindexNew->hashFinalSaplingRoot;
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
