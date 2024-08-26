@@ -282,7 +282,7 @@ bool CBlockTreeDB::WriteBatchSync(const std::vector<std::pair<int, const CBlockF
                 // then the index entry is rewritten. In that case we must read the solution from the old entry.
                 CDiskBlockIndex dbindex_old;
                 if (!Read(key, dbindex_old)) {
-                    LogPrintf("%s: Failed to read index entry", __func__);
+                    LogPrintf("%s: Failed to read index entry\n", __func__);
                     throw runtime_error("Failed to read index entry");
                 }
                 return dbindex_old.GetSolution();
@@ -509,23 +509,9 @@ bool CBlockTreeDB::LoadBlockIndexGuts(std::function<CBlockIndex*(const uint256&)
                 pindexNew->nSproutValue   = diskindex.nSproutValue;
                 pindexNew->nSaplingValue  = diskindex.nSaplingValue;
 
-                // Consistency checks
-                CBlockHeader header;
-                {
-                    LOCK(cs_main);
-                    try {
-                        header = pindexNew->GetBlockHeader();
-                    } catch (const runtime_error&) {
-                        return error("LoadBlockIndex(): failed to read index entry: diskindex hash = %s",
-                            diskindex.GetBlockHash().ToString());
-                    }
-                }
-                if (header.GetHash() != diskindex.GetBlockHash())
-                    return error("LoadBlockIndex(): inconsistent header vs diskindex hash: header hash = %s, diskindex hash = %s",
-                        header.GetHash().ToString(), diskindex.GetBlockHash().ToString());
-                if (header.GetHash() != pindexNew->GetBlockHash())
-                    return error("LoadBlockIndex(): block header inconsistency detected: on-disk = %s, in-memory = %s",
-                        diskindex.ToString(), pindexNew->ToString());
+                // Check the block hash against the required difficulty as encoded in the
+                // nBits field. The probability of this succeeding randomly is low enough
+                // that it is a useful check to detect logic or disk storage errors.
                 if (pindexNew->nHeight > 0 && !CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, Params().GetConsensus()))
                     return error("LoadBlockIndex(): CheckProofOfWork failed: %s", pindexNew->ToString());
 

@@ -4762,7 +4762,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
     strUsage += HelpMessageOpt("-paytxfee=<amt>", strprintf(_("Fee (in %s/kB) to add to transactions you send (default: %s)"),
                                                             CURRENCY_UNIT, FormatMoney(payTxFee.GetFeePerK())));
     strUsage += HelpMessageOpt("-rescan", _("Rescan the block chain for missing wallet transactions on startup"));
-    strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup (implies -rescan)"));
+    strUsage += HelpMessageOpt("-salvagewallet", _("Attempt to recover private keys from a corrupt wallet on startup"));
     strUsage += HelpMessageOpt("-sendfreetransactions", strprintf(_("Send transactions as zero-fee transactions if possible (default: %u)"), DEFAULT_SEND_FREE_TRANSACTIONS));
     strUsage += HelpMessageOpt("-spendzeroconfchange", strprintf(_("Spend unconfirmed change when sending transactions (default: %u)"), DEFAULT_SPEND_ZEROCONF_CHANGE));
     strUsage += HelpMessageOpt("-txconfirmtarget=<n>", strprintf(_("If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks (default: %u)"), DEFAULT_TX_CONFIRM_TARGET));
@@ -4881,9 +4881,6 @@ bool CWallet::InitLoadWallet(bool clearWitnessCaches)
 
     RegisterValidationInterface(walletInstance);
 
-    // chainActive.Genesis() may return null; in this case, we want rescanning
-    // to happen automatically as a consequence of the genesis block (and subsequent
-    // blocks) being added to the chain.
     CBlockIndex *pindexRescan = chainActive.Tip();
     if (clearWitnessCaches || GetBoolArg("-rescan", false))
     {

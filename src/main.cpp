@@ -2626,7 +2626,6 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     view.PushAnchor(sapling_tree);
     if (!fJustCheck) {
         pindex->hashFinalSproutRoot = sprout_tree.root();
-        pindex->hashFinalSaplingRoot = sapling_tree.root();
     }
     blockundo.old_sprout_tree_root = old_sprout_tree_root;
 
@@ -3456,7 +3455,6 @@ CBlockIndex* AddToBlockIndex(const CBlockHeader& block)
     {
         pindexNew->pprev = (*miPrev).second;
         pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
-        pindexNew->hashFinalSaplingRoot = pindexNew->hashFinalSaplingRoot;
         pindexNew->BuildSkip();
     }
     pindexNew->nChainWork = (pindexNew->pprev ? pindexNew->pprev->nChainWork : 0) + GetBlockProof(*pindexNew);
@@ -4881,6 +4879,7 @@ bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskB
                         {
                             LogPrint("reindex", "%s: Processing out of order child %s of %s\n", __func__, block.GetHash().ToString(),
                                     head.ToString());
+                            LOCK(cs_main);
                             CValidationState dummy;
                             if (AcceptBlock(block, dummy, chainparams, NULL, true, &(range.first->second)))
                             {
@@ -5038,7 +5037,6 @@ void static CheckBlockIndex(const Consensus::Params& consensusParams)
                 }
             }
         }
-        // assert(pindex->GetBlockHash() == pindex->GetBlockHeader().GetHash()); // Perhaps too slow
         // try {
         //     assert(pindex->GetBlockHash() == pindex->GetBlockHeader().GetHash()); // Perhaps too slow
         // } catch (const runtime_error&) {
