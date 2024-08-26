@@ -4,6 +4,7 @@
 
 #include "clientversion.h"
 #include "consensus/validation.h"
+#include "fs.h"
 #include "main.h"
 #include "test/test_bitcoin.h"
 #include "utiltime.h"
@@ -11,8 +12,6 @@
 
 #include <cstdio>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/test/unit_test.hpp>
 
 
@@ -20,7 +19,6 @@ BOOST_FIXTURE_TEST_SUITE(CheckBlock_tests, BasicTestingSetup)
 
 bool read_block(const std::string& filename, CBlock& block)
 {
-    namespace fs = boost::filesystem;
     fs::path testFile = fs::current_path() / "data" / filename;
 #ifdef TEST_DATA_DIR
     if (!fs::exists(testFile))
@@ -28,7 +26,7 @@ bool read_block(const std::string& filename, CBlock& block)
         testFile = fs::path(BOOST_PP_STRINGIZE(TEST_DATA_DIR)) / filename;
     }
 #endif
-    FILE* fp = fopen(testFile.string().c_str(), "rb");
+    FILE* fp = fsbridge::fopen(testFile, "rb");
     if (!fp) return false;
 
     fseek(fp, 8, SEEK_SET); // skip msgheader/size

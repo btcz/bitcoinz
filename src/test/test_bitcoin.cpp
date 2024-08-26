@@ -14,6 +14,7 @@
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "fs.h"
 #include "key.h"
 #include "main.h"
 #include "miner.h"
@@ -26,7 +27,6 @@
 #include "rpc/register.h"
 #include "script/sigcache.h"
 
-#include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 
@@ -45,12 +45,12 @@ JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : Bas
 {
     pzcashParams = ZCJoinSplit::Prepared();
 
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
-    boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
+    fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+    fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+    fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     static_assert(
-        sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+        sizeof(fs::path::value_type) == sizeof(codeunit),
         "librustzcash not configured correctly");
     auto sapling_spend_str = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();
@@ -100,11 +100,11 @@ TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup
         RegisterAllCoreRPCCommands(tableRPC);
 
         // Save current path, in case a test changes it
-        orig_current_path = boost::filesystem::current_path();
+        orig_current_path = fs::current_path();
 
         ClearDatadirCache();
-        pathTemp = GetTempPath() / strprintf("test_bitcoinz_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
-        boost::filesystem::create_directories(pathTemp);
+        pathTemp = fs::temp_directory_path() / strprintf("test_bitcoinz_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
+        fs::create_directories(pathTemp);
         mapArgs["-datadir"] = pathTemp.string();
         pblocktree = new CBlockTreeDB(1 << 20, true);
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
@@ -127,9 +127,9 @@ TestingSetup::~TestingSetup()
         delete pblocktree;
 
         // Restore the previous current path so temporary directory can be deleted
-        boost::filesystem::current_path(orig_current_path);
+        fs::current_path(orig_current_path);
 
-        boost::filesystem::remove_all(pathTemp);
+        fs::remove_all(pathTemp);
 }
 
 #ifdef ENABLE_MINING

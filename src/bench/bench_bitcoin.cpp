@@ -9,8 +9,6 @@
 #include "util.h"
 #include "zcash/JoinSplit.hpp"
 
-#include <boost/filesystem.hpp>
-
 #include "librustzcash.h"
 
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
@@ -23,12 +21,12 @@ main(int argc, char** argv)
     SetupEnvironment();
     fPrintToDebugLog = false; // don't want to write to debug.log file
 
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
-    boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
+    fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+    fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+    fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     static_assert(
-        sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+        sizeof(fs::path::value_type) == sizeof(codeunit),
         "librustzcash not configured correctly");
     auto sapling_spend_str = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();

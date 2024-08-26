@@ -12,6 +12,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "consensus/consensus.h"
+#include "fs.h"
 #include "init.h"
 #include "key_io.h"
 #include "main.h"
@@ -33,7 +34,6 @@
 #include <variant>
 
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 using namespace std;
@@ -900,18 +900,18 @@ bool CWallet::Verify()
     uiInterface.InitMessage(_("Verifying wallet..."));
 
     // Wallet file must be a plain filename without a directory
-    if (walletFile != boost::filesystem::basename(walletFile) + boost::filesystem::extension(walletFile))
+    if (walletFile != fs::basename(walletFile) + fs::extension(walletFile))
         return UIError(strprintf(_("Wallet %s resides outside data directory %s"), walletFile, GetDataDir().string()));
 
     if (!bitdb.Open(GetDataDir()))
     {
         // try moving the database env out of the way
-        boost::filesystem::path pathDatabase = GetDataDir() / "database";
-        boost::filesystem::path pathDatabaseBak = GetDataDir() / strprintf("database.%d.bak", GetTime());
+        fs::path pathDatabase = GetDataDir() / "database";
+        fs::path pathDatabaseBak = GetDataDir() / strprintf("database.%d.bak", GetTime());
         try {
-            boost::filesystem::rename(pathDatabase, pathDatabaseBak);
+            fs::rename(pathDatabase, pathDatabaseBak);
             LogPrintf("Moved old %s to %s. Retrying.\n", pathDatabase.string(), pathDatabaseBak.string());
-        } catch (const boost::filesystem::filesystem_error&) {
+        } catch (const fs::filesystem_error&) {
             // failure is ok (well, not really, but it's not worse than what we started with)
         }
 
@@ -929,7 +929,7 @@ bool CWallet::Verify()
             return false;
     }
 
-    if (boost::filesystem::exists(GetDataDir() / walletFile))
+    if (fs::exists(GetDataDir() / walletFile))
     {
         CDBEnv::VerifyResult r = bitdb.Verify(walletFile, CWalletDB::Recover);
         if (r == CDBEnv::RECOVER_OK)

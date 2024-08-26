@@ -557,7 +557,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 
     EnsureWalletIsUnlocked();
 
-    boost::filesystem::path exportdir;
+    fs::path exportdir;
     try {
         exportdir = GetExportDir();
     } catch (const std::runtime_error& e) {
@@ -571,9 +571,9 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     if (clean.compare(unclean) != 0) {
         throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Filename is invalid as only alphanumeric characters are allowed.  Try '%s' instead.", clean));
     }
-    boost::filesystem::path exportfilepath = exportdir / clean;
+    fs::path exportfilepath = exportdir / clean;
 
-    if (boost::filesystem::exists(exportfilepath)) {
+    if (fs::exists(exportfilepath)) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot overwrite existing file " + exportfilepath.string());
     }
 

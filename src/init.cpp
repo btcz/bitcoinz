@@ -16,6 +16,7 @@
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
 #include "experimental_features.h"
+#include "fs.h"
 #include "httpserver.h"
 #include "httprpc.h"
 #include "key.h"
@@ -56,7 +57,6 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/bind/bind.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <boost/thread.hpp>
 
@@ -210,8 +210,8 @@ void Shutdown()
 
     if (fFeeEstimatesInitialized)
     {
-        boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
-        CAutoFile est_fileout(fopen(est_path.string().c_str(), "wb"), SER_DISK, CLIENT_VERSION);
+        fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+        CAutoFile est_fileout(fsbridge::fopen(est_path, "wb"), SER_DISK, CLIENT_VERSION);
         if (!est_fileout.IsNull())
             mempool.WriteFeeEstimates(est_fileout);
         else
@@ -248,8 +248,8 @@ void Shutdown()
 
 #ifndef WIN32
     try {
-        boost::filesystem::remove(GetPidFile());
-    } catch (const boost::filesystem::filesystem_error& e) {
+        fs::remove(GetPidFile());
+    } catch (const fs::filesystem_error& e) {
         LogPrintf("%s: Unable to remove pidfile: %s\n", __func__, e.what());
     }
 #endif
@@ -543,7 +543,7 @@ struct CImportingNow
 // works correctly.
 void CleanupBlockRevFiles()
 {
-    using namespace boost::filesystem;
+    using namespace fs;
     map<string, path> mapBlockFiles;
 
     // Glob all blk?????.dat and rev?????.dat files from the blocks directory.
@@ -683,7 +683,7 @@ void ThreadStartWalletNotifier()
     ThreadNotifyWallets(pindexLastTip);
 }
 
-void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
+void ThreadImport(std::vector<fs::path> vImportFiles)
 {
     const CChainParams& chainparams = Params();
     RenameThread("bitcoinz-loadblk");
@@ -697,17 +697,17 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         size_t fullSize = 0;
         while (true) {
             CDiskBlockPos pos(nFile, 0);
-            boost::filesystem::path blkFile = GetBlockPosFilename(pos, "blk");
-            if (!boost::filesystem::exists(blkFile))
+            fs::path blkFile = GetBlockPosFilename(pos, "blk");
+            if (!fs::exists(blkFile))
                 break; // No block files left to reindex
             nFile++;
-            fullSize += boost::filesystem::file_size(blkFile);
+            fullSize += fs::file_size(blkFile);
         }
         nFullSizeToReindex = std::max<size_t>(1, fullSize);
         nFile = 0;
         while (true) {
             CDiskBlockPos pos(nFile, 0);
-            if (!boost::filesystem::exists(GetBlockPosFilename(pos, "blk")))
+            if (!fs::exists(GetBlockPosFilename(pos, "blk")))
                 break; // No block files left to reindex
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
@@ -726,11 +726,11 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     }
 
     // hardcoded $DATADIR/bootstrap.dat
-    boost::filesystem::path pathBootstrap = GetDataDir() / "bootstrap.dat";
-    if (boost::filesystem::exists(pathBootstrap)) {
-        FILE *file = fopen(pathBootstrap.string().c_str(), "rb");
+    fs::path pathBootstrap = GetDataDir() / "bootstrap.dat";
+    if (fs::exists(pathBootstrap)) {
+        FILE *file = fsbridge::fopen(pathBootstrap, "rb");
         if (file) {
-            boost::filesystem::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
+            fs::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
             LogPrintf("Importing bootstrap.dat...\n");
             LoadExternalBlockFile(chainparams, file);
             RenameOver(pathBootstrap, pathBootstrapOld);
@@ -740,8 +740,8 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     }
 
     // -loadblock=
-    for (const boost::filesystem::path& path : vImportFiles) {
-        FILE *file = fopen(path.string().c_str(), "rb");
+    for (const fs::path& path : vImportFiles) {
+        FILE *file = fsbridge::fopen(path, "rb");
         if (file) {
             LogPrintf("Importing blocks file %s...\n", path.string());
             LoadExternalBlockFile(chainparams,file);
@@ -787,14 +787,14 @@ static void ZC_LoadParams(
     struct timeval tv_start, tv_end;
     float elapsed;
 
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
-    boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
+    fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+    fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+    fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     if (!(
-        boost::filesystem::exists(sapling_spend) &&
-        boost::filesystem::exists(sapling_output) &&
-        boost::filesystem::exists(sprout_groth16)
+        fs::exists(sapling_spend) &&
+        fs::exists(sapling_output) &&
+        fs::exists(sprout_groth16)
     )) {
         uiInterface.ThreadSafeMessageBox(strprintf(
             _("Cannot find the BitcoinZ network parameters in the following directory:\n"
@@ -809,7 +809,7 @@ static void ZC_LoadParams(
     pzcashParams = ZCJoinSplit::Prepared();
 
     static_assert(
-        sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+        sizeof(fs::path::value_type) == sizeof(codeunit),
         "librustzcash not configured correctly");
     auto sapling_spend_str = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();
@@ -1185,8 +1185,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     std::string strDataDir = GetDataDir().string();
 
     // Make sure only a single Bitcoin process is using the data directory.
-    boost::filesystem::path pathLockFile = GetDataDir() / ".lock";
-    FILE* file = fopen(pathLockFile.string().c_str(), "a"); // empty lock file; created if it doesn't exist.
+    fs::path pathLockFile = GetDataDir() / ".lock";
+    FILE* file = fsbridge::fopen(pathLockFile, "a"); // empty lock file; created if it doesn't exist.
     if (file) fclose(file);
 
     try {
@@ -1397,7 +1397,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     fReindex = GetBoolArg("-reindex", false);
     bool fReindexChainState = GetBoolArg("-reindex-chainstate", false);
 
-    boost::filesystem::create_directories(GetDataDir() / "blocks");
+    fs::create_directories(GetDataDir() / "blocks");
 
     // cache size calculations
     int64_t nTotalCache = (GetArg("-dbcache", nDefaultDbCache) << 20);
@@ -1567,8 +1567,8 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     }
     LogPrintf(" block index %15dms\n", GetTimeMillis() - nStart);
 
-    boost::filesystem::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
-    CAutoFile est_filein(fopen(est_path.string().c_str(), "rb"), SER_DISK, CLIENT_VERSION);
+    fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+    CAutoFile est_filein(fsbridge::fopen(est_path, "rb"), SER_DISK, CLIENT_VERSION);
     // Allowed to fail as this file IS missing on first startup.
     if (!est_filein.IsNull())
         mempool.ReadFeeEstimates(est_filein);
@@ -1664,7 +1664,7 @@ bool AppInit2(boost::thread_group& threadGroup, CScheduler& scheduler)
     if (!ActivateBestChain(state, chainparams))
         strErrors << "Failed to connect best block";
 
-    std::vector<boost::filesystem::path> vImportFiles;
+    std::vector<fs::path> vImportFiles;
     if (mapArgs.count("-loadblock"))
     {
         for (const std::string& strFile : mapMultiArgs["-loadblock"])
