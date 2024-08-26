@@ -147,6 +147,16 @@ std::string PrivacyInfo();
 /** Returns licensing information (for -version) */
 std::string LicenseInfo();
 
+/**
+ * Most paths passed as configuration arguments are treated as relative to
+ * the datadir if they are not absolute.
+ *
+ * @param path The path to be conditionally prefixed with datadir.
+ * @param net_specific Forwarded to GetDataDir().
+ * @return The normalized path.
+ */
+fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific = true);
+
 inline bool IsSwitchChar(char c)
 {
 #ifdef WIN32

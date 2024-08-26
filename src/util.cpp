@@ -8,9 +8,9 @@
 #endif
 
 #include "util.h"
+#include "fs.h"
 
 #include "chainparamsbase.h"
-#include "fs.h"
 #include "random.h"
 #include "serialize.h"
 #include "sync.h"
@@ -156,11 +156,7 @@ static void DebugPrintInit()
 fs::path GetDebugLogPath()
 {
     fs::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
-    if (logfile.is_absolute()) {
-        return logfile;
-    } else {
-        return GetDataDir() / logfile;
-    }
+    return AbsPathForConfigVal(logfile);
 }
 
 bool OpenDebugLog()
@@ -542,11 +538,7 @@ void ClearDatadirCache()
 
 fs::path GetConfigFile(const std::string& confPath)
 {
-    fs::path pathConfigFile(confPath);
-    if (!pathConfigFile.is_absolute())
-        pathConfigFile = GetDataDir(false) / pathConfigFile;
-
-    return pathConfigFile;
+    return AbsPathForConfigVal(fs::path(confPath), false);
 }
 
 void ReadConfigFile(const std::string& confPath,
@@ -577,9 +569,7 @@ void ReadConfigFile(const std::string& confPath,
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(GetArg("-pid", BITCOIN_PID_FILENAME));
-    if (!pathPidFile.is_absolute()) pathPidFile = GetDataDir() / pathPidFile;
-    return pathPidFile;
+    return AbsPathForConfigVal(fs::path(GetArg("-pid", BITCOIN_PID_FILENAME)));
 }
 
 void CreatePidFile(const fs::path &path, pid_t pid)
@@ -808,6 +798,11 @@ bool SetupNetworking()
         return false;
 #endif
     return true;
+}
+
+fs::path AbsPathForConfigVal(const fs::path& path, bool net_specific)
+{
+    return fs::absolute(path, GetDataDir(net_specific));
 }
 
 void SetThreadPriority(int nPriority)
