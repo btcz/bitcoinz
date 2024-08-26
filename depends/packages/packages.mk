@@ -35,7 +35,6 @@ rust_crates := \
 rust_packages := rust $(rust_crates) librustzcash
 zcash_packages := libsodium utfcpp
 packages := boost libevent zeromq $(zcash_packages) googletest
-native_packages := native_ccache
 
 wallet_packages=bdb
 
