@@ -530,7 +530,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             i++;
         }
 
-        boost::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
+        std::unordered_map<uint256, SproutMerkleTree, CCoinsKeyHasher> intermediates;
 
         for (const JSDescription &joinsplit : tx.vJoinSplit) {
             for (const uint256 &nf : joinsplit.nullifiers) {
