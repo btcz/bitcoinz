@@ -24,6 +24,7 @@
 #include "ui_interface.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
+#include "script/sigcache.h"
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
@@ -79,6 +80,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
     ECC_Start();
     SetupEnvironment();
     SetupNetworking();
+    InitSignatureCache();
     fPrintToDebugLog = false; // don't want to write to debug.log file
     fCheckBlockIndex = true;
     SelectParams(chainName);
