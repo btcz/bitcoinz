@@ -286,6 +286,60 @@ if test "x$CXXFLAGS_overridden" = "xno"; then
 fi
 CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO -D__STDC_FORMAT_MACROS"
 
+enable_arm_crc=no
+enable_sse42=no
+
+dnl Check for optional instruction set support. Enabling these does _not_ imply that all code will
+dnl be compiled with them, rather that specific objects/libs may use them after checking for runtime
+dnl compatibility.
+
+dnl x86
+AX_CHECK_COMPILE_FLAG([-msse4.2], [SSE42_CXXFLAGS="-msse4.2"], [], [$CXXFLAG_WERROR])
+
+TEMP_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$SSE42_CXXFLAGS $CXXFLAGS"
+AC_MSG_CHECKING([for SSE4.2 intrinsics])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdint.h>
+    #if defined(_MSC_VER)
+    #include <intrin.h>
+    #elif defined(__GNUC__) && defined(__SSE4_2__)
+    #include <nmmintrin.h>
+    #endif
+  ]],[[
+    uint64_t l = 0;
+    l = _mm_crc32_u8(l, 0);
+    l = _mm_crc32_u32(l, 0);
+    l = _mm_crc32_u64(l, 0);
+    return l;
+  ]])],
+ [ AC_MSG_RESULT([yes]); enable_sse42=yes],
+ [ AC_MSG_RESULT([no])]
+)
+CXXFLAGS="$TEMP_CXXFLAGS"
+
+# ARM
+AX_CHECK_COMPILE_FLAG([-march=armv8-a+crc+crypto], [ARM_CRC_CXXFLAGS="-march=armv8-a+crc+crypto"], [], [$CXXFLAG_WERROR])
+
+TEMP_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$ARM_CRC_CXXFLAGS $CXXFLAGS"
+AC_MSG_CHECKING([for ARMv8 CRC32 intrinsics])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <arm_acle.h>
+    #include <arm_neon.h>
+  ]],[[
+#ifdef __aarch64__
+    __crc32cb(0, 0); __crc32ch(0, 0); __crc32cw(0, 0); __crc32cd(0, 0);
+    vmull_p64(0, 0);
+#else
+#error "crc32c library does not support hardware acceleration on 32-bit ARM"
+#endif
+  ]])],
+ [ AC_MSG_RESULT([yes]); enable_arm_crc=yes; ],
+ [ AC_MSG_RESULT([no])]
+)
+CXXFLAGS="$TEMP_CXXFLAGS"
+
 AC_ARG_WITH([utils],
   [AS_HELP_STRING([--with-utils],
   [build bitcoinz-cli bitcoinz-tx (default=yes)])],
@@ -648,10 +702,36 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <fcntl.h>]],
  [ AC_MSG_RESULT(no); HAVE_O_CLOEXEC=0 ]
 )
 
-if test x$use_reduce_exports = xyes; then
-  AX_CHECK_COMPILE_FLAG([-fvisibility=hidden],[RE_CXXFLAGS="-fvisibility=hidden"],
-  [AC_MSG_ERROR([Cannot set default symbol visibility. Use --disable-reduce-exports.])])
-fi
+dnl crc32c platform checks
+AC_MSG_CHECKING([for __builtin_prefetch])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  char data = 0;
+  const char* address = &data;
+  __builtin_prefetch(address, 0, 0);
+  ]])],
+ [ AC_MSG_RESULT([yes]); HAVE_BUILTIN_PREFETCH=1 ],
+ [ AC_MSG_RESULT([no]); HAVE_BUILTIN_PREFETCH=0 ]
+)
+
+AC_MSG_CHECKING([for _mm_prefetch])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <xmmintrin.h>]], [[
+  char data = 0;
+  const char* address = &data;
+  _mm_prefetch(address, _MM_HINT_NTA);
+  ]])],
+ [ AC_MSG_RESULT([yes]); HAVE_MM_PREFETCH=1 ],
+ [ AC_MSG_RESULT([no]); HAVE_MM_PREFETCH=0 ]
+)
+
+AC_MSG_CHECKING([for strong getauxval support in the system headers])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    #include <sys/auxv.h>
+  ]], [[
+    getauxval(AT_HWCAP);
+  ]])],
+ [ AC_MSG_RESULT([yes]); HAVE_STRONG_GETAUXVAL=1; AC_DEFINE([HAVE_STRONG_GETAUXVAL], [1], [Define this symbol to build code that uses getauxval]) ],
+ [ AC_MSG_RESULT([no]); HAVE_STRONG_GETAUXVAL=0 ]
+)
 
 LIBMEMENV=
 AC_SUBST(LIBMEMENV)
@@ -897,6 +977,8 @@ AM_CONDITIONAL([ENABLE_BENCH],[test x$use_bench = xyes])
 AM_CONDITIONAL([USE_LCOV],[test x$use_lcov = xyes])
 AM_CONDITIONAL([GLIBC_BACK_COMPAT],[test x$use_glibc_compat = xyes])
 AM_CONDITIONAL([HARDEN],[test x$use_hardening = xyes])
+AM_CONDITIONAL([ENABLE_SSE42],[test x$enable_sse42 = xyes])
+AM_CONDITIONAL([ENABLE_ARM_CRC], [test x$enable_arm_crc = xyes])
 AM_CONDITIONAL([WORDS_BIGENDIAN], [test x$ac_cv_c_bigendian = xyes])
 
 AC_DEFINE(CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MAJOR, [Major version])
@@ -928,6 +1010,8 @@ AC_SUBST(PIC_FLAGS)
 AC_SUBST(PIE_FLAGS)
 AC_SUBST(SANITIZER_CXXFLAGS)
 AC_SUBST(SANITIZER_LDFLAGS)
+AC_SUBST(SSE42_CXXFLAGS)
+AC_SUBST(ARM_CRC_CXXFLAGS)
 AC_SUBST(LIBTOOL_APP_LDFLAGS)
 AC_SUBST(BOOST_LIBS)
 AC_SUBST(TESTDEFS)
@@ -938,6 +1022,9 @@ AC_SUBST(LIBZCASH_LIBS)
 AC_SUBST(HAVE_FDATASYNC)
 AC_SUBST(HAVE_FULLFSYNC)
 AC_SUBST(HAVE_O_CLOEXEC)
+AC_SUBST(HAVE_BUILTIN_PREFETCH)
+AC_SUBST(HAVE_MM_PREFETCH)
+AC_SUBST(HAVE_STRONG_GETAUXVAL)
 AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile src/test/buildenv.py])
 AC_CONFIG_FILES([qa/pull-tester/run-bitcoind-for-test.sh],[chmod +x qa/pull-tester/run-bitcoind-for-test.sh])
 AC_CONFIG_FILES([qa/pull-tester/tests-config.sh],[chmod +x qa/pull-tester/tests-config.sh])

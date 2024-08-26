@@ -532,7 +532,7 @@ CTAES_DIST += crypto/ctaes/ctaes.h
 CTAES_DIST += crypto/ctaes/README.md
 CTAES_DIST += crypto/ctaes/test.c
 
-CLEANFILES = *.gcda *.gcno */*.gcno wallet/*/*.gcno
+CLEANFILES = *.gcda *.gcno */*.gcno crc32c/src/*.gcda crc32c/src/*.gcno wallet/*/*.gcno
 
 DISTCLEANFILES = obj/build.h
 
@@ -569,6 +569,7 @@ endif
 	@test -f $(PROTOC)
 	$(AM_V_GEN) $(PROTOC) --cpp_out=$(@D) --proto_path=$(abspath $(<D) $<)
 
+include Makefile.crc32c.include
 include Makefile.leveldb.include
 
 if ENABLE_TESTS
