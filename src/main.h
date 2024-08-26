@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <list>
 #include <map>
 #include <optional>
 #include <set>
