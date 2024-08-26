@@ -76,11 +76,6 @@ typedef int32_t ssize_t;
 #endif
 #endif
 
-// As Solaris does not have the MSG_NOSIGNAL flag for send(2) syscall, it is defined as 0
-#if !defined(HAVE_MSG_NOSIGNAL) && !defined(MSG_NOSIGNAL)
-#define MSG_NOSIGNAL 0
-#endif
-
 #ifndef WIN32
 // PRIO_MAX is not defined on Solaris
 #ifndef PRIO_MAX
@@ -103,5 +98,10 @@ bool static inline IsSelectableSocket(SOCKET s) {
     return (s < FD_SETSIZE);
 #endif
 }
+
+// MSG_NOSIGNAL is not available on some platforms, if it doesn't exist define it as 0
+#if !defined(MSG_NOSIGNAL)
+#define MSG_NOSIGNAL 0
+#endif
 
 #endif // BITCOIN_COMPAT_H
