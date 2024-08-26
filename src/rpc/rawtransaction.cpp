@@ -162,6 +162,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     if (tx.fOverwintered) {
         entry.pushKV("expiryheight", (int64_t)tx.nExpiryHeight);
     }
+
+    entry.pushKV("hex", EncodeHexTx(tx));
+
     UniValue vin(UniValue::VARR);
     for (const CTxIn& txin : tx.vin) {
         UniValue in(UniValue::VOBJ);
