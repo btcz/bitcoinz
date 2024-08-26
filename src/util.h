@@ -32,6 +32,7 @@
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
+extern const char * const DEFAULT_DEBUGLOGFILE;
 
 extern std::map<std::string, std::string> mapArgs;
 extern std::map<std::string, std::vector<std::string> > mapMultiArgs;
@@ -134,7 +135,8 @@ void ReadConfigFile(const std::string& confPath, std::map<std::string, std::stri
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-void OpenDebugLog();
+fs::path GetDebugLogPath();
+bool OpenDebugLog();
 void ShrinkDebugFile();
 void runCommand(const std::string& strCommand);
 const fs::path GetExportDir();

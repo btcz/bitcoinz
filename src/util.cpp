@@ -86,6 +86,7 @@ using namespace std;
 
 const char * const BITCOIN_CONF_FILENAME = "bitcoinz.conf";
 const char * const BITCOIN_PID_FILENAME = "bitcoinzd.pid";
+const char * const DEFAULT_DEBUGLOGFILE = "debug.log";
 
 map<string, string> mapArgs;
 map<string, vector<string> > mapMultiArgs;
@@ -152,17 +153,31 @@ static void DebugPrintInit()
     vMsgsBeforeOpenLog = new list<string>;
 }
 
-void OpenDebugLog()
+fs::path GetDebugLogPath()
+{
+    fs::path logfile(GetArg("-debuglogfile", DEFAULT_DEBUGLOGFILE));
+    if (logfile.is_absolute()) {
+        return logfile;
+    } else {
+        return GetDataDir() / logfile;
+    }
+}
+
+bool OpenDebugLog()
 {
     boost::call_once(&DebugPrintInit, debugPrintInitFlag);
     boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
     assert(fileout == NULL);
     assert(vMsgsBeforeOpenLog);
-    fs::path pathDebug = GetDataDir() / "debug.log";
-    fileout = fsbridge::fopen(pathDebug, "a");
-    if (fileout) setbuf(fileout, NULL); // unbuffered
+    fs::path pathDebug = GetDebugLogPath();
 
+    fileout = fsbridge::fopen(pathDebug, "a");
+    if (!fileout) {
+        return false;
+    }
+
+    setbuf(fileout, nullptr); // unbuffered
     // dump buffered messages from before we opened the log
     while (!vMsgsBeforeOpenLog->empty()) {
         FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
@@ -171,6 +186,7 @@ void OpenDebugLog()
 
     delete vMsgsBeforeOpenLog;
     vMsgsBeforeOpenLog = NULL;
+    return true;
 }
 
 bool LogAcceptCategory(const char* category)
@@ -255,7 +271,7 @@ int LogPrintStr(const std::string &str)
             // reopen the log file, if requested
             if (fReopenDebugLog) {
                 fReopenDebugLog = false;
-                fs::path pathDebug = GetDataDir() / "debug.log";
+                fs::path pathDebug = GetDebugLogPath();
                 if (fsbridge::freopen(pathDebug,"a",fileout) != NULL)
                     setbuf(fileout, NULL); // unbuffered
             }
@@ -704,7 +720,7 @@ void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
 void ShrinkDebugFile()
 {
     // Scroll debug.log if it's getting too big
-    fs::path pathLog = GetDataDir() / "debug.log";
+    fs::path pathLog = GetDebugLogPath();
     FILE* file = fsbridge::fopen(pathLog, "r");
     if (file && fs::file_size(pathLog) > 10 * 1000000)
     {

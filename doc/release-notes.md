@@ -8,6 +8,10 @@ Resolved a critical bug that prevented the program from starting up correctly in
 The issue occurred during the startup process when the program attempted to rescan the latest indexed blocks.
 A failure in the LoadBlockIndex() function, caused by a corrupted index file, was identified as the root cause.
 
+Changed command-line options
+-----------------------------
+- `-debuglogfile=<file>` can be used to specify an alternative debug logging file.
+
 Upgrading
 =========
 
