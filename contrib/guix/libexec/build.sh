@@ -165,8 +165,11 @@ export TZ="UTC"
 # Depends Building #
 ####################
 
+# Export LIBRARY_PATH and LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LIBRARY_PATH:$GUIX_ENVIRONMENT/lib
+export LIBRARY_PATH=$LD_LIBRARY_PATH
+
 # Build the depends tree, overriding variables that assume multilib gcc
-export LD_LIBRARY_PATH=$GUIX_ENVIRONMENT/lib:$LIBRARY_PATH
 make -C depends --jobs="$JOBS" HOST="$HOST" \
                                    WITH_GUIX=1 \
                                    ${V:+V=1} \
@@ -252,6 +255,9 @@ mkdir -p "$DISTSRC"
                     ${HOST_LDFLAGS:+LDFLAGS="${HOST_LDFLAGS}"}
 
     sed -i.old 's/-lstdc++ //g' config.status libtool
+
+    # Export LIBRARY_PATH
+    export LIBRARY_PATH=$LD_LIBRARY_PATH
 
     # Build BitcoinZ
     make --jobs="$JOBS" ${V:+V=1}

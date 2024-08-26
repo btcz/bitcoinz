@@ -85,7 +85,8 @@ bitcoinz_gtest_LDADD += \
   $(ZMQ_LIBS) \
   $(LIBZCASH) \
   $(LIBRUSTZCASH) \
-  $(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS) \
+  $(LIBRUSTZCASH)
 
 bitcoinz_gtest_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS) -static
 

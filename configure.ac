@@ -408,6 +408,30 @@ AC_ARG_WITH([daemon],
   [build_bitcoind=$withval],
   [build_bitcoind=yes])
 
+AC_PATH_PROG([CARGO], [cargo], [none])
+if test "$CARGO" = "none"; then
+  AC_MSG_ERROR("cargo required to enable rust support.")
+fi
+
+AC_PATH_PROG([RUSTC], [rustc], [none])
+if test "$RUSTC" = "none"; then
+  AC_MSG_ERROR("rustc required to enable rust support.")
+fi
+
+CARGO_FLAGS="$CARGO_FLAGS --lib --verbose --release --locked"
+
+case $host in
+  ${host_cpu}-w64-mingw*) RUST_TARGET=${host_cpu}-pc-windows-gnu ;;
+  ${host_cpu}-pc-linux*) RUST_TARGET=${host_cpu}-unknown-${host_os} ;;
+  ${host_cpu}-apple-darwin*) RUST_TARGET=${host_cpu}-apple-darwin ;;
+  *) RUST_TARGET=${host} ;;
+esac
+
+if test x$RUST_VENDORED_SOURCES != x; then
+  AC_CONFIG_FILES([.cargo/config.toml:.cargo/config.toml.in])
+  CARGO_FLAGS="$CARGO_FLAGS --offline"
+fi
+
 case $host in
   *mingw*)
      TARGET_OS=windows
@@ -939,9 +963,13 @@ fi
 
 AM_CONDITIONAL([ENABLE_ZMQ], [test "$use_zmq" = "yes"])
 
-RUST_LIBS="-lrustzcash"
+AC_SEARCH_LIBS([dlsym],[dl])
+
+RUST_LIBS=""
 case $host in
   *mingw*)
+    ;;
+  *darwin*)
     ;;
   *)
     RUST_LIBS="$RUST_LIBS -ldl"
@@ -1076,6 +1104,9 @@ AC_SUBST(HAVE_O_CLOEXEC)
 AC_SUBST(HAVE_BUILTIN_PREFETCH)
 AC_SUBST(HAVE_MM_PREFETCH)
 AC_SUBST(HAVE_STRONG_GETAUXVAL)
+AC_SUBST(CARGO_FLAGS)
+AC_SUBST(RUST_TARGET)
+AC_SUBST(RUST_VENDORED_SOURCES)
 AC_CONFIG_FILES([Makefile src/Makefile doc/man/Makefile share/setup.nsi share/Info.plist src/test/buildenv.py])
 AC_CONFIG_FILES([contrib/devtools/split-debug.sh],[chmod +x contrib/devtools/split-debug.sh])
 AM_COND_IF([HAVE_DOXYGEN], [AC_CONFIG_FILES([doc/Doxyfile])])
@@ -1138,4 +1169,10 @@ echo "  CXXFLAGS        = $DEBUG_CXXFLAGS $HARDENED_CXXFLAGS $WARN_CXXFLAGS $NOW
 echo "  LDFLAGS         = $PTHREAD_LIBS $HARDENED_LDFLAGS $SANITIZER_LDFLAGS $LDFLAGS"
 echo "  AR              = $AR"
 echo "  ARFLAGS         = $ARFLAGS"
+echo
+echo "  CARGO           = $CARGO"
+echo "  CARGO_FLAGS     = $CARGO_FLAGS"
+echo
+echo "  RUSTC           = $RUSTC"
+echo "  RUST_TARGET     = $RUST_TARGET"
 echo

@@ -31,6 +31,39 @@ $(package)_extra_sources += $($(package)_rust-std-x86_64-apple-darwin_file_name)
 $(package)_extra_sources += $($(package)_rust-std-aarch64-unknown-linux-gnu_file_name)
 $(package)_extra_sources += $($(package)_rust-std-x86_64-w64-mingw32_file_name)
 
+ifneq ($(WITH_GUIX),)
+# Mapping from GCC canonical hosts to Rust targets
+$(package)_rust_target_x86_64-pc-linux-gnu=x86_64-unknown-linux-gnu
+$(package)_rust_target_aarch64-unknown-linux-gnu=aarch64-unknown-linux-gnu
+$(package)_rust_target_x86_64-apple-darwin=x86_64-apple-darwin
+$(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
+
+define rust_target
+$(package)_rust_target=$($(package)_rust_target_$(canonical_host))
+endef
+
+else
+
+# Mapping from GCC canonical hosts to Rust targets
+# If a mapping is not present, we assume they are identical, unless $host_os is
+# "darwin", in which case we assume x86_64-apple-darwin.
+$(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
+
+define rust_target
+$(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(2)))
+endef
+
+ifneq ($(canonical_host),$(build))
+$(package)_rust_target=$(call rust_target,$(package),$(canonical_host),$(host_os))
+else
+$(package)_rust_target=$(if $(rust_rust_target_$(canonical_host)),$(rust_rust_target_$(canonical_host)),$(canonical_host))
+endif
+endif
+
+define rust_target
+$(if $($(1)_rust_target_$(2)),$($(1)_rust_target_$(2)),$(if $(findstring darwin,$(3)),x86_64-apple-darwin,$(2)))
+endef
+
 define $(package)_set_vars
 $(package)_stage_opts=--disable-ldconfig
 $(package)_stage_build_opts=--without=rust-docs-json-preview,rust-docs

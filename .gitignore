@@ -76,6 +76,10 @@ src/univalue/gen
 *.lo
 *.la
 
+# Rust
+.cargo/config.toml
+src/rustzcash/target/
+
 # Compilation
 src/Makefile
 doc/man/Makefile

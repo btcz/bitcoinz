@@ -28,8 +28,7 @@ bench_bench_bitcoinz_LDADD = \
   $(LIBLEVELDB) \
   $(LIBMEMENV) \
   $(LIBSECP256K1) \
-  $(LIBZCASH) \
-  $(LIBSNARK)
+  $(LIBZCASH)
 
 if ENABLE_ZMQ
 bench_bench_bitcoinz_LDADD += $(LIBBITCOIN_ZMQ) $(ZMQ_LIBS)
@@ -39,7 +38,7 @@ if ENABLE_WALLET
 bench_bench_bitcoinz_LDADD += $(LIBBITCOIN_WALLET)
 endif
 
-bench_bench_bitcoinz_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH_LIBS)
+bench_bench_bitcoinz_LDADD += $(BOOST_LIBS) $(BDB_LIBS) $(SSL_LIBS) $(CRYPTO_LIBS) $(MINIUPNPC_LIBS) $(EVENT_PTHREADS_LIBS) $(EVENT_LIBS) $(LIBZCASH_LIBS) $(LIBRUSTZCASH)
 bench_bench_bitcoinz_LDFLAGS = $(RELDFLAGS) $(AM_LDFLAGS) $(LIBTOOL_APP_LDFLAGS)
 
 CLEAN_BITCOINZ_BENCH = bench/*.gcda bench/*.gcno

@@ -97,3 +97,9 @@ fi
 if test -n "@LDFLAGS@"; then
   LDFLAGS="@LDFLAGS@ ${LDFLAGS}"
 fi
+
+CARGO="${depends_prefix}/native/bin/cargo"
+RUSTC="${depends_prefix}/native/bin/rustc"
+
+RUST_TARGET="@rust_target@"
+RUST_VENDORED_SOURCES="$depends_prefix/vendored-sources"

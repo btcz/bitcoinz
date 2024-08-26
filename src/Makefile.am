@@ -20,6 +20,7 @@ BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
 BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS)
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
+BITCOIN_INCLUDES += -I$(srcdir)/rustzcash/include
 BITCOIN_INCLUDES += -I$(srcdir)/$(UNIVALUE_INCLUDE_DIR_INT)
 
 LIBBITCOIN_SERVER=libbitcoin_server.a
@@ -28,6 +29,7 @@ LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
+LIBRUSTZCASH=rustzcash/target/$(RUST_TARGET)/release/librustzcash.a
 LIBZCASH=libzcash.a
 
 if ENABLE_ZMQ
@@ -39,6 +41,11 @@ endif
 
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
+
+cargo-build: $(wildcard rustzcash/include/*.h)
+	RUSTC="$(RUSTC)" $(CARGO) build $(CARGO_FLAGS) --manifest-path=$(srcdir)/rustzcash/Cargo.toml --target=$(RUST_TARGET)
+
+$(LIBRUSTZCASH): cargo-build
 
 # Make is not made aware of per-object dependencies to avoid limiting building parallelization
 # But to build the less dependent modules first, we manually select their order here:
@@ -82,7 +89,7 @@ LIBZCASH_H = \
   zcash/util.h \
   zcash/Zcash.h
 
-.PHONY: FORCE check-symbols check-security
+.PHONY: FORCE cargo-build check-symbols check-security
 # bitcoin core #
 BITCOIN_CORE_H = \
   addressindex.h \
@@ -428,7 +435,8 @@ bitcoinzd_LDADD += \
   $(EVENT_LIBS) \
   $(ZMQ_LIBS) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS) \
+  $(LIBRUSTZCASH)
 
 # bitcoin-cli binary #
 bitcoinz_cli_SOURCES = bitcoin-cli.cpp
@@ -448,7 +456,8 @@ bitcoinz_cli_LDADD = \
   $(EVENT_LIBS) \
   $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS) \
+  $(LIBRUSTZCASH)
 #
 
 # bitcoinz-tx binary #
@@ -469,7 +478,8 @@ bitcoinz_tx_LDADD = \
   $(LIBSECP256K1) \
   $(LIBZCASH) \
   $(LIBBITCOIN_CRYPTO) \
-  $(LIBZCASH_LIBS)
+  $(LIBZCASH_LIBS) \
+  $(LIBRUSTZCASH)
 
 bitcoinz_tx_LDADD += $(BOOST_LIBS)
 #
@@ -505,6 +515,7 @@ EXTRA_DIST = $(CTAES_DIST)
 
 clean-local:
 	-$(MAKE) -C secp256k1 clean
+	-rm -rf rustzcash/target
 	-rm -f leveldb/*/*.gcda leveldb/*/*.gcno leveldb/helpers/memenv/*.gcda leveldb/helpers/memenv/*.gcno
 	rm -f fuzz.cpp
 	rm -rf fuzzing/*/output
