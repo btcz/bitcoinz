@@ -27,6 +27,8 @@
 #include <boost/thread.hpp>
 #include <boost/algorithm/string/case_conv.hpp> // for to_upper()
 
+#include <memory> // for unique_ptr
+
 using namespace RPCServer;
 using namespace std;
 using namespace boost::placeholders;
@@ -37,9 +39,8 @@ static std::string rpcWarmupStatus("RPC server started");
 static CCriticalSection cs_rpcWarmup;
 /* Timer-creating functions */
 static std::vector<RPCTimerInterface*> timerInterfaces;
-/* Map of name to timer.
- * @note Can be changed to std::unique_ptr when C++11 */
-static std::map<std::string, boost::shared_ptr<RPCTimerBase> > deadlineTimers;
+/* Map of name to timer. */
+static std::map<std::string, std::unique_ptr<RPCTimerBase> > deadlineTimers;
 
 static struct CRPCSignals
 {
@@ -514,7 +515,7 @@ void RPCRunLater(const std::string& name, std::function<void(void)> func, int64_
     deadlineTimers.erase(name);
     RPCTimerInterface* timerInterface = timerInterfaces[0];
     LogPrint("rpc", "queue run of timer %s in %i seconds (using %s)\n", name, nSeconds, timerInterface->Name());
-    deadlineTimers.insert(std::make_pair(name, boost::shared_ptr<RPCTimerBase>(timerInterface->NewTimer(func, nSeconds*1000))));
+    deadlineTimers.emplace(name, std::unique_ptr<RPCTimerBase>(timerInterface->NewTimer(func, nSeconds*1000)));
 }
 
 CRPCTable tableRPC;
