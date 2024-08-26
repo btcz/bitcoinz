@@ -726,7 +726,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
                         RPC_INVALID_PARAMETER,
                         "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
                 }
-                fRescan = jVal[0].getBool();
+                fRescan = jVal[0].get_bool();
             }
         }
     }
@@ -734,7 +734,7 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
     // Height to rescan from
     int nRescanHeight = 0;
     if (params.size() > 2)
-        nRescanHeight = params[2].get_int();
+        nRescanHeight = params[2].getInt<int>();
     if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
@@ -827,7 +827,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     // Height to rescan from
     int nRescanHeight = 0;
     if (params.size() > 2) {
-        nRescanHeight = params[2].get_int();
+        nRescanHeight = params[2].getInt<int>();
     }
     if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");

@@ -15,19 +15,19 @@ UniValue SendTransaction(CTransaction& tx, std::optional<std::reference_wrapper<
             // More details in debug.log
             throw JSONRPCError(RPC_WALLET_ERROR, "SendTransaction: CommitTransaction failed");
         }
-        o.push_back(Pair("txid", tx.GetHash().ToString()));
+        o.pushKV("txid", tx.GetHash().ToString());
     } else {
         // Test mode does not send the transaction to the network.
-        o.push_back(Pair("test", 1));
-        o.push_back(Pair("txid", tx.GetHash().ToString()));
-        o.push_back(Pair("hex", EncodeHexTx(tx)));
+        o.pushKV("test", 1);
+        o.pushKV("txid", tx.GetHash().ToString());
+        o.pushKV("hex", EncodeHexTx(tx));
     }
     return o;
 }
 
 std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::optional<std::reference_wrapper<CReserveKey>> reservekey, bool testmode) {
     // Sign the raw transaction
-    UniValue rawtxnValue = find_value(obj, "rawtxn");
+    UniValue rawtxnValue = obj.find_value("rawtxn");
     if (rawtxnValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for raw transaction");
     }
@@ -37,14 +37,14 @@ std::pair<CTransaction, UniValue> SignSendRawTransaction(UniValue obj, std::opti
     params.push_back(rawtxn);
     UniValue signResultValue = signrawtransaction(params, false);
     UniValue signResultObject = signResultValue.get_obj();
-    UniValue completeValue = find_value(signResultObject, "complete");
+    UniValue completeValue = signResultObject.find_value("complete");
     bool complete = completeValue.get_bool();
     if (!complete) {
         // TODO: #1366 Maybe get "errors" and print array vErrors into a string
         throw JSONRPCError(RPC_WALLET_ENCRYPTION_FAILED, "Failed to sign transaction");
     }
 
-    UniValue hexValue = find_value(signResultObject, "hex");
+    UniValue hexValue = signResultObject.find_value("hex");
     if (hexValue.isNull()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing hex data for signed transaction");
     }

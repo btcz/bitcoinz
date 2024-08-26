@@ -289,9 +289,9 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           // deserialize test data
           raw_tx = test[0].get_str();
           raw_script = test[1].get_str();
-          nIn = test[2].get_int();
-          nHashType = test[3].get_int();
-          consensusBranchId = test[4].get_int();
+          nIn = test[2].getInt<int>();
+          nHashType = test[3].getInt<int>();
+          consensusBranchId = test[4].getInt<int>();
           sigHashHex = test[5].get_str();
 
           uint256 sh;

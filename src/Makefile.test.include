@@ -106,7 +106,6 @@ BITCOIN_TESTS =\
   test/transaction_tests.cpp \
   test/txvalidationcache_tests.cpp \
   test/uint256_tests.cpp \
-  test/univalue_tests.cpp \
   test/util_tests.cpp \
   test/sha256compress_tests.cpp
 
@@ -157,7 +156,6 @@ check-local:
 	@echo "Running test/bitcoin-util-test.py..."
 	$(AM_V_at)srcdir=$(srcdir) PYTHONPATH=$(builddir)/test $(srcdir)/test/bitcoin-util-test.py
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C secp256k1 check
-	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C univalue check
 
 %.json.h: %.json
 	@$(MKDIR_P) $(@D)

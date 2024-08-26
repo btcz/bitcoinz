@@ -52,7 +52,7 @@ UniValue CallRPC(string args)
         return result;
     }
     catch (const UniValue& objError) {
-        throw runtime_error(find_value(objError, "message").get_str());
+        throw runtime_error(objError.find_value("message").get_str());
     }
 }
 
@@ -96,8 +96,8 @@ BOOST_AUTO_TEST_CASE(rpc_rawparams)
     BOOST_CHECK_THROW(CallRPC("decoderawtransaction DEADBEEF"), runtime_error);
     string rawtx = "0100000001a15d57094aa7a21a28cb20b59aab8fc7d1149a3bdbcddba9c622e4f5f6a99ece010000006c493046022100f93bb0e7d8db7bd46e40132d1f8242026e045f03a0efe71bbb8e3f475e970d790221009337cd7f1f929f00cc6ff01f03729b069a7c21b59b1736ddfee5db5946c5da8c0121033b9b137ee87d5a812d6f506efdd37f0affa7ffc310711c06c7f3e097c9447c52ffffffff0100e1f505000000001976a9140389035a9225b3839e2bbf32d826a1e222031fd888ac00000000";
     BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ")+rawtx));
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 1);
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "locktime").get_int(), 0);
+    BOOST_CHECK_EQUAL(r.get_obj().find_value("version").getInt<int>(), 1);
+    BOOST_CHECK_EQUAL(r.get_obj().find_value("locktime").getInt<int>(), 0);
     BOOST_CHECK_THROW(r = CallRPC(string("decoderawtransaction ")+rawtx+" extra"), runtime_error);
 
     BOOST_CHECK_THROW(CallRPC("signrawtransaction"), runtime_error);
@@ -131,9 +131,9 @@ BOOST_AUTO_TEST_CASE(rpc_rawsign)
     string privkey1 = "\"KzsXybp9jX64P5ekX1KUxRQ79Jht9uzW7LorgwE65i5rWACL6LQe\"";
     string privkey2 = "\"Kyhdf5LuKTRx4ge69ybABsiUAWjVRK4XGxAKk2FQLp2HjGMy87Z4\"";
     r = CallRPC(string("signrawtransaction ")+notsigned+" "+prevout+" "+"[]");
-    BOOST_CHECK(find_value(r.get_obj(), "complete").get_bool() == false);
+    BOOST_CHECK(r.get_obj().find_value("complete").get_bool() == false);
     r = CallRPC(string("signrawtransaction ")+notsigned+" "+prevout+" "+"["+privkey1+","+privkey2+"]");
-    BOOST_CHECK(find_value(r.get_obj(), "complete").get_bool() == true);
+    BOOST_CHECK(r.get_obj().find_value("complete").get_bool() == true);
 }
 
 BOOST_AUTO_TEST_CASE(rpc_format_monetary_values)
@@ -171,10 +171,10 @@ BOOST_AUTO_TEST_CASE(rpc_format_monetary_values)
     BOOST_CHECK_EQUAL(ValueFromAmount(COIN/100000000).write(), "0.00000001");
 }
 
-static UniValue ValueFromString(const std::string &str)
+static UniValue ValueFromString(const std::string& str) noexcept
 {
     UniValue value;
-    BOOST_CHECK(value.setNumStr(str));
+    value.setNumStr(str);
     return value;
 }
 
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     UniValue ar = r.get_array();
     UniValue o1 = ar[0].get_obj();
-    UniValue adr = find_value(o1, "address");
+    UniValue adr = o1.find_value("address");
     BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.255");
     BOOST_CHECK_NO_THROW(CallRPC(string("setban 127.0.0.0 remove")));;
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
@@ -253,10 +253,10 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
-    adr = find_value(o1, "address");
-    UniValue banned_until = find_value(o1, "banned_until");
+    adr = o1.find_value("address");
+    UniValue banned_until = o1.find_value("banned_until");
     BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.0");
-    BOOST_CHECK_EQUAL(banned_until.get_int64(), 1607731200); // absolute time check
+    BOOST_CHECK_EQUAL(banned_until.getInt<int64_t>(), 1607731200); // absolute time check
 
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
 
@@ -264,12 +264,12 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
-    adr = find_value(o1, "address");
-    banned_until = find_value(o1, "banned_until");
+    adr = o1.find_value("address");
+    banned_until = o1.find_value("banned_until");
     BOOST_CHECK_EQUAL(adr.get_str(), "127.0.0.0/255.255.255.0");
     int64_t now = GetTime();
-    BOOST_CHECK(banned_until.get_int64() > now);
-    BOOST_CHECK(banned_until.get_int64()-now <= 200);
+    BOOST_CHECK(banned_until.getInt<int64_t>() > now);
+    BOOST_CHECK(banned_until.getInt<int64_t>()-now <= 200);
 
     // must throw an exception because 127.0.0.1 is in already banned subnet range
     BOOST_CHECK_THROW(r = CallRPC(string("setban 127.0.0.1 add")), runtime_error);
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
-    adr = find_value(o1, "address");
+    adr = o1.find_value("address");
     BOOST_CHECK_EQUAL(adr.get_str(), "fe80::202:b3ff:fe1e:8329/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
 
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
-    adr = find_value(o1, "address");
+    adr = o1.find_value("address");
     BOOST_CHECK_EQUAL(adr.get_str(), "2001:db8::/ffff:fffc:0:0:0:0:0:0");
 
     BOOST_CHECK_NO_THROW(CallRPC(string("clearbanned")));
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(rpc_ban)
     BOOST_CHECK_NO_THROW(r = CallRPC(string("listbanned")));
     ar = r.get_array();
     o1 = ar[0].get_obj();
-    adr = find_value(o1, "address");
+    adr = o1.find_value("address");
     BOOST_CHECK_EQUAL(adr.get_str(), "2001:4d48:ac57:400:cacf:e9ff:fe1d:9c63/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff");
 }
 
@@ -333,11 +333,11 @@ BOOST_AUTO_TEST_CASE(rpc_raw_create_overwinter_v3)
       "{\"tmHU5HLMu3yS8eoNvbrU1NWeJaGf6jxehru\":11}");
     std::string rawhex = r.get_str();
     BOOST_CHECK_NO_THROW(r = CallRPC(string("decoderawtransaction ") + rawhex));
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "overwintered").get_bool(), true);
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "version").get_int(), 3);
-    BOOST_CHECK_EQUAL(find_value(r.get_obj(), "expiryheight").get_int(), 21);
+    BOOST_CHECK_EQUAL(r.get_obj().find_value("overwintered").get_bool(), true);
+    BOOST_CHECK_EQUAL(r.get_obj().find_value("version").getInt<int>(), 3);
+    BOOST_CHECK_EQUAL(r.get_obj().find_value("expiryheight").getInt<int>(), 21);
     BOOST_CHECK_EQUAL(
-        ParseHexToUInt32(find_value(r.get_obj(), "versiongroupid").get_str()),
+        ParseHexToUInt32(r.get_obj().find_value("versiongroupid").get_str()),
         OVERWINTER_VERSION_GROUP_ID);
 
     // Sanity check we can deserialize the raw hex
@@ -409,7 +409,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     CheckRPCThrows("getaddressutxos {\"addressesmisspell\":[]}",
         "Addresses is expected to be an array");
     CheckRPCThrows("getaddressutxos {\"addresses\":[],\"chainInfo\":1}",
-        "JSON value is not a boolean as expected");
+        "JSON value of type number is not of expected type bool");
 
     BOOST_CHECK_NO_THROW(CallRPC("getaddressdeltas {\"addresses\":[]}"));
     CheckRPCThrows("getaddressdeltas {\"addresses\":[],\"start\":0,\"end\":0,\"chainInfo\":true}",
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE(rpc_insightexplorer)
     // Unfortunately, an unknown or mangled key is ignored
     BOOST_CHECK_NO_THROW(CallRPC("getblockhashes 1477641360 1477641360 {\"AAAnoOrphans\":true,\"logicalTimes\":true}"));
     CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":true,\"logicalTimes\":1}",
-        "JSON value is not a boolean as expected");
+        "JSON value of type number is not of expected type bool");
     CheckRPCThrows("getblockhashes 1477641360 1477641360 {\"noOrphans\":True,\"logicalTimes\":false}",
         "Error parsing JSON:{\"noOrphans\":True,\"logicalTimes\":false}");
 

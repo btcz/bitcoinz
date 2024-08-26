@@ -1,28 +1,18 @@
 // Copyright 2014 BitPay Inc.
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or https://www.opensource.org/licenses/mit-license.php .
+// Distributed under the MIT/X11 software license, see the accompanying
+// file COPYING or https://opensource.org/licenses/mit-license.php.
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <univalue.h>
+
 #include <cassert>
+#include <cstdio>
 #include <string>
-#include "univalue.h"
 
 #ifndef JSON_TEST_SRC
 #error JSON_TEST_SRC must point to test source directory
 #endif
 
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
-#endif
-
-using namespace std;
-string srcdir(JSON_TEST_SRC);
-static bool test_failed = false;
-
-#define d_assert(expr) { if (!(expr)) { test_failed = true; fprintf(stderr, "%s failed\n", filename.c_str()); } }
-#define f_assert(expr) { if (!(expr)) { test_failed = true; fprintf(stderr, "%s failed\n", __func__); } }
+std::string srcdir(JSON_TEST_SRC);
 
 static std::string rtrim(std::string s)
 {
@@ -30,9 +20,9 @@ static std::string rtrim(std::string s)
     return s;
 }
 
-static void runtest(string filename, const string& jdata)
+static void runtest(std::string filename, const std::string& jdata)
 {
-        string prefix = filename.substr(0, 4);
+        std::string prefix = filename.substr(0, 4);
 
         bool wantPass = (prefix == "pass") || (prefix == "roun");
         bool wantFail = (prefix == "fail");
@@ -43,9 +33,9 @@ static void runtest(string filename, const string& jdata)
         bool testResult = val.read(jdata);
 
         if (wantPass) {
-            d_assert(testResult == true);
+            assert(testResult == true);
         } else {
-            d_assert(testResult == false);
+            assert(testResult == false);
         }
 
         if (wantRoundTrip) {
@@ -56,19 +46,19 @@ static void runtest(string filename, const string& jdata)
 
 static void runtest_file(const char *filename_)
 {
-        string basename(filename_);
-        string filename = srcdir + "/" + basename;
+        std::string basename(filename_);
+        std::string filename = srcdir + "/" + basename;
         FILE *f = fopen(filename.c_str(), "r");
-        assert(f != NULL);
+        assert(f != nullptr);
 
-        string jdata;
+        std::string jdata;
 
         char buf[4096];
         while (!feof(f)) {
                 int bread = fread(buf, 1, sizeof(buf), f);
                 assert(!ferror(f));
 
-                string s(buf, bread);
+                std::string s(buf, bread);
                 jdata += s;
         }
 
@@ -114,6 +104,8 @@ static const char *filenames[] = {
         "fail40.json",               // invalid unicode: broken UTF-8
         "fail41.json",               // invalid unicode: unfinished UTF-8
         "fail42.json",               // valid json with garbage following a nul byte
+        "fail44.json",               // unterminated string
+        "fail45.json",               // nested beyond max depth
         "fail3.json",
         "fail4.json",                // extra comma
         "fail5.json",
@@ -124,6 +116,7 @@ static const char *filenames[] = {
         "pass1.json",
         "pass2.json",
         "pass3.json",
+        "pass4.json",
         "round1.json",              // round-trip test
         "round2.json",              // unicode
         "round3.json",              // bare string
@@ -140,30 +133,38 @@ void unescape_unicode_test()
     bool testResult;
     // Escaped ASCII (quote)
     testResult = val.read("[\"\\u0022\"]");
-    f_assert(testResult);
-    f_assert(val[0].get_str() == "\"");
+    assert(testResult);
+    assert(val[0].get_str() == "\"");
     // Escaped Basic Plane character, two-byte UTF-8
     testResult = val.read("[\"\\u0191\"]");
-    f_assert(testResult);
-    f_assert(val[0].get_str() == "\xc6\x91");
+    assert(testResult);
+    assert(val[0].get_str() == "\xc6\x91");
     // Escaped Basic Plane character, three-byte UTF-8
     testResult = val.read("[\"\\u2191\"]");
-    f_assert(testResult);
-    f_assert(val[0].get_str() == "\xe2\x86\x91");
+    assert(testResult);
+    assert(val[0].get_str() == "\xe2\x86\x91");
     // Escaped Supplementary Plane character U+1d161
     testResult = val.read("[\"\\ud834\\udd61\"]");
-    f_assert(testResult);
-    f_assert(val[0].get_str() == "\xf0\x9d\x85\xa1");
+    assert(testResult);
+    assert(val[0].get_str() == "\xf0\x9d\x85\xa1");
+}
+
+void no_nul_test()
+{
+    char buf[] = "___[1,2,3]___";
+    UniValue val;
+    assert(val.read({buf + 3, 7}));
 }
 
 int main (int argc, char *argv[])
 {
-    for (unsigned int fidx = 0; fidx < ARRAY_SIZE(filenames); fidx++) {
-        runtest_file(filenames[fidx]);
+    for (const auto& f: filenames) {
+        runtest_file(f);
     }
 
     unescape_unicode_test();
+    no_nul_test();
 
-    return test_failed ? 1 : 0;
+    return 0;
 }
 

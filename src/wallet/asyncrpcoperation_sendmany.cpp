@@ -39,7 +39,7 @@
 using namespace libzcash;
 
 int find_output(UniValue obj, int n) {
-    UniValue outputMapValue = find_value(obj, "outputmap");
+    UniValue outputMapValue = obj.find_value("outputmap");
     if (!outputMapValue.isArray()) {
         throw JSONRPCError(RPC_WALLET_ERROR, "Missing outputmap for JoinSplit operation");
     }
@@ -47,7 +47,7 @@ int find_output(UniValue obj, int n) {
     UniValue outputMap = outputMapValue.get_array();
     assert(outputMap.size() == ZC_NUM_JS_OUTPUTS);
     for (size_t i = 0; i < outputMap.size(); i++) {
-        if (outputMap[i].get_int() == n) {
+        if (outputMap[i].getInt<int>() == n) {
             return i;
         }
     }
@@ -141,8 +141,8 @@ void AsyncRPCOperation_sendmany::main() {
     try {
         success = main_impl();
     } catch (const UniValue& objError) {
-        int code = find_value(objError, "code").get_int();
-        std::string message = find_value(objError, "message").get_str();
+        int code = objError.find_value("code").getInt<int>();
+        std::string message = objError.find_value("message").get_str();
         set_error_code(code);
         set_error_message(message);
     } catch (const runtime_error& e) {
@@ -492,7 +492,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         }
 
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("rawtxn", EncodeHexTx(tx_)));
+        obj.pushKV("rawtxn", EncodeHexTx(tx_));
         auto txAndResult = SignSendRawTransaction(obj, keyChange, testmode);
         tx_ = txAndResult.first;
         set_result(txAndResult.second);
@@ -1181,11 +1181,11 @@ UniValue AsyncRPCOperation_sendmany::perform_joinsplit(
     // !!! Payment disclosure END
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("encryptednote1", encryptedNote1));
-    obj.push_back(Pair("encryptednote2", encryptedNote2));
-    obj.push_back(Pair("rawtxn", HexStr(ss.begin(), ss.end())));
-    obj.push_back(Pair("inputmap", arrInputMap));
-    obj.push_back(Pair("outputmap", arrOutputMap));
+    obj.pushKV("encryptednote1", encryptedNote1);
+    obj.pushKV("encryptednote2", encryptedNote2);
+    obj.pushKV("rawtxn", HexStr(ss.begin(), ss.end()));
+    obj.pushKV("inputmap", arrInputMap);
+    obj.pushKV("outputmap", arrOutputMap);
     return obj;
 }
 
@@ -1263,7 +1263,7 @@ UniValue AsyncRPCOperation_sendmany::getStatus() const {
     }
 
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "z_sendmany"));
-    obj.push_back(Pair("params", contextinfo_ ));
+    obj.pushKV("method", "z_sendmany");
+    obj.pushKV("params", contextinfo_ );
     return obj;
 }
