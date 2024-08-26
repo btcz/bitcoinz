@@ -12,44 +12,96 @@ For example:
 
     make HOST=x86_64-w64-mingw32 -j4
 
-A prefix will be generated that's suitable for plugging into Bitcoin's
-configure. In the above example, a dir named x86_64-w64-mingw32 will be
-created. To use it for Bitcoin:
+**BitcoinZ's `configure` script by default will ignore the depends output.** In
+order for it to pick up libraries, tools, and settings from the depends build,
+you must set the `CONFIG_SITE` environment variable to point to a `config.site` settings file.
+Make sure that `CONFIG_SITE` is an absolute path.
+In the above example, a file named `depends/x86_64-w64-mingw32/share/config.site` will be
+created. To use it during compilation:
 
-    ./configure --prefix=`pwd`/depends/x86_64-w64-mingw32
+    CONFIG_SITE=$PWD/depends/x86_64-w64-mingw32/share/config.site ./configure
 
-Common `host-platform-triplets` for cross compilation are:
+The default install prefix when using `config.site` is `--prefix=depends/<host-platform-triplet>`,
+so depends build outputs will be installed in that location.
 
-- `i686-w64-mingw32` for Win32
+Common `host-platform-triplet`s for cross compilation are:
+
+- `x86_64-pc-linux-gnu` for x86 Linux
 - `x86_64-w64-mingw32` for Win64
-- `x86_64-apple-darwin18` for MacOSX
-- `arm-linux-gnueabihf` for Linux ARM
+- `x86_64-apple-darwin` for macOS
+- `aarch64-linux-gnu` for Linux ARM 64 bit
 
-No other options are needed, the paths are automatically configured.
+The paths are automatically configured and no other options are needed.
 
-Dependency Options:
-The following can be set when running make: make FOO=bar
+### Install the required dependencies: Ubuntu & Debian
 
-    SOURCES_PATH: downloaded sources will be placed here
-    BASE_CACHE: built packages will be placed here
-    SDK_PATH: Path where sdk's can be found (used by OSX)
-    PRIORITY_DOWNLOAD_PATH: Try fetching source files from here before using their own URLs
-    NO_WALLET: Don't download/build/cache libs needed to enable the wallet
-    DEBUG: disable some optimizations and enable more runtime checking
-    LIBRUSTZCASH_OVERRIDE: Path to a local librustzcash repository
+#### Common
+
+    apt install automake bison cmake curl libtool make patch pkg-config python3 xz-utils
+
+#### For macOS cross compilation
+
+    apt install clang lld llvm g++ zip
+
+Clang 18 or later is required. You must also obtain the macOS SDK before
+proceeding with a cross-compile. Under the depends directory, create a
+subdirectory named `SDKs`. Then, place the extracted SDK under this new directory.
+For more information, see [SDK Extraction](../contrib/macdeploy/README.md#sdk-extraction).
+
+#### For Win64 cross compilation
+
+- see [build-windows.md](../doc/build-windows.md#cross-compilation-for-ubuntu-and-windows-subsystem-for-linux)
+
+#### For linux cross compilation
+
+Common linux dependencies:
+
+    sudo apt-get install g++-multilib binutils
+
+For linux AARCH64 cross compilation:
+
+    sudo apt-get install g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+
+### Install the required dependencies: FreeBSD
+
+    pkg install bash
+
+### Dependency Options
+
+The following can be set when running make: `make FOO=bar`
+
+- `SOURCES_PATH`: Downloaded sources will be placed here
+- `BASE_CACHE`: Built packages will be placed here
+- `SDK_PATH`: Path where SDKs can be found (used by macOS)
+- `FALLBACK_DOWNLOAD_PATH`: If a source file can't be fetched, try here before giving up
+- `C_STANDARD`: Set the C standard version used. Defaults to `c11`.
+- `CXX_STANDARD`: Set the C++ standard version used. Defaults to `c++17`.
+- `NO_BOOST`: Don't download/build/cache Boost
+- `NO_LIBEVENT`: Don't download/build/cache Libevent
+- `NO_ZMQ`: Don't download/build/cache packages needed for enabling ZeroMQ
+- `NO_WALLET`: Don't download/build/cache libs needed to enable the wallet
+- `WITH_GUIX`: Cross compilation using guix containers
+- `DEBUG`: Disable some optimizations and enable more runtime checking
+- `HOST_ID_SALT`: Optional salt to use when generating host package ids
+- `BUILD_ID_SALT`: Optional salt to use when generating build package ids
+- `LOG`: Use file-based logging for individual packages. During a package build its log file
+  resides in the `depends` directory, and the log file is printed out automatically in case
+  of build error. After successful build log files are moved along with package archives
+- `LTO`: Enable options needed for LTO. Does not add `-flto` related options to *FLAGS.
+- `NO_HARDEN=1`: Don't use hardening options when building packages
 
 If some packages are not built, for example `make NO_WALLET=1`, the appropriate
-options will be passed to bitcoin's configure. In this case, `--disable-wallet`.
+options will be passed to bitcoinz's configure. In this case, `--disable-wallet`.
 
-Additional targets:
+### Additional targets
 
     download: run 'make download' to fetch all sources without building them
-    download-osx: run 'make download-osx' to fetch all sources needed for osx builds
+    download-osx: run 'make download-osx' to fetch all sources needed for macOS builds
     download-win: run 'make download-win' to fetch all sources needed for win builds
     download-linux: run 'make download-linux' to fetch all sources needed for linux builds
+
 
 ### Other documentation
 
 - [description.md](description.md): General description of the depends system
 - [packages.md](packages.md): Steps for adding packages
-

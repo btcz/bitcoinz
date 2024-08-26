@@ -37,6 +37,7 @@ src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
 src/config/stamp-h1
 share/setup.nsi
+share/Info.plist
 
 cache/
 venv-mnf/
@@ -109,6 +110,8 @@ qa/pull-tester/test.*/*
 
 /doc/doxygen/
 
+contrib/devtools/split-debug.sh
+
 libzcashconsensus.pc
 
 contrib/debian/files
@@ -122,3 +125,5 @@ src/fuzz.cpp
 
 src/zcash/CreateJoinSplit
 src/zcash/GenerateParams
+
+/guix-build-*

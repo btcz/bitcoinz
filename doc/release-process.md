@@ -1,151 +1,200 @@
 Release Process
 ====================
-Meta: There should always be a single release engineer to disambiguate responsibility.
 
-If this is a hotfix release, please see the [Hotfix Release Process](https://github.com/zcash/zcash/blob/master/doc/hotfix-process.md) documentation before proceeding.
+## Branch updates
 
-## Pre-release
+### Before every release candidate
 
-### Github Milestone
+* Update release candidate version in `configure.ac` (`CLIENT_VERSION_RC`).
+* Update manpages (after rebuilding the binaries), see [gen-manpages.py](https://github.com/btcz/bitcoinz/blob/master/contrib/devtools/README.md#gen-manpagespy).
+* Update bitcoinz.conf and commit changes if they exist, see [gen-bitcoinz-conf.sh](https://github.com/btcz/bitcoinz/blob/master/contrib/devtools/README.md#gen-bitcoinz-confsh).
 
-Ensure all goals for the github milestone are met. If not, remove tickets
-or PRs with a comment as to why it is not included. (Running out of time
-is a common reason.)
+### Before every major and minor release
 
-### Pre-release checklist:
+* Update [bips.md](bips.md) to account for changes since the last release.
+* Update version in `configure.ac` (don't forget to set `CLIENT_VERSION_RC` to `0`).
+* Update manpages (see previous section)
+* Write release notes (see "Write the release notes" below) in doc/release-notes.md. If necessary,
+  archive the previous release notes as doc/release-notes/release-notes-${VERSION}.md.
 
-Check that dependencies are properly hosted by looking at the `check-depends` builder:
+### Before every major release
 
-  https://ci.z.cash/#/builders/1
+* On both the master branch and the new release branch:
+  - update `CLIENT_VERSION_MAJOR` in [`configure.ac`](../configure.ac)
+* On the new release branch in [`configure.ac`](../configure.ac)(see [this commit](https://github.com/btcz/bitcoinz/commit/35b8af9)):
+  - set `CLIENT_VERSION_MINOR` to `0`
+  - set `CLIENT_VERSION_BUILD` to `0`
+  - set `CLIENT_VERSION_IS_RELEASE` to `true`
 
-Check that there are no surprising performance regressions:
+#### Tagging a release (candidate)
 
-  https://speed.z.cash
+To tag the version (or release candidate) in git, use the `make-tag.py` script from [bitcoinz-maintainer-tools](https://github.com/btcz/bitcoinz-maintainer-tools). From the root of the repository run:
 
-Ensure that new performance metrics appear on that site.
+    ../bitcoinz-maintainer-tools/make-tag.py v(new version, e.g. 2.0.9)
 
-Update `src/chainparams.cpp` nMinimumChainWork with information from the getblockchaininfo rpc.
+This will perform a few last-minute consistency checks in the build system files, and if they pass, create a signed tag.
 
-### Protocol Safety Checks:
+## Building
 
-If this release changes the behavior of the protocol or fixes a serious
-bug, verify that a pre-release PR merge updated `PROTOCOL_VERSION` in
-`version.h` correctly.
+### First time / New builders
 
-If this release breaks backwards compatibility or needs to prevent
-interaction with software forked projects, change the network magic
-numbers. Set the four `pchMessageStart` in `CTestNetParams` in
-`chainparams.cpp` to random values.
+Install Guix using one of the installation methods detailed in
+[contrib/guix/INSTALL.md](/contrib/guix/INSTALL.md).
 
-Both of these should be done in standard PRs ahead of the release
-process. If these were not anticipated correctly, this could block the
-release, so if you suspect this is necessary, double check with the
-whole engineering team.
+Check out the source code in the following directory hierarchy.
 
-## Release dependencies
+    cd /path/to/your/toplevel/build
+    git clone https://github.com/btcz/guix.sigs.git
+    git clone https://github.com/btcz/bitcoinz-detached-sigs.git
+    git clone https://github.com/btcz/bitcoinz.git
 
-The release script has the following dependencies:
+### Write the release notes
 
-- `help2man`
-- `debchange` (part of the devscripts Debian package)
+Open a draft of the release notes for collaborative editing at https://github.com/btcz/bitcoinz-devwiki/wiki.
 
-You can optionally install the `progressbar2` Python module with pip to have a
-progress bar displayed during the build process.
+For the period during which the notes are being edited on the wiki, the version on the branch should be wiped and replaced with a link to the wiki which should be used for all announcements until `-final`.
 
-## Release process
+Generate list of authors:
 
-In the commands below, <RELEASE> and <RELEASE_PREV> are prefixed with a v, ie.
-v1.0.9 (not 1.0.9).
+    git log --format='- %aN' v(current version, e.g. 25.0)..v(new version, e.g. 25.1) | grep -v 'merge-script' | sort -fiu
 
-### Create the release branch
+### Setup and perform Guix builds
 
-Run the release script, which will verify you are on the latest clean
-checkout of master, create a branch, then commit standard automated
-changes to that branch locally:
+Checkout the BitcoinZ version you'd like to build:
 
-    $ ./zcutil/make-release.py <RELEASE> <RELEASE_PREV> <RELEASE_FROM> <APPROX_RELEASE_HEIGHT>
+```sh
+pushd ./bitcoinz
+SIGNER='(your builder key, ie bluematt, sipa, etc)'
+VERSION='(new version without v-prefix, e.g. 2.0.9)'
+git fetch origin "v${VERSION}"
+git checkout "v${VERSION}"
+popd
+```
 
-Examples:
+Ensure your guix.sigs are up-to-date if you wish to `guix-verify` your builds
+against other `guix-attest` signatures.
 
-    $ ./zcutil/make-release.py v1.0.9 v1.0.8-1 v1.0.8-1 120000
-    $ ./zcutil/make-release.py v1.0.13 v1.0.13-rc1 v1.0.12 222900
+```sh
+git -C ./guix.sigs pull
+```
 
-### Create, Review, and Merge the release branch pull request
+### Create the macOS SDK tarball (first time, or when SDK version changes)
 
-Review the automated changes in git:
+Create the macOS SDK tarball, see the [macdeploy
+instructions](/contrib/macdeploy/README.md#deterministic-macos-app-notes) for
+details.
 
-    $ git log master..HEAD
+### Build and attest to build outputs
 
-Push the resulting branch to github:
+Follow the relevant Guix README.md sections:
+- [Building](/contrib/guix/README.md#building)
+- [Attesting to build outputs](/contrib/guix/README.md#attesting-to-build-outputs)
 
-    $ git push 'git@github.com:$YOUR_GITHUB_NAME/zcash' $(git rev-parse --abbrev-ref HEAD)
+### Verify other builders' signatures to your own (optional)
 
-Then create the PR on github. Complete the standard review process,
-then merge, then wait for CI to complete.
+- [Verifying build output attestations](/contrib/guix/README.md#verifying-build-output-attestations)
 
-## Make tag for the newly merged result
+### Commit your non codesigned signature to guix.sigs
 
-Checkout master and pull the latest version to ensure master is up to date with the release PR which was merged in before.
+```sh
+pushd ./guix.sigs
+git add "${VERSION}/${SIGNER}"/noncodesigned.SHA256SUMS{,.asc}
+git commit -m "Add attestations by ${SIGNER} for ${VERSION} non-codesigned"
+popd
+```
 
-    $ git checkout master
-    $ git pull --ff-only
+Then open a Pull Request to the [guix.sigs repository](https://github.com/btcz/guix.sigs).
 
-Check the last commit on the local and remote versions of master to make sure they are the same:
+## Codesigning
 
-    $ git log -1
+### macOS codesigner only: Create detached macOS signatures (assuming [signapple](https://github.com/achow101/signapple/) is installed and up to date with master branch)
 
-The output should include something like, which is created by Homu:
+In the `guix-build-${VERSION}/output/x86_64-apple-darwin` and `guix-build-${VERSION}/output/arm64-apple-darwin` directories:
 
-    Auto merge of #4242 - nathan-at-least:release-v1.0.9, r=nathan-at-least
+    tar xf bitcoinz-osx-unsigned.tar.gz
+    ./detached-sig-create.sh /path/to/codesign.p12
+    Enter the keychain password and authorize the signature
+    signature-osx.tar.gz will be created
 
-Then create the git tag. The `-s` means the release tag will be
-signed. **CAUTION:** Remember the `v` at the beginning here:
+### Windows codesigner only: Create detached Windows signatures
 
-    $ git tag -s v1.0.9
-    $ git push origin v1.0.9
+In the `guix-build-${VERSION}/output/x86_64-w64-mingw32` directory:
 
-## Make and deploy deterministic builds
+    tar xf bitcoinz-win-unsigned.tar.gz
+    ./detached-sig-create.sh -key /path/to/codesign.key
+    Enter the passphrase for the key when prompted
+    signature-win.tar.gz will be created
 
-- Run the [Gitian deterministic build environment](https://github.com/zcash/zcash-gitian)
-- Compare the uploaded [build manifests on gitian.sigs](https://github.com/zcash/gitian.sigs)
-- If all is well, the DevOps engineer will build the Debian packages and update the
-  [apt.z.cash package repository](https://apt.z.cash).
+### Windows and macOS codesigners only: test code signatures
+It is advised to test that the code signature attaches properly prior to tagging by performing the `guix-codesign` step.
+However if this is done, once the release has been tagged in the bitcoinz-detached-sigs repo, the `guix-codesign` step must be performed again in order for the guix attestation to be valid when compared against the attestations of non-codesigner builds. The directories created by `guix-codesign` will need to be cleared prior to running `guix-codesign` again.
 
-## Add release notes to GitHub
+### Windows and macOS codesigners only: Commit the detached codesign payloads
 
-- Go to the [GitHub tags page](https://github.com/zcash/zcash/tags).
-- Click "Add release notes" beside the tag for this release.
-- Copy the release blog post into the release description, and edit to suit
-  publication on GitHub. See previous release notes for examples.
-- Click "Publish release" if publishing the release blog post now, or
-  "Save draft" to store the notes internally (and then return later to publish
-  once the blog post is up).
+```sh
+pushd ./bitcoinz-detached-sigs
+# checkout or create the appropriate branch for this release series
+git checkout --orphan <branch>
+# if you are the macOS codesigner
+rm -rf osx
+tar xf signature-osx.tar.gz
+# if you are the windows codesigner
+rm -rf win
+tar xf signature-win.tar.gz
+git add -A
+git commit -m "<version>: {osx,win} signature for {rc,final}"
+git tag -s "v${VERSION}" HEAD
+git push the current branch and new tag
+popd
+```
 
-Note that some GitHub releases are marked as "Verified", and others as
-"Unverified". This is related to the GPG signature on the release tag - in
-particular, GitHub needs the corresponding public key to be uploaded to a
-corresponding GitHub account. If this release is marked as "Unverified", click
-the marking to see what GitHub wants to be done.
+### Non-codesigners: wait for Windows and macOS detached signatures
 
-## Post Release Task List
+- Once the Windows and macOS builds each have 3 matching signatures, they will be signed with their respective release keys.
+- Detached signatures will then be committed to the [bitcoinz-detached-sigs](https://github.com/btcz/bitcoinz-detached-sigs) repository, which can be combined with the unsigned apps to create signed binaries.
 
-### Deploy testnet
+### Create the codesigned build outputs
 
-Notify the Zcash DevOps engineer/sysadmin that the release has been tagged. They update some variables in the company's automation code and then run an Ansible playbook, which:
+- [Codesigning build outputs](/contrib/guix/README.md#codesigning-build-outputs)
 
-* builds Zcash based on the specified branch
-* deploys it as a public service (e.g. betatestnet.z.cash, mainnet.z.cash)
-* often the same server can be re-used, and the role idempotently handles upgrades, but if not then they also need to update DNS records
-* possible manual steps: blowing away the `testnet3` dir, deleting old parameters, restarting DNS seeder
+### Verify other builders' signatures to your own (optional)
 
-Then, verify that nodes can connect to the testnet server, and update the guide on the wiki to ensure the correct hostname is listed in the recommended bitcoinz.conf.
+- [Verifying build output attestations](/contrib/guix/README.md#verifying-build-output-attestations)
 
-### Update the 1.0 User Guide
+### Commit your codesigned signature to guix.sigs (for the signed macOS/Windows binaries)
 
-This also means updating [the translations](https://github.com/zcash/zcash-docs).
-Coordinate with the translation team for now. Suggestions for improving this
-part of the process should be added to #2596.
+```sh
+pushd ./guix.sigs
+git add "${VERSION}/${SIGNER}"/all.SHA256SUMS{,.asc}
+git commit -m "Add attestations by ${SIGNER} for ${VERSION} codesigned"
+popd
+```
 
-### Publish the release announcement (blog, github, zcash-dev, slack)
+Then open a Pull Request to the [guix.sigs repository](https://github.com/btcz/guix.sigs).
 
-## Celebrate
+## After 6 or more people have guix-built and their results match
+
+After verifying signatures, combine the `all.SHA256SUMS.asc` file from all signers into `SHA256SUMS.asc`:
+
+```bash
+cat "$VERSION"/*/all.SHA256SUMS.asc > SHA256SUMS.asc
+```
+
+- Archive the release notes for the new version to `doc/release-notes/release-notes-${VERSION}.md`
+  (branch `master` and branch of the release).
+
+- Update repositories
+
+  - Delete post-EOL [release branches](https://github.com/btcz/bitcoinz/branches/all) and create a tag `v${branch_name}-final`.
+
+  - Delete ["Needs backport" labels](https://github.com/btcz/bitcoinz/labels?q=backport) for non-existing branches.
+
+  - Create a [new GitHub release](https://github.com/btcz/bitcoinz/releases/new) with a link to the archived release notes
+
+- Announce the release:
+
+  - BitcoinZ on Discord https://discord.com/invite/bitcoinz
+
+  - BitcoinZ on bitcointalk https://bitcointalk.org/index.php?topic=3086664.0
+
+  - BitcoinZ on Twitter https://x.com/btczofficial
