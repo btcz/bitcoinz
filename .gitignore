@@ -117,8 +117,6 @@ qa/pull-tester/test.*/*
 
 contrib/devtools/split-debug.sh
 
-libzcashconsensus.pc
-
 contrib/debian/files
 contrib/debian/substvars
 
