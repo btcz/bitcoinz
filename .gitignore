@@ -56,6 +56,7 @@ src/univalue/gen
 *.o-*
 .bitcoinz
 *.a
+*.lib
 *.pb.cc
 *.pb.h
 .vscode
@@ -78,7 +79,7 @@ src/univalue/gen
 
 # Rust
 .cargo/config.toml
-src/rustzcash/target/
+src/rust/target/
 
 # Compilation
 src/Makefile
