@@ -101,7 +101,7 @@ uint256 CAlert::GetHash() const
 
 bool CAlert::IsInEffect() const
 {
-    return (GetAdjustedTime() < nExpiration);
+    return (GetTime() < nExpiration);
 }
 
 bool CAlert::Cancels(const CAlert& alert) const
@@ -154,7 +154,7 @@ bool CAlert::RelayTo(CNode* pnode) const
     {
         if (AppliesTo(pnode->nVersion, pnode->strSubVer) ||
             AppliesToMe() ||
-            GetAdjustedTime() < nRelayUntil)
+            GetTime() < nRelayUntil)
         {
             pnode->PushMessage("alert", *this);
             return true;
