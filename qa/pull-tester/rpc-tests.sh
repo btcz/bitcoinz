@@ -95,6 +95,7 @@ testScriptsExt=(
     'invalidblockrequest.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
+    'maxuploadtarget.py',
     'wallet_db_flush.py'
 );
 
