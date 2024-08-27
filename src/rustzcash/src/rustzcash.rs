@@ -31,6 +31,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::{Path, PathBuf};
 use std::slice;
+use std::ptr::addr_of;
 
 #[cfg(not(target_os = "windows"))]
 use std::ffi::OsStr;
@@ -772,12 +773,23 @@ pub extern "C" fn librustzcash_sprout_prove(
     vpub_new: u64,
 ) {
     // Load parameters from disk
-    let sprout_fs = File::open(
-        unsafe { &SPROUT_GROTH16_PARAMS_PATH }
-            .as_ref()
-            .expect("parameters should have been initialized"),
-    )
-    .expect("couldn't load Sprout groth16 parameters file");
+    let sprout_path = unsafe { addr_of!(SPROUT_GROTH16_PARAMS_PATH).as_ref() }
+        .expect("Only mutated during init, so this pointer can never be null")
+        .as_ref()
+        .expect(
+            "Parameters not loaded: SPROUT_GROTH16_PARAMS_PATH should have been initialized",
+        );
+    const HOW_TO_FIX: &str = "
+Please download this file from https://download.z.cash/downloads/sprout-groth16.params
+and put it at ";
+    let sprout_fs = File::open(sprout_path).unwrap_or_else(|err| {
+        panic!(
+            "Couldn't load Sprout Groth16 parameters file: {}{}{}",
+            err,
+            HOW_TO_FIX,
+            &sprout_path.to_string_lossy()
+        )
+    }); 
 
     let mut sprout_fs = BufReader::with_capacity(1024 * 1024, sprout_fs);
 
