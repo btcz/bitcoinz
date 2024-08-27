@@ -20,7 +20,7 @@ BITCOIN_CONFIG_INCLUDES=-I$(builddir)/config
 BITCOIN_INCLUDES=-I$(builddir) -I$(builddir)/obj $(BDB_CPPFLAGS) $(BOOST_CPPFLAGS) $(LEVELDB_CPPFLAGS)
 
 BITCOIN_INCLUDES += -I$(srcdir)/secp256k1/include
-BITCOIN_INCLUDES += -I$(srcdir)/rustzcash/include
+BITCOIN_INCLUDES += -I$(srcdir)/rust/librustzcash/include
 BITCOIN_INCLUDES += -I$(srcdir)/$(UNIVALUE_INCLUDE_DIR_INT)
 
 LIBBITCOIN_SERVER=libbitcoin_server.a
@@ -29,7 +29,7 @@ LIBBITCOIN_CLI=libbitcoin_cli.a
 LIBBITCOIN_UTIL=libbitcoin_util.a
 LIBBITCOIN_CRYPTO=crypto/libbitcoin_crypto.a
 LIBSECP256K1=secp256k1/libsecp256k1.la
-LIBRUSTZCASH=rustzcash/target/$(RUST_TARGET)/release/librustzcash.a
+LIBRUSTZCASH=rust/target/$(RUST_TARGET)/release/librustzcash.a
 LIBZCASH=libzcash.a
 
 if ENABLE_ZMQ
@@ -42,8 +42,8 @@ endif
 $(LIBSECP256K1): $(wildcard secp256k1/src/*) $(wildcard secp256k1/include/*)
 	$(AM_V_at)$(MAKE) $(AM_MAKEFLAGS) -C $(@D) $(@F)
 
-cargo-build: $(wildcard rustzcash/include/*.h)
-	RUSTC="$(RUSTC)" $(CARGO) build $(CARGO_FLAGS) --manifest-path=$(srcdir)/rustzcash/Cargo.toml --target=$(RUST_TARGET)
+cargo-build: $(wildcard rust/librustzcash/include/*.h)
+	RUSTC="$(RUSTC)" $(CARGO) build $(CARGO_FLAGS) --manifest-path=$(srcdir)/rust/Cargo.toml --target=$(RUST_TARGET)
 
 $(LIBRUSTZCASH): cargo-build
 
@@ -516,7 +516,7 @@ EXTRA_DIST = $(CTAES_DIST)
 
 clean-local:
 	-$(MAKE) -C secp256k1 clean
-	-rm -rf rustzcash/target
+	-rm -rf rust/target
 	-rm -f leveldb/*/*.gcda leveldb/*/*.gcno leveldb/helpers/memenv/*.gcda leveldb/helpers/memenv/*.gcno
 	rm -f fuzz.cpp
 	rm -rf fuzzing/*/output
