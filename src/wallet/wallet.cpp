@@ -4692,17 +4692,6 @@ void CWallet::GetKeyBirthTimes(std::map<CKeyID, int64_t> &mapKeyBirth) const {
     }
 }
 
-bool CWallet::AddDestData(const CTxDestination &dest, const std::string &key, const std::string &value)
-{
-    if (std::get_if<CNoDestination>(&dest))
-        return false;
-
-    mapAddressBook[dest].destdata.insert(std::make_pair(key, value));
-    if (!fFileBacked)
-        return true;
-    return CWalletDB(strWalletFile).WriteDestData(EncodeDestination(dest), key, value);
-}
-
 bool CWallet::EraseDestData(const CTxDestination &dest, const std::string &key)
 {
     if (!mapAddressBook[dest].destdata.erase(key))
