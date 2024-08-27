@@ -108,31 +108,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CPubKey demoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination demoAddress(CTxDestination(demoPubkey.GetID()));
     UniValue retValue;
-    string strAccount = "";
     string strPurpose = "receive";
-    BOOST_CHECK_NO_THROW({ /*Initialize Wallet with an account */
+    BOOST_CHECK_NO_THROW({ /*Initialize Wallet with the demo pubkey*/
         CWalletDB walletdb(pwalletMain->strWalletFile);
-        CAccount account;
-        account.vchPubKey = demoPubkey;
-        pwalletMain->SetAddressBook(account.vchPubKey.GetID(), strAccount, strPurpose);
-        walletdb.WriteAccount(strAccount, account);
+        pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
     CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
-
-    /*********************************
-     * 			setaccount
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " \"\""));
-    /* Accounts are disabled */
-    BOOST_CHECK_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " nullaccount"), runtime_error);
-    /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
-    /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg (34 chars) is an illegal address (should be 35 chars) */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg nullaccount"), runtime_error);
-
 
     /*********************************
      *                  getbalance
@@ -162,16 +145,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("listreceivedbyaddress 0 true extra"), runtime_error);
 
     /*********************************
-     * 		listreceivedbyaccount
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount"));
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount 0"));
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount not_int"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount 0 not_bool"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount 0 true"));
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount 0 true extra"), runtime_error);
-
-    /*********************************
      *          listsinceblock
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listsinceblock"));
@@ -180,20 +153,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *          listtransactions
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listtransactions"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress)));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " 20"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " 20 0"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions *"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions * 20"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions * 20 0"));
     BOOST_CHECK_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " not_int"), runtime_error);
 
     /*********************************
      *          listlockunspent
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listlockunspent"));
-
-    /*********************************
-     *          listaccounts
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("listaccounts"));
 
     /*********************************
      *          listaddressgroupings
@@ -209,24 +177,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      * 		getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
-    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress \"\""));
-    /* Accounts are deprecated */
-    BOOST_CHECK_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"), runtime_error);
-
-    /*********************************
-     * 		getaccountaddress
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress \"\""));
-    /* Accounts are deprecated */
-    BOOST_CHECK_THROW(CallRPC("getaccountaddress accountThatDoesntExists"), runtime_error);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getaccountaddress " + strAccount));
-    BOOST_CHECK(DecodeDestination(retValue.get_str()) == demoAddress);
-
-    /*********************************
-     * 			getaccount
-     *********************************/
-    BOOST_CHECK_THROW(CallRPC("getaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("getaccount " + EncodeDestination(demoAddress)));
 
     /*********************************
      * 	signmessage + verifymessage
@@ -247,19 +197,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " wrongmessage").get_bool() == false);
     /* Correct address, message and signature*/
     BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
-
-    /*********************************
-     * 		getaddressesbyaccount
-     *********************************/
-    BOOST_CHECK_THROW(CallRPC("getaddressesbyaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getaddressesbyaccount " + strAccount));
-    UniValue arr = retValue.get_array();
-    BOOST_CHECK_EQUAL(4, arr.size());
-    bool notFound = true;
-    for (auto a : arr.getValues()) {
-        notFound &= DecodeDestination(a.get_str()) != demoAddress;
-    }
-    BOOST_CHECK(!notFound);
 
     /*********************************
      * 	     fundrawtransaction
