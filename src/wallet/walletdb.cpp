@@ -9,6 +9,7 @@
 #include "fs.h"
 #include "key_io.h"
 #include "main.h"
+#include "proof_verifier.h"
 #include "protocol.h"
 #include "serialize.h"
 #include "sync.h"
@@ -331,7 +332,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CWalletTx wtx;
             ssValue >> wtx;
             CValidationState state;
-            auto verifier = libzcash::ProofVerifier::Strict();
+            auto verifier = ProofVerifier::Strict();
             if (!(CheckTransaction(wtx, state, verifier) && (wtx.GetHash() == hash) && state.IsValid()))
                 return false;
 

@@ -1668,8 +1668,7 @@ bool CWallet::UpdateNullifierNoteMap()
                 if (!item.second.nullifier) {
                     if (GetNoteDecryptor(item.second.address, dec)) {
                         auto i = item.first.js;
-                        auto hSig = wtxItem.second.vJoinSplit[i].h_sig(
-                            *pzcashParams, wtxItem.second.joinSplitPubKey);
+                        auto hSig = wtxItem.second.vJoinSplit[i].h_sig(wtxItem.second.joinSplitPubKey);
                         item.second.nullifier = GetSproutNoteNullifier(
                             wtxItem.second.vJoinSplit[i],
                             item.second.address,
@@ -2083,7 +2082,7 @@ mapSproutNoteData_t CWallet::FindMySproutNotes(const CTransaction &tx) const
 
     mapSproutNoteData_t noteData;
     for (size_t i = 0; i < tx.vJoinSplit.size(); i++) {
-        auto hSig = tx.vJoinSplit[i].h_sig(*pzcashParams, tx.joinSplitPubKey);
+        auto hSig = tx.vJoinSplit[i].h_sig(tx.joinSplitPubKey);
         for (uint8_t j = 0; j < tx.vJoinSplit[i].ciphertexts.size(); j++) {
             for (const NoteDecryptorMap::value_type& item : mapNoteDecryptors) {
                 try {
@@ -2529,7 +2528,7 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
             EncodePaymentAddress(pa)));
     }
 
-    auto hSig = this->vJoinSplit[jsop.js].h_sig(*pzcashParams, this->joinSplitPubKey);
+    auto hSig = this->vJoinSplit[jsop.js].h_sig(this->joinSplitPubKey);
     try {
         SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                 decryptor,
@@ -5162,7 +5161,7 @@ void CWallet::GetFilteredNotes(
             }
 
             // determine amount of funds in the note
-            auto hSig = wtx.vJoinSplit[i].h_sig(*pzcashParams, wtx.joinSplitPubKey);
+            auto hSig = wtx.vJoinSplit[i].h_sig(wtx.joinSplitPubKey);
             try {
                 SproutNotePlaintext plaintext = SproutNotePlaintext::decrypt(
                         decryptor,

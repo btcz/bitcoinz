@@ -35,7 +35,6 @@
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
-ZCJoinSplit *pzcashParams;
 FastRandomContext insecure_rand_ctx(true);
 
 extern bool fPrintToConsole;
@@ -43,8 +42,6 @@ extern void noui_connect();
 
 JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
-    pzcashParams = ZCJoinSplit::Prepared();
-
     fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
     fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
     fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
@@ -71,7 +68,6 @@ JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : Bas
 
 JoinSplitTestingSetup::~JoinSplitTestingSetup()
 {
-    delete pzcashParams;
 }
 
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)

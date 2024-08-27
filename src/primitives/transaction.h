@@ -234,7 +234,6 @@ public:
     JSDescription(): vpub_old(0), vpub_new(0) { }
 
     JSDescription(
-            ZCJoinSplit& params,
             const uint256& joinSplitPubKey,
             const uint256& rt,
             const std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -246,7 +245,6 @@ public:
     );
 
     static JSDescription Randomized(
-            ZCJoinSplit& params,
             const uint256& joinSplitPubKey,
             const uint256& rt,
             std::array<libzcash::JSInput, ZC_NUM_JS_INPUTS>& inputs,
@@ -260,15 +258,8 @@ public:
             std::function<int(int)> gen = GetRandInt
     );
 
-    // Verifies that the JoinSplit proof is correct.
-    bool Verify(
-        ZCJoinSplit& params,
-        libzcash::ProofVerifier& verifier,
-        const uint256& joinSplitPubKey
-    ) const;
-
     // Returns the calculated h_sig
-    uint256 h_sig(ZCJoinSplit& params, const uint256& joinSplitPubKey) const;
+    uint256 h_sig(const uint256& joinSplitPubKey) const;
 
     ADD_SERIALIZE_METHODS;
 

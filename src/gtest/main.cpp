@@ -3,7 +3,6 @@
 #include "key.h"
 #include "pubkey.h"
 #include "script/sigcache.h"
-#include "zcash/JoinSplit.hpp"
 #include "util.h"
 
 #include "librustzcash.h"
@@ -17,14 +16,10 @@ struct ECCryptoClosure
 
 ECCryptoClosure instance_of_eccryptoclosure;
 
-ZCJoinSplit* params;
-
 int main(int argc, char **argv) {
   assert(init_and_check_sodium() != -1);
   ECC_Start();
   InitSignatureCache();
-
-  params = ZCJoinSplit::Prepared();
 
   fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
   fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";

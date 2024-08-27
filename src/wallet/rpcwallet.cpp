@@ -12,6 +12,7 @@
 #include "main.h"
 #include "net.h"
 #include "netbase.h"
+#include "proof_verifier.h"
 #include "rpc/server.h"
 #include "timedata.h"
 #include "transaction_builder.h"
@@ -2092,8 +2093,7 @@ UniValue zc_sample_joinsplit(const UniValue& params, bool fHelp)
 
     uint256 joinSplitPubKey;
     uint256 anchor = SproutMerkleTree().root();
-    JSDescription samplejoinsplit(*pzcashParams,
-                                  joinSplitPubKey,
+    JSDescription samplejoinsplit(joinSplitPubKey,
                                   anchor,
                                   {JSInput(), JSInput()},
                                   {JSOutput(), JSOutput()},
@@ -2458,8 +2458,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
     mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
     mtx.joinSplitPubKey = joinSplitPubKey;
 
-    JSDescription jsdesc(*pzcashParams,
-                         joinSplitPubKey,
+    JSDescription jsdesc(joinSplitPubKey,
                          anchor,
                          {vjsin[0], vjsin[1]},
                          {vjsout[0], vjsout[1]},
@@ -2467,8 +2466,8 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
                          vpub_new);
 
     {
-        auto verifier = libzcash::ProofVerifier::Strict();
-        assert(jsdesc.Verify(*pzcashParams, verifier, joinSplitPubKey));
+        auto verifier = ProofVerifier::Strict();
+        assert(verifier.VerifySprout(jsdesc, joinSplitPubKey));
     }
 
     mtx.vJoinSplit.push_back(jsdesc);
@@ -2503,7 +2502,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
         ss2 << ((unsigned char) 0x00);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[0];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.h_sig(joinSplitPubKey);
 
         encryptedNote1 = HexStr(ss2.begin(), ss2.end());
     }
@@ -2512,7 +2511,7 @@ UniValue zc_raw_joinsplit(const UniValue& params, bool fHelp)
         ss2 << ((unsigned char) 0x01);
         ss2 << jsdesc.ephemeralKey;
         ss2 << jsdesc.ciphertexts[1];
-        ss2 << jsdesc.h_sig(*pzcashParams, joinSplitPubKey);
+        ss2 << jsdesc.h_sig(joinSplitPubKey);
 
         encryptedNote2 = HexStr(ss2.begin(), ss2.end());
     }

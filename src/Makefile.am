@@ -150,6 +150,7 @@ BITCOIN_CORE_H = \
   prevector.h \
   primitives/block.h \
   primitives/transaction.h \
+  proof_verifier.h \
   protocol.h \
   pubkey.h \
   random.h \
@@ -255,6 +256,7 @@ libbitcoin_server_a_SOURCES = \
   rpc/misc.cpp \
   rpc/net.cpp \
   rpc/rawtransaction.cpp \
+  proof_verifier.cpp \
   rpc/server.cpp \
   script/sigcache.cpp \
   script/ismine.cpp \
@@ -494,7 +496,6 @@ libzcash_a_SOURCES = \
   zcash/address/sprout.cpp \
   zcash/address/zip32.cpp \
   zcash/JoinSplit.cpp \
-  zcash/Proof.cpp \
   zcash/Note.cpp \
   zcash/prf.cpp \
   zcash/util.cpp
