@@ -21,6 +21,7 @@
 
 #include <deque>
 #include <stdint.h>
+#include <atomic>
 
 #ifndef WIN32
 #include <arpa/inet.h>
