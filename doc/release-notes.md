@@ -44,6 +44,13 @@ ensure that local time is set reasonably accurately.
 If it appears that the node has a significantly different time than its peers,
 a warning will still be logged and indicated on the metrics screen if enabled.
 
+Option handling
+---------------
+
+- The `-reindex` and `-reindex-chainstate` options now imply `-rescan`
+  (provided that the wallet is enabled and pruning is disabled, and unless
+  `-rescan=0` is specified explicitly).
+
 Fixes
 -----
 
