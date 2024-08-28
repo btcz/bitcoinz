@@ -103,6 +103,9 @@ public:
     /** Best header has changed */
     boost::signals2::signal<void (bool, const CBlockIndex *)> NotifyHeaderTip;
 
+    /** Banlist did change. */
+    boost::signals2::signal<void (void)> BannedListChanged;
+
     /** Transaction expired */
     boost::signals2::signal<void (const uint256& txid)> NotifyTxExpiration;
 };
