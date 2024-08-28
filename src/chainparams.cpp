@@ -137,8 +137,6 @@ public:
             ( 159300, 30 ) // 30 minutes
             ( 364400, 5 ); // 5 minutes
 
-        vRollingCheckpointStartHeight = 364400;
-
         genesis = CreateGenesisBlock(
             1478403829,
             uint256S("0x000000000000000000000000000000000000000000000000000000000000021d"),
@@ -401,8 +399,6 @@ public:
             ( 13999, 30 ) // 30 minutes
             ( 14000, 5 ); // 5 minutes
 
-        vRollingCheckpointStartHeight = 14000;
-
         genesis = CreateGenesisBlock(
             1479443947,
             uint256S("0x0000000000000000000000000000000000000000000000000000000000000013"),
@@ -633,8 +629,6 @@ public:
             ( 0, 2 * 60 ) // originally 2 hours
             ( 159300, 30 ) // 30 minutes
             ( 364400, 5 ); // 5 minutes
-
-        vRollingCheckpointStartHeight = 364400;
 
         genesis = CreateGenesisBlock(
             1482971059,
