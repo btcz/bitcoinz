@@ -207,12 +207,22 @@ public:
             ( 352540, uint256S("0x00000006838b961606dad5a3da08b595a69cb8fc78684d9a4d3d3727bc96eb2b"))
             ( 352640, uint256S("0x000000c4a4a131d358a4b5419171c627cfb219367a810ca1780ef3119f634b6b"))
             ( 352740, uint256S("0x0000006bcc7d38424a1cf996b3b4ee61c44f941523af16c26c22c2708151a977"))
-            ( 357600, uint256S("0x0000003b302a1ecfa6555b64981b1950853f49e022c923e98f94535225c6c54a")),
+            ( 357600, uint256S("0x0000003b302a1ecfa6555b64981b1950853f49e022c923e98f94535225c6c54a"))
+            ( 500000, uint256S("0x0000002bf33f0c63ce3d9a9ff15c154b27dc80de1bd8ac891eb24acf13cdad40"))
+            ( 600000, uint256S("0x000000ed96988f1b3bd63e65dc933f226ae2e0e722f8bdcf43937f58929a9e3d"))
+            ( 700000, uint256S("0x00000295a14a32e2d0ca939b22295ea093bc73ee73664c6900ff1278a2e4067b"))
+            ( 800000, uint256S("0x0000003c5772dfbeb950307478a53a5392c2e7b3e58fc9cfea79c83583284618"))
+            ( 900000, uint256S("0x0000014ab739fe933f697b9a32e8aae19a3629937bd6e3f419626c49e880880f"))
+            ( 1000000, uint256S("0x0000007de5a17a38a4f43e44947acf084949080715e9dd6a235af9c704246cf0"))
+            ( 1100000, uint256S("0x000000211ead28f86240b83fff913a04caddb3a2f9e19d42a898526f30002429"))
+            ( 1200000, uint256S("0x00000093b2415c696284232f27a9c3a363115b197068e6788e3435d09fc77a40"))
+            ( 1300000, uint256S("0x000000c525dea4be1246e9b5b1a0db728d7f8ac2fa28dfe0de0d9c82ba79c934"))
+            ( 1400000, uint256S("0x000000d6ec96846f53f6c17b1d6c450be50ad54a25ed047deb3076cd31c0f5fd")),
 
-            1530166456,     // * UNIX timestamp of last checkpoint block
-            662217,         // * total number of transactions between genesis and last checkpoint
-            2290.912865  // * estimated number of transactions per day after checkpoint
-                            //   total number of tx / (checkpoint block height / (24 * 24))
+            1722854257,  // * UNIX timestamp of last checkpoint block
+            3896307,     // * total number of transactions between genesis and last checkpoint
+            2244.272832  // * estimated number of transactions per day after checkpoint
+                         //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
         // Hardcoded fallback value for the Sprout shielded value pool balance
