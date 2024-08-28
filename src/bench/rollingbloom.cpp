@@ -39,4 +39,12 @@ static void RollingBloom(benchmark::State& state)
     }
 }
 
+static void RollingBloomReset(benchmark::State& state)
+{
+    CRollingBloomFilter filter(120000, 0.000001);
+    while (state.KeepRunning()) {
+        filter.reset();
+    }
+}
+
 BENCHMARK(RollingBloom);

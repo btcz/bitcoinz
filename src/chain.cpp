@@ -8,8 +8,6 @@
 #include "main.h"
 #include "txdb.h"
 
-using namespace std;
-
 /**
  * CChain implementation
  */
