@@ -427,6 +427,7 @@ static void DumpBanlist()
 void CNode::CloseSocketDisconnect()
 {
     fDisconnect = true;
+    LOCK(cs_hSocket);
     if (hSocket != INVALID_SOCKET)
     {
         LogPrint("net", "disconnecting peer=%d\n", id);
@@ -758,7 +759,13 @@ void SocketSendData(CNode *pnode)
     while (it != pnode->vSendMsg.end()) {
         const CSerializeData &data = *it;
         assert(data.size() > pnode->nSendOffset);
-        int nBytes = send(pnode->hSocket, &data[pnode->nSendOffset], data.size() - pnode->nSendOffset, MSG_NOSIGNAL | MSG_DONTWAIT);
+        int nBytes = 0;
+        {
+            LOCK(pnode->cs_hSocket);
+            if (pnode->hSocket == INVALID_SOCKET)
+                break;
+            nBytes = send(pnode->hSocket, reinterpret_cast<const char*>(data.data()) + pnode->nSendOffset, data.size() - pnode->nSendOffset, MSG_NOSIGNAL | MSG_DONTWAIT);
+        }
         if (nBytes > 0) {
             pnode->nLastSend = GetTime();
             pnode->nSendBytes += nBytes;
@@ -1106,12 +1113,6 @@ void ThreadSocketHandler()
             LOCK(cs_vNodes);
             for (CNode* pnode : vNodes)
             {
-                if (pnode->hSocket == INVALID_SOCKET)
-                    continue;
-                FD_SET(pnode->hSocket, &fdsetError);
-                hSocketMax = max(hSocketMax, pnode->hSocket);
-                have_fds = true;
-
                 // Implement the following logic:
                 // * If there is data to send, select() for sending data. As this only
                 //   happens when optimistic write failed, we choose to first drain the
@@ -1127,19 +1128,30 @@ void ThreadSocketHandler()
                 // * We send some data.
                 // * We wait for data to be received (and disconnect after timeout).
                 // * We process a message in the buffer (message handler thread).
+
+                bool select_send;
                 {
-                    TRY_LOCK(pnode->cs_vSend, lockSend);
-                    if (lockSend && !pnode->vSendMsg.empty()) {
-                        FD_SET(pnode->hSocket, &fdsetSend);
-                        continue;
-                    }
+                    LOCK(pnode->cs_vSend);
+                    select_send = !pnode->vSendMsg.empty();
                 }
+
+                FD_SET(pnode->hSocket, &fdsetError);
+                hSocketMax = max(hSocketMax, pnode->hSocket);
+                have_fds = true;
+
+                if (select_send) {
+                    FD_SET(pnode->hSocket, &fdsetSend);
+                    continue;
+                }
+                bool select_recv;
                 {
                     TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
-                    if (lockRecv && (
+                    select_recv = lockRecv && (
                         pnode->vRecvMsg.empty() || !pnode->vRecvMsg.front().complete() ||
-                        pnode->GetTotalRecvSize() <= ReceiveFloodSize()))
-                        FD_SET(pnode->hSocket, &fdsetRecv);
+                        pnode->GetTotalRecvSize() <= ReceiveFloodSize());
+                }
+                if (select_recv) {
+                    FD_SET(pnode->hSocket, &fdsetRecv);
                 }
             }
         }
@@ -1190,9 +1202,15 @@ void ThreadSocketHandler()
             //
             // Receive
             //
+            bool recvSet = false;
+            bool sendSet = false;
+            bool errorSet = false;
             if (pnode->hSocket == INVALID_SOCKET)
                 continue;
-            if (FD_ISSET(pnode->hSocket, &fdsetRecv) || FD_ISSET(pnode->hSocket, &fdsetError))
+            recvSet = FD_ISSET(pnode->hSocket, &fdsetRecv);
+            sendSet = FD_ISSET(pnode->hSocket, &fdsetSend);
+            errorSet = FD_ISSET(pnode->hSocket, &fdsetError);
+            if (recvSet || errorSet)
             {
                 TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
                 if (lockRecv)
@@ -1234,13 +1252,10 @@ void ThreadSocketHandler()
             //
             // Send
             //
-            if (pnode->hSocket == INVALID_SOCKET)
-                continue;
-            if (FD_ISSET(pnode->hSocket, &fdsetSend))
+            if (sendSet)
             {
-                TRY_LOCK(pnode->cs_vSend, lockSend);
-                if (lockSend)
-                    SocketSendData(pnode);
+                LOCK(pnode->cs_vSend);
+                SocketSendData(pnode);
             }
 
             //
@@ -1619,9 +1634,8 @@ void ThreadMessageHandler()
 
             // Send messages
             {
-                TRY_LOCK(pnode->cs_vSend, lockSend);
-                if (lockSend)
-                    g_signals.SendMessages(pnode, pnode == pnodeTrickle || pnode->fWhitelisted);
+                LOCK(pnode->cs_sendProcessing);
+                g_signals.SendMessages(pnode, pnode == pnodeTrickle || pnode->fWhitelisted);
             }
             boost::this_thread::interruption_point();
         }
