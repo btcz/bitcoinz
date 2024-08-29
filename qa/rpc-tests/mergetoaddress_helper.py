@@ -41,7 +41,10 @@ class MergeToAddressHelper:
         initialize_chain_clean(test.options.tmpdir, 4)
 
     def setup_network(self, test, additional_args=[]):
-        args = ['-debug=zrpcunsafe']
+        args = [
+            '-debug=zrpcunsafe',
+            '-limitancestorcount=%d' % self.utxos_to_generate,
+        ]
         args += additional_args
         test.nodes = []
         test.nodes.append(start_node(0, test.options.tmpdir, args))
