@@ -7,7 +7,6 @@
 #include "clientversion.h"
 #include "util.h"
 #include "warnings.h"
-#include "uint256.h"
 
 CCriticalSection cs_warnings;
 std::string strMiscWarning;
@@ -45,8 +44,9 @@ std::string GetWarnings(const std::string& strFor)
 
     LOCK(cs_warnings);
 
-    if (!CLIENT_VERSION_IS_RELEASE)
-        strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
+    if (!CLIENT_VERSION_IS_RELEASE) {
+        strStatusBar = "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications";
+    }
 
     if (GetBoolArg("-testsafemode", DEFAULT_TESTSAFEMODE))
         strStatusBar = strRPC = "testsafemode enabled";
@@ -59,11 +59,11 @@ std::string GetWarnings(const std::string& strFor)
 
     if (fLargeWorkForkFound)
     {
-        strStatusBar = strRPC = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
+        strStatusBar = strRPC = "Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.";
     }
     else if (fLargeWorkInvalidChainFound)
     {
-        strStatusBar = strRPC = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
+        strStatusBar = strRPC = "Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.";
     }
 
     if (strFor == "statusbar")
