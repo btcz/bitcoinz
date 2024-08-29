@@ -82,3 +82,27 @@ is not necessary.
 
 On Windows, do not forget to uninstall all earlier versions of the Bitcoin
 client first.
+
+
+### RPC and REST
+
+### Configuration and command-line options
+
+### Block and transaction handling
+
+### P2P protocol and network code
+
+The p2p alert system has been removed in #7692 and the 'alert' message is no longer supported.
+
+### Validation
+
+### Build system
+
+### Wallet
+
+### GUI
+
+### Tests
+
+### Miscellaneous
+

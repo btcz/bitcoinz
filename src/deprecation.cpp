@@ -4,7 +4,6 @@
 
 #include "deprecation.h"
 
-#include "alert.h"
 #include "clientversion.h"
 #include "init.h"
 #include "ui_interface.h"
@@ -32,7 +31,6 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
                                  DEPRECATION_HEIGHT) + " " +
                        _("You should upgrade to the latest version of BitcoinZ.");
             LogPrintf("*** %s\n", msg);
-            CAlert::Notify(msg, fThread);
             uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_ERROR);
         }
         StartShutdown();
@@ -42,7 +40,6 @@ void EnforceNodeDeprecation(int nHeight, bool forceLogging, bool fThread) {
                             DEPRECATION_HEIGHT) + " " +
                   _("You should upgrade to the latest version of BitcoinZ.");
         LogPrintf("*** %s\n", msg);
-        CAlert::Notify(msg, fThread);
         uiInterface.ThreadSafeMessageBox(msg, "", CClientUIInterface::MSG_WARNING);
     }
 }

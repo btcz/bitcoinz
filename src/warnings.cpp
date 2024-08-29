@@ -7,7 +7,6 @@
 #include "clientversion.h"
 #include "util.h"
 #include "warnings.h"
-#include "alert.h"
 #include "uint256.h"
 
 CCriticalSection cs_warnings;
@@ -41,7 +40,6 @@ void SetfLargeWorkInvalidChainFound(bool flag)
 
 std::string GetWarnings(const std::string& strFor)
 {
-    int nPriority = 0;
     std::string strStatusBar;
     std::string strRPC;
 
@@ -56,36 +54,16 @@ std::string GetWarnings(const std::string& strFor)
     // Misc warnings like out of disk space and clock is wrong
     if (strMiscWarning != "")
     {
-        nPriority = 1000;
         strStatusBar = strMiscWarning;
     }
 
     if (fLargeWorkForkFound)
     {
-        nPriority = 2000;
         strStatusBar = strRPC = _("Warning: The network does not appear to fully agree! Some miners appear to be experiencing issues.");
     }
     else if (fLargeWorkInvalidChainFound)
     {
-        nPriority = 2000;
         strStatusBar = strRPC = _("Warning: We do not appear to fully agree with our peers! You may need to upgrade, or other nodes may need to upgrade.");
-    }
-
-    // Alerts
-    {
-        LOCK(cs_mapAlerts);
-        for (const std::pair<uint256, CAlert>& item : mapAlerts)
-        {
-            const CAlert& alert = item.second;
-            if (alert.AppliesToMe() && alert.nPriority > nPriority)
-            {
-                nPriority = alert.nPriority;
-                strStatusBar = alert.strStatusBar;
-                if (alert.nPriority >= ALERT_PRIORITY_SAFE_MODE) {
-                    strRPC = alert.strRPCError;
-                }
-            }
-        }
     }
 
     if (strFor == "statusbar")

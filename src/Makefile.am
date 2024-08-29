@@ -95,7 +95,6 @@ BITCOIN_CORE_H = \
   addrdb.h \
   addressindex.h \
   addrman.h \
-  alert.h \
   amount.h \
   arith_uint256.h \
   asyncrpcoperation.h \
@@ -226,10 +225,8 @@ libbitcoin_util_a-clientversion.$(OBJEXT): obj/build.h
 libbitcoin_server_a_CPPFLAGS = $(AM_CPPFLAGS) $(BITCOIN_INCLUDES) $(EVENT_CFLAGS) $(EVENT_PTHREADS_CFLAGS)
 libbitcoin_server_a_CXXFLAGS = $(AM_CXXFLAGS) $(PIE_FLAGS)
 libbitcoin_server_a_SOURCES = \
-  sendalert.cpp \
   addrman.cpp \
   addrdb.cpp \
-  alert.cpp \
   alertkeys.h \
   asyncrpcoperation.cpp \
   asyncrpcqueue.cpp \
