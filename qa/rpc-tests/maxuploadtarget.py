@@ -16,7 +16,6 @@ from test_framework.util import ( \
         start_node, stop_node, \
         p2p_port, \
         )
-from test_framework.comptool import wait_until
 from decimal import Decimal
 import os
 import time

@@ -30,4 +30,7 @@ static const int NO_BLOOM_VERSION = 170004;
 //! "sendheaders" command and announcing blocks with headers starts with this version
 static const int SENDHEADERS_VERSION = 770009;
 
+//! "feefilter" tells peers to filter invs to you by fee starts with this version
+static const int FEEFILTER_VERSION = 770009;
+
 #endif // BITCOIN_VERSION_H

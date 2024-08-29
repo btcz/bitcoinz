@@ -103,6 +103,15 @@ of just announcing the hash. In a reorganization, all new headers are sent,
 instead of just the new tip. This can often prevent an extra roundtrip before
 the actual block is downloaded.
 
+
+Fee filtering of invs (BIP 133)
+------------------------------------
+
+The optional new p2p message "feefilter" is implemented and the protocol
+version is bumped to 70013. Upon receiving a feefilter message from a peer,
+a node will not send invs for any transactions which do not meet the filter
+feerate. [BIP 133](https://github.com/bitcoin/bips/blob/master/bip-0133.mediawiki)
+
 ### Validation
 
 ### Build system

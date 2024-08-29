@@ -536,3 +536,21 @@ void CBlockPolicyEstimator::Read(CAutoFile& filein)
     priStats.Read(filein);
     nBestSeenHeight = nFileBestSeenHeight;
 }
+
+FeeFilterRounder::FeeFilterRounder(const CFeeRate& minIncrementalFee)
+{
+    CAmount minFeeLimit = minIncrementalFee.GetFeePerK() / 2;
+    feeset.insert(0);
+    for (double bucketBoundary = minFeeLimit; bucketBoundary <= MAX_FEERATE; bucketBoundary *= FEE_SPACING) {
+        feeset.insert(bucketBoundary);
+    }
+}
+
+CAmount FeeFilterRounder::round(CAmount currentMinFee)
+{
+    std::set<double>::iterator it = feeset.lower_bound(currentMinFee);
+    if ((it != feeset.begin() && insecure_rand.rand32() % 3 != 0) || it == feeset.end()) {
+        it--;
+    }
+    return *it;
+}

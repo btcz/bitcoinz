@@ -40,7 +40,7 @@ public:
     MOCK_CONST_METHOD0(IsError, bool());
     MOCK_CONST_METHOD1(IsInvalid, bool(int &nDoSOut));
     MOCK_CONST_METHOD0(CorruptionPossible, bool());
-    MOCK_CONST_METHOD0(GetRejectCode, unsigned char());
+    MOCK_CONST_METHOD0(GetRejectCode, unsigned int());
     MOCK_CONST_METHOD0(GetRejectReason, std::string());
 };
 
