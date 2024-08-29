@@ -24,11 +24,6 @@ static const int DEFAULT_CONNECT_TIMEOUT = 5000;
 //! -dns default
 static const int DEFAULT_NAME_LOOKUP = true;
 
-#ifdef WIN32
-// In MSVC, this is defined as a macro, undefine it to prevent a compile and link error
-#undef SetPort
-#endif
-
 enum Network
 {
     NET_UNROUTABLE = 0,
@@ -158,7 +153,6 @@ class CService : public CNetAddr
         explicit CService(const std::string& strIpPort, int portDefault, bool fAllowLookup = false);
         explicit CService(const std::string& strIpPort, bool fAllowLookup = false);
         void Init();
-        void SetPort(unsigned short portIn);
         unsigned short GetPort() const;
         bool GetSockAddr(struct sockaddr* paddr, socklen_t *addrlen) const;
         bool SetSockAddr(const struct sockaddr* paddr);

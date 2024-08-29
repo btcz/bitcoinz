@@ -21,12 +21,6 @@ void SetMiscWarning(const std::string& strWarning)
     strMiscWarning = strWarning;
 }
 
-std::string GetMiscWarning()
-{
-    LOCK(cs_warnings);
-    return strMiscWarning;
-}
-
 void SetfLargeWorkForkFound(bool flag)
 {
     LOCK(cs_warnings);
@@ -43,12 +37,6 @@ void SetfLargeWorkInvalidChainFound(bool flag)
 {
     LOCK(cs_warnings);
     fLargeWorkInvalidChainFound = flag;
-}
-
-bool GetfLargeWorkInvalidChainFound()
-{
-    LOCK(cs_warnings);
-    return fLargeWorkInvalidChainFound;
 }
 
 std::string GetWarnings(const std::string& strFor)
