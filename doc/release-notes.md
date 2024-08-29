@@ -94,6 +94,15 @@ client first.
 
 The p2p alert system has been removed in #7692 and the 'alert' message is no longer supported.
 
+Direct headers announcement (BIP 130)
+-------------------------------------
+
+Between compatible peers, BIP 130 direct headers announcement is used. This
+means that blocks are advertized by announcing their headers directly, instead
+of just announcing the hash. In a reorganization, all new headers are sent,
+instead of just the new tip. This can often prevent an extra roundtrip before
+the actual block is downloaded.
+
 ### Validation
 
 ### Build system

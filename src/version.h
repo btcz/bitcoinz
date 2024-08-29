@@ -27,4 +27,7 @@ static const int BIP0031_VERSION = 60000;
 //! "filter*" commands are disabled without NODE_BLOOM after and including this version
 static const int NO_BLOOM_VERSION = 170004;
 
+//! "sendheaders" command and announcing blocks with headers starts with this version
+static const int SENDHEADERS_VERSION = 770009;
+
 #endif // BITCOIN_VERSION_H
