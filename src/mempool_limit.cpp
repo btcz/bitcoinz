@@ -124,10 +124,10 @@ std::optional<uint256> WeightedTxTree::maybeDropRandom()
     if (totalTxWeight.cost <= capacity) {
         return std::nullopt;
     }
-    LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
+    LogPrint(BCLog::MEMPOOL, "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
     int randomWeight = GetRand(totalTxWeight.evictionWeight);
     WeightedTxInfo drop = txIdAndWeights[findByEvictionWeight(0, randomWeight)];
-    LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, evictionWeight=%d)\n",
+    LogPrint(BCLog::MEMPOOL, "Evicting transaction (txid=%s, cost=%d, evictionWeight=%d)\n",
         drop.txId.ToString(), drop.txWeight.cost, drop.txWeight.evictionWeight);
     remove(drop.txId);
     return drop.txId;

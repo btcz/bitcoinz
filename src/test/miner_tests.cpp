@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(CreateNewBlock_validity)
             // Convert solution indices to byte array (decompress) and pass it to validBlock method.
             std::set<std::vector<unsigned char>> solns;
             for (size_t s = 0; s < eq.nsols; s++) {
-                LogPrint("pow", "Checking solution %d\n", s+1);
+                LogPrint(BCLog::POW, "Checking solution %d\n", s+1);
                 std::vector<eh_index> index_vector(PROOFSIZE);
                 for (size_t i = 0; i < PROOFSIZE; i++) {
                     index_vector[i] = eq.sols[s][i];

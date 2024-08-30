@@ -188,7 +188,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
                     if (!mempool.mapTx.count(txin.prevout.hash))
                     {
                         LogPrintf("ERROR: mempool transaction missing input\n");
-                        if (fDebug) assert("mempool transaction missing input" == 0);
+                        assert("mempool transaction missing input" == 0);
                         fMissingInputs = true;
                         if (porphan)
                             vOrphan.pop_back();
@@ -548,7 +548,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
 
     std::string solver = GetArg("-equihashsolver", "default");
     assert(solver == "tromp" || solver == "default");
-    LogPrint("pow", "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
+    LogPrint(BCLog::POW, "Using Equihash solver \"%s\" with n = %u, k = %u\n", solver, n, k);
 
     std::mutex m_cs;
     bool cancelSolver = false;
@@ -633,14 +633,14 @@ void static BitcoinMiner(const CChainParams& chainparams)
                                                   pblock->nNonce.size());
 
                 // (x_1, x_2, ...) = A(I, V, n, k)
-                LogPrint("pow", "Running Equihash solver \"%s\" with nNonce = %s\n",
+                LogPrint(BCLog::POW, "Running Equihash solver \"%s\" with nNonce = %s\n",
                          solver, pblock->nNonce.ToString());
 
                 std::function<bool(std::vector<unsigned char>)> validBlock =
                         [&pblock, &hashTarget, &chainparams, &m_cs, &cancelSolver, &coinbaseScript]
                         (std::vector<unsigned char> soln) {
                     // Write the solution to the hash and compute the result.
-                    LogPrint("pow", "- Checking solution against target\n");
+                    LogPrint(BCLog::POW, "- Checking solution against target\n");
                     pblock->nSolution = soln;
                     solutionTargetChecks.increment();
 
@@ -682,7 +682,7 @@ void static BitcoinMiner(const CChainParams& chainparams)
                         break;
                     }
                 } catch (EhSolverCancelledException&) {
-                    LogPrint("pow", "Equihash solver cancelled\n");
+                    LogPrint(BCLog::POW, "Equihash solver cancelled\n");
                     std::lock_guard<std::mutex> lock{m_cs};
                     cancelSolver = false;
                 }

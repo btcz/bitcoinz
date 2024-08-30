@@ -123,11 +123,11 @@ namespace tinyformat {}
 namespace tfm = tinyformat;
 
 // Error handling; calls assert() by default.
-#define TINYFORMAT_ERROR(reasonString) throw std::runtime_error(reasonString)
+#define TINYFORMAT_ERROR(reasonString) throw tinyformat::format_error(reasonString)
 
 // Define for C++11 variadic templates which make the code shorter & more
 // general.  If you don't define this, C++11 support is autodetected below.
-// #define TINYFORMAT_USE_VARIADIC_TEMPLATES
+#define TINYFORMAT_USE_VARIADIC_TEMPLATES
 
 
 //------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ namespace tfm = tinyformat;
 #endif
 
 #ifdef __APPLE__
-// Workaround macOS linker warning: Xcode uses different default symbol
+// Workaround OSX linker warning: xcode uses different default symbol
 // visibilities for static libs vs executables (see issue #25)
 #   define TINYFORMAT_HIDDEN __attribute__((visibility("hidden")))
 #else
@@ -163,6 +163,13 @@ namespace tfm = tinyformat;
 #endif
 
 namespace tinyformat {
+
+class format_error: public std::runtime_error
+{
+public:
+    format_error(const std::string &what): std::runtime_error(what) {
+    }
+};
 
 //------------------------------------------------------------------------------
 namespace detail {
@@ -577,7 +584,7 @@ inline const char* printFormatStringLiteral(std::ostream& out, const char* fmt)
 // Formatting options which can't be natively represented using the ostream
 // state are returned in spacePadPositive (for space padded positive numbers)
 // and ntrunc (for truncating conversions).  argIndex is incremented if
-// necessary to pull out variable width and precision.  The function returns a
+// necessary to pull out variable width and precision .  The function returns a
 // pointer to the character after the end of the current format spec.
 inline const char* streamStateFromFormat(std::ostream& out, bool& spacePadPositive,
                                          int& ntrunc, const char* fmtStart,

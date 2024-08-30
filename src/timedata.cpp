@@ -36,7 +36,7 @@ int64_t CTimeWarning::AddTimeData(const CNetAddr& ip, int64_t nTime, int64_t now
         return nTimeOffset;
     }
 
-    LogPrint("net","added time data, samples %d, offset %+d (%+d minutes)\n", setKnown.size(), nTimeOffset, nTimeOffset/60);
+    LogPrint(BCLog::NET,"added time data, samples %d, offset %+d (%+d minutes)\n", setKnown.size(), nTimeOffset, nTimeOffset/60);
 
     if (nPeersBehind + nPeersAhead < TIMEDATA_WARNING_SAMPLES) {
         if (nTimeOffset < -TIMEDATA_WARNING_THRESHOLD) {

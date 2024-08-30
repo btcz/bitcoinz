@@ -399,14 +399,14 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 auto addResult = std::visit(
                     AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey);
                 if (addResult == KeyAlreadyExists){
-                    LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
+                    LogPrint(BCLog::ZRPC, "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
                     // Something went wrong
                     fGood = false;
                 }
                 continue;
             } else {
-                LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
+                LogPrint(BCLog::ZRPC, "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
                 // Not a valid spending key, so carry on and see if it's a BitcoinZ style t-address.
             }
         }

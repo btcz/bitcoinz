@@ -810,7 +810,7 @@ bool checkEHParamaters(int solSize, int height, const CChainParams& params) {
     EHparameters ehparams[MAX_EH_PARAM_LIST_LEN];
     int listlength = validEHparameterList(ehparams, height, params);
     for(int i = 0; i < listlength; i++){
-        LogPrint("pow", "checkEHParamaters height: %d n:%d k:%d solsize: %d \n",
+        LogPrint(BCLog::POW, "checkEHParamaters height: %d n:%d k:%d solsize: %d \n",
             height, ehparams[i].n, ehparams[i].k, ehparams[i].nSolSize);
         if (ehparams[i].nSolSize == solSize)
             return true;

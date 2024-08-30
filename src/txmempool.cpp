@@ -746,7 +746,7 @@ std::vector<uint256> CTxMemPool::removeExpired(unsigned int nBlockHeight)
         list<CTransaction> removed;
         remove(tx, removed, true);
         ids.push_back(tx.GetHash());
-        LogPrint("mempool", "Removing expired txid: %s\n", tx.GetHash().ToString());
+        LogPrint(BCLog::MEMPOOL, "Removing expired txid: %s\n", tx.GetHash().ToString());
     }
     return ids;
 }
@@ -824,7 +824,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     if (GetRand(std::numeric_limits<uint32_t>::max()) >= nCheckFrequency)
         return;
 
-    LogPrint("mempool", "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
+    LogPrint(BCLog::MEMPOOL, "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(), (unsigned int)mapNextTx.size());
 
     uint64_t checkTotal = 0;
     uint64_t innerUsage = 0;
@@ -1198,7 +1198,7 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
 
 void CTxMemPool::SetMempoolCostLimit(int64_t totalCostLimit, int64_t evictionMemorySeconds) {
     LOCK(cs);
-    LogPrint("mempool", "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
+    LogPrint(BCLog::MEMPOOL, "Setting mempool cost limit: (limit=%d, time=%d)\n", totalCostLimit, evictionMemorySeconds);
     delete recentlyEvicted;
     delete weightedTxTree;
     recentlyEvicted = new RecentlyEvictedList(evictionMemorySeconds);
@@ -1364,6 +1364,7 @@ void CTxMemPool::TrimToSize(size_t sizelimit, std::vector<uint256>* pvNoSpendsRe
         }
     }
 
-    if (maxFeeRateRemoved > CFeeRate(0))
-        LogPrint("mempool", "Removed %u txn, rolling minimum fee bumped to %s\n", nTxnRemoved, maxFeeRateRemoved.ToString());
+    if (maxFeeRateRemoved > CFeeRate(0)) {
+        LogPrint(BCLog::MEMPOOL, "Removed %u txn, rolling minimum fee bumped to %s\n", nTxnRemoved, maxFeeRateRemoved.ToString());
+    }
 }
