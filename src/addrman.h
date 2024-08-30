@@ -28,6 +28,9 @@ public:
     //! last try whatsoever by us (memory only)
     int64_t nLastTry;
 
+    //! last counted attempt (memory only)
+    int64_t nLastCountAttempt;
+
 private:
     //! where knowledge about this address first came from
     CNetAddr source;
@@ -65,6 +68,7 @@ public:
     {
         nLastSuccess = 0;
         nLastTry = 0;
+        nLastCountAttempt = 0;
         nAttempts = 0;
         nRefCount = 0;
         fInTried = false;
@@ -199,6 +203,9 @@ private:
     //! list of "new" buckets
     int vvNew[ADDRMAN_NEW_BUCKET_COUNT][ADDRMAN_BUCKET_SIZE];
 
+    //! last time Good was called (memory only)
+    int64_t nLastGood;
+
 protected:
     //! secret key to randomize bucket select with
     uint256 nKey;
@@ -232,7 +239,7 @@ protected:
     bool Add_(const CAddress &addr, const CNetAddr& source, int64_t nTimePenalty);
 
     //! Mark an entry as attempted to connect.
-    void Attempt_(const CService &addr, int64_t nTime);
+    void Attempt_(const CService &addr, bool fCountFailure, int64_t nTime);
 
     //! Select an address to connect to, if newOnly is set to true, only the new table is selected from.
     CAddrInfo Select_(bool newOnly);
@@ -455,6 +462,7 @@ public:
         nIdCount = 0;
         nTried = 0;
         nNew = 0;
+        nLastGood = 1; //Initially at 1 so that "never" is strictly worse.
     }
 
     CAddrMan()
@@ -524,12 +532,14 @@ public:
     }
 
     //! Mark an entry as connection attempted to.
-    void Attempt(const CService &addr, int64_t nTime = GetTime())
+    void Attempt(const CService &addr, bool fCountFailure, int64_t nTime = GetTime())
     {
-        LOCK(cs);
-        Check();
-        Attempt_(addr, nTime);
-        Check();
+        {
+            LOCK(cs);
+            Check();
+            Attempt_(addr, fCountFailure, nTime);
+            Check();
+        }
     }
 
     /**
