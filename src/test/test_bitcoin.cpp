@@ -22,10 +22,10 @@
 #include "random.h"
 #include "txdb.h"
 #include "txmempool.h"
-#include "ui_interface.h"
-#include "rpc/server.h"
 #include "rpc/register.h"
+#include "rpc/server.h"
 #include "script/sigcache.h"
+#include "ui_interface.h"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
