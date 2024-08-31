@@ -556,8 +556,12 @@ public:
     //! Check whether all joinsplit and sapling spend requirements (anchors/nullifiers) are satisfied
     bool HaveShieldedRequirements(const CTransaction& tx) const;
 
-    //! Return priority of tx at height nHeight
-    double GetPriority(const CTransaction &tx, int nHeight) const;
+    /**
+     * Return priority of tx at height nHeight. Also calculate the sum of the values of the inputs
+     * that are already in the chain.  These are the inputs that will age and increase priority as
+     * new blocks are added to the chain.
+     */
+    double GetPriority(const CTransaction &tx, int nHeight, CAmount &inChainInputValue) const;
 
     const CTxOut &GetOutputFor(const CTxIn& input) const;
 

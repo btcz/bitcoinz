@@ -22,11 +22,11 @@
 using namespace std;
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
-                                 int64_t _nTime, double _dPriority,
-                                 unsigned int _nHeight, bool poolHasNoInputsOf,
+                                 int64_t _nTime, double _entryPriority, unsigned int _entryHeight,
+                                 bool poolHasNoInputsOf, CAmount _inChainInputValue,
                                  bool _spendsCoinbase, uint32_t _nBranchId):
-    tx(_tx), nFee(_nFee), nTime(_nTime), dPriority(_dPriority), nHeight(_nHeight),
-    hadNoDependencies(poolHasNoInputsOf),
+    tx(_tx), nFee(_nFee), nTime(_nTime), entryPriority(_entryPriority), entryHeight(_entryHeight),
+    hadNoDependencies(poolHasNoInputsOf), inChainInputValue(_inChainInputValue),
     spendsCoinbase(_spendsCoinbase), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
@@ -36,6 +36,8 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
     nCountWithDescendants = 1;
     nSizeWithDescendants = nTxSize;
     nFeesWithDescendants = nFee;
+    CAmount nValueIn = tx.GetValueOut()+nFee;
+    assert(inChainInputValue <= nValueIn);
 }
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
@@ -46,9 +48,10 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
 double
 CTxMemPoolEntry::GetPriority(unsigned int currentHeight) const
 {
-    CAmount nValueIn = tx.GetValueOut()+nFee;
-    double deltaPriority = ((double)(currentHeight-nHeight)*nValueIn)/nModSize;
-    double dResult = dPriority + deltaPriority;
+    double deltaPriority = ((double)(currentHeight-entryHeight)*inChainInputValue)/nModSize;
+    double dResult = entryPriority + deltaPriority;
+    if (dResult < 0) // This should only happen if it was called with a height below entry height
+        dResult = 0;
     return dResult;
 }
 
