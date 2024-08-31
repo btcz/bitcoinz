@@ -10,10 +10,10 @@
 class MockCValidationState : public CValidationState {
 public:
     MOCK_METHOD5(DoS, bool(int level, bool ret,
-             unsigned char chRejectCodeIn, std::string strRejectReasonIn,
+             unsigned int chRejectCodeIn, std::string strRejectReasonIn,
              bool corruptionIn));
     MOCK_METHOD3(Invalid, bool(bool ret,
-                 unsigned char _chRejectCode, std::string _strRejectReason));
+                 unsigned int _chRejectCode, std::string _strRejectReason));
     MOCK_METHOD1(Error, bool(std::string strRejectReasonIn));
     MOCK_CONST_METHOD0(IsValid, bool());
     MOCK_CONST_METHOD0(IsInvalid, bool());
@@ -31,6 +31,9 @@ TEST(CheckBlock, VersionTooLow) {
     block.nVersion = 1;
 
     MockCValidationState state;
+
+    SelectParams(CBaseChainParams::MAIN);
+
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "version-too-low", false)).Times(1);
     EXPECT_FALSE(CheckBlock(block, state, Params(), verifier, false, false));
 }

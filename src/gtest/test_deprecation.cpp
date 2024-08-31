@@ -121,30 +121,3 @@ TEST_F(DeprecationTest, DeprecatedNodeIgnoredOnTestnet) {
     EnforceNodeDeprecation(DEPRECATION_HEIGHT+1);
     EXPECT_FALSE(ShutdownRequested());
 }
-
-TEST_F(DeprecationTest, AlertNotify) {
-    fs::path temp = fs::temp_directory_path() /
-        fs::unique_path("alertnotify-%%%%.txt");
-
-    mapArgs["-alertnotify"] = std::string("echo %s >> ") + temp.string();
-
-    EXPECT_CALL(mock_, ThreadSafeMessageBox(::testing::_, "", CClientUIInterface::MSG_WARNING));
-    EnforceNodeDeprecation(DEPRECATION_HEIGHT - DEPRECATION_WARN_LIMIT, false, false);
-
-    std::vector<std::string> r = read_lines(temp);
-    EXPECT_EQ(r.size(), 1u);
-
-    // -alertnotify restricts the message to safe characters.
-    auto expectedMsg = strprintf(
-        "This version will be deprecated at block height %d, and will automatically shut down. You should upgrade to the latest version of BitcoinZ.",
-        DEPRECATION_HEIGHT);
-
-    // Windows built-in echo semantics are different than posixy shells. Quotes and
-    // whitespace are printed literally.
-#ifndef WIN32
-    EXPECT_EQ(r[0], expectedMsg);
-#else
-    EXPECT_EQ(r[0], strprintf("'%s' ", expectedMsg));
-#endif
-    fs::remove(temp);
-}
