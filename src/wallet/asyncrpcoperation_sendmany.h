@@ -21,9 +21,6 @@
 
 #include <univalue.h>
 
-// Default transaction fee if caller does not specify one.
-#define ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE   10000
-
 using namespace libzcash;
 
 class SendManyRecipient {
@@ -83,7 +80,7 @@ public:
         std::vector<SendManyRecipient> zOutputs,
         int minDepth,
         unsigned int anchorDepth,
-        CAmount fee = ASYNC_RPC_OPERATION_DEFAULT_MINERS_FEE,
+        CAmount fee = DEFAULT_FEE,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_sendmany();
 

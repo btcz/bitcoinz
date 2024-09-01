@@ -14,7 +14,6 @@
 #include <optional>
 #include <variant>
 
-const CAmount FEE = 10000;
 const int MIGRATION_EXPIRY_DELTA = 450;
 
 AsyncRPCOperation_saplingmigration::AsyncRPCOperation_saplingmigration(int targetHeight) : targetHeight_(targetHeight) {}
@@ -114,7 +113,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         CAmount amountToSend = chooseAmount(availableFunds);
         auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, &coinsView, &cs_main);
         builder.SetExpiryHeight(targetHeight_ + MIGRATION_EXPIRY_DELTA);
-        LogPrint(BCLog::ZRPCUNSAFE, "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - FEE));
+        LogPrint(BCLog::ZRPCUNSAFE, "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - DEFAULT_FEE));
         std::vector<SproutNoteEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
@@ -147,10 +146,10 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             }
             builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }
-        // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
-        // the value of the Sapling output will be 0.0001 ZEC less.
-        builder.SetFee(FEE);
-        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - FEE);
+        // The amount chosen *includes* the default fee for this transaction, i.e.
+        // the value of the Sapling output will be 0.00001 ZEC less.
+        builder.SetFee(DEFAULT_FEE);
+        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - DEFAULT_FEE);
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {
             LogPrint(BCLog::ZRPCUNSAFE, "%s: Canceled. Stopping.\n", getId());
@@ -159,7 +158,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         pwalletMain->AddPendingSaplingMigrationTx(tx);
         LogPrint(BCLog::ZRPCUNSAFE, "%s: Added pending migration transaction with txid=%s\n", getId(), tx.GetHash().ToString());
         ++numTxCreated;
-        amountMigrated += amountToSend - FEE;
+        amountMigrated += amountToSend - DEFAULT_FEE;
         migrationTxIds.push_back(tx.GetHash().ToString());
     } while (numTxCreated < 5 && availableFunds > CENT);
 

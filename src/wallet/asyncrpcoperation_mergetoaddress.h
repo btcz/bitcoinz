@@ -21,9 +21,6 @@
 
 #include <univalue.h>
 
-// Default transaction fee if caller does not specify one.
-#define MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE 10000
-
 using namespace libzcash;
 
 // Input UTXO is a tuple of txid, vout, amount, script
@@ -63,7 +60,7 @@ public:
         std::vector<MergeToAddressInputSproutNote> sproutNoteInputs,
         std::vector<MergeToAddressInputSaplingNote> saplingNoteInputs,
         MergeToAddressRecipient recipient,
-        CAmount fee = MERGE_TO_ADDRESS_OPERATION_DEFAULT_MINERS_FEE,
+        CAmount fee = DEFAULT_FEE,
         UniValue contextInfo = NullUniValue);
     virtual ~AsyncRPCOperation_mergetoaddress();
 

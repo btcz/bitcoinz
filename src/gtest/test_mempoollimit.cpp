@@ -135,7 +135,8 @@ TEST(MempoolLimitTests, WeightedTxInfoFromTx)
         builder.AddSaplingOutput(sk.full_viewing_key().ovk, sk.default_address(), 25000, {});
         builder.SetFee(9999);
 
-        WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), 9999);
+        static_assert(DEFAULT_FEE == 1000);
+        WeightedTxInfo info = WeightedTxInfo::from(builder.Build().GetTxOrThrow(), DEFAULT_FEE-1);
         EXPECT_EQ(MIN_TX_COST, info.txWeight.cost);
         EXPECT_EQ(MIN_TX_COST + LOW_FEE_PENALTY, info.txWeight.evictionWeight);
     }

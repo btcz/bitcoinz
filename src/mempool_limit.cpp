@@ -9,7 +9,6 @@
 #include "timedata.h"
 #include "version.h"
 
-const CAmount DEFAULT_FEE = 10000;
 const TxWeight ZERO_WEIGHT = TxWeight(0, 0);
 
 void RecentlyEvictedList::pruneList()

@@ -10,7 +10,7 @@ from test_framework.authproxy import JSONRPCException
 from test_framework.util import assert_equal, assert_greater_than, \
     initialize_chain_clean, start_nodes, start_node, connect_nodes_bi, \
     stop_nodes, sync_blocks, sync_mempools, wait_and_assert_operationid_status, \
-    wait_bitcoinds
+    wait_bitcoinds, DEFAULT_FEE
 
 from decimal import Decimal
 
@@ -330,7 +330,7 @@ class WalletTest (BitcoinTestFramework):
 
         # check balances
         zsendmanynotevalue = Decimal('7.0')
-        zsendmanyfee = Decimal('0.0001')
+        zsendmanyfee = DEFAULT_FEE
         node2utxobalance = Decimal('25003.998') - zsendmanynotevalue - zsendmanyfee
 
         assert_equal(self.nodes[2].getbalance(), node2utxobalance)
@@ -365,8 +365,12 @@ class WalletTest (BitcoinTestFramework):
         int(mytxdetails["joinSplitSig"], 16) # hex string
 
         # send from private note to node 0 and node 2
-        node0balance = self.nodes[0].getbalance() # 25.99794745
-        node2balance = self.nodes[2].getbalance() # 16.99790000
+        node0balance = self.nodes[0].getbalance()
+        # The following assertion fails nondeterministically
+        # assert_equal(node0balance, Decimal('25.99798873'))
+        node2balance = self.nodes[2].getbalance()
+        # The following assertion might fail nondeterministically
+        # assert_equal(node2balance, Decimal('16.99799000'))
 
         recipients = []
         recipients.append({"address":self.nodes[0].getnewaddress(), "amount":1})

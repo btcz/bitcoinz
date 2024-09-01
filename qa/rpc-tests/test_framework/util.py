@@ -23,6 +23,9 @@ import re
 
 from authproxy import AuthServiceProxy
 
+DEFAULT_FEE = Decimal('0.00001')
+DEFAULT_FEE_ZATS = 1000
+
 def p2p_port(n):
     return 11000 + n + os.getpid()%999
 def rpc_port(n):

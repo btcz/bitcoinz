@@ -8,13 +8,14 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from decimal import Decimal
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_greater_than, start_nodes,\
-    initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status
+    initialize_chain_clean, connect_nodes_bi, wait_and_assert_operationid_status, \
+    DEFAULT_FEE
 
 import logging
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
-fee = Decimal('0.0001') # constant (but can be changed within reason)
+fee = DEFAULT_FEE # constant (but can be changed within reason)
 
 class ZkeyImportExportTest (BitcoinTestFramework):
 

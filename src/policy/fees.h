@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+static const CAmount DEFAULT_FEE = 1000;
+
 class CAutoFile;
 class CFeeRate;
 class CTxMemPoolEntry;
