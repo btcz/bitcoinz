@@ -73,6 +73,8 @@ private:
     bool hadNoDependencies;    //!< Not dependent on any other txs when it entered the mempool
     CAmount inChainInputValue; //! Sum of all txin values that are already in blockchain
     bool spendsCoinbase;       //!< keep track of transactions that spend a coinbase
+    unsigned int sigOpCount;   //!< Legacy sig ops plus P2SH sig op count
+    int64_t feeDelta;          //!< Used for determining the priority of the transaction for mining in a block
     uint32_t nBranchId;        //!< Branch ID this transaction is known to commit to, cached for efficiency
 
    // Information about descendants of this transaction that are in the
@@ -87,8 +89,8 @@ private:
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                     int64_t _nTime, double _entryPriority, unsigned int _entryHeight,
-                    bool poolHasNoInputsOf, CAmount _inChainInputValue,
-                    bool spendsCoinbase, uint32_t nBranchId);
+                    bool poolHasNoInputsOf, CAmount _inChainInputValue, bool spendsCoinbase,
+                    unsigned int nSigOps, uint32_t nBranchId);
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 
     const CTransaction& GetTx() const { return this->tx; }
@@ -101,9 +103,14 @@ public:
     size_t GetTxSize() const { return nTxSize; }
     int64_t GetTime() const { return nTime; }
     unsigned int GetHeight() const { return entryHeight; }
+    unsigned int GetSigOpCount() const { return sigOpCount; }
+    int64_t GetModifiedFee() const { return nFee + feeDelta; }
     bool WasClearAtEntry() const { return hadNoDependencies; }
 
     size_t DynamicMemoryUsage() const { return nUsageSize; }
+
+    // Updates the fee delta used for mining priority score
+    void UpdateFeeDelta(int64_t feeDelta);
 
     // Adjusts the descendant state, if this entry is not dirty.
     void UpdateState(int64_t modifySize, CAmount modifyFee, int64_t modifyCount);
@@ -121,6 +128,16 @@ public:
 
     bool GetSpendsCoinbase() const { return spendsCoinbase; }
     uint32_t GetValidatedBranchId() const { return nBranchId; }
+};
+
+struct update_fee_delta
+{
+    update_fee_delta(int64_t _feeDelta) : feeDelta(_feeDelta) { }
+
+    void operator() (CTxMemPoolEntry &e) { e.UpdateFeeDelta(feeDelta); }
+
+private:
+    int64_t feeDelta;
 };
 
 // Helpers for modifying CTxMemPool::mapTx, which is a boost multi_index.
@@ -192,6 +209,24 @@ public:
     }
 };
 
+/** \class CompareTxMemPoolEntryByScore
+ *
+ *  Sort by score of entry ((fee+delta)/size) in descending order
+ */
+class CompareTxMemPoolEntryByScore
+{
+public:
+    bool operator()(const CTxMemPoolEntry& a, const CTxMemPoolEntry& b) const
+    {
+        double f1 = (double)a.GetModifiedFee() * b.GetTxSize();
+        double f2 = (double)b.GetModifiedFee() * a.GetTxSize();
+        if (f1 == f2) {
+            return b.GetTx().GetHash() < a.GetTx().GetHash();
+        }
+        return f1 > f2;
+    }
+};
+
 class CompareTxMemPoolEntryByEntryTime
 {
 public:
@@ -229,10 +264,11 @@ public:
  *
  * CTxMemPool::mapTx, and CTxMemPoolEntry bookkeeping:
  *
- * mapTx is a boost::multi_index that sorts the mempool on 3 criteria:
+ * mapTx is a boost::multi_index that sorts the mempool on 4 criteria:
  * - transaction hash
  * - feerate [we use max(feerate of tx, feerate of tx with all descendants)]
  * - time in mempool
+ * - mining score (feerate modified by any fee deltas from PrioritiseTransaction)
  *
  * Note: the term "descendant" refers to in-mempool transactions that depend on
  * this one, while "ancestor" refers to in-mempool transactions that a given
@@ -303,14 +339,6 @@ private:
     uint64_t totalTxSize = 0;   //!< sum of all mempool tx' byte sizes
     uint64_t cachedInnerUsage;  //!< sum of dynamic memory usage of all the map elements (NOT the maps themselves)
 
-    CFeeRate minReasonableRelayFee;
-
-    mutable int64_t lastRollingFeeUpdate;
-    mutable bool blockSinceLastRollingFeeBump;
-    mutable double rollingMinimumFeeRate; //! minimum fee to get into the pool, decreases exponentially
-
-    void trackPackageRemoved(const CFeeRate& rate);
-
     std::map<uint256, const CTransaction*> mapRecentlyAddedTx;
     uint64_t nRecentlyAddedSequence = 0;
     uint64_t nNotifiedSequence = 0;
@@ -321,6 +349,8 @@ private:
     WeightedTxTree* weightedTxTree = new WeightedTxTree(DEFAULT_MEMPOOL_TOTAL_COST_LIMIT);
 
     void checkNullifiers(ShieldedType type) const;
+
+    CFeeRate minReasonableRelayFee;
 
 public:
 
@@ -340,6 +370,11 @@ public:
             boost::multi_index::ordered_non_unique<
                 boost::multi_index::identity<CTxMemPoolEntry>,
                 CompareTxMemPoolEntryByEntryTime
+            >,
+            // sorted by score (for mining prioritization)
+            boost::multi_index::ordered_unique<
+                boost::multi_index::identity<CTxMemPoolEntry>,
+                CompareTxMemPoolEntryByScore
             >
         >
     > indexed_transaction_set;
@@ -424,6 +459,8 @@ public:
                         std::list<CTransaction>& conflicts, bool fCurrentEstimate = true);
     void removeWithoutBranchId(uint32_t nMemPoolBranchId);
     void clear();
+    void _clear(); // unlocked
+    bool CompareDepthAndScore(const uint256& hasha, const uint256& hashb);
     void queryHashes(std::vector<uint256>& vtxid);
     void pruneSpent(const uint256& hash, CCoins &coins);
     unsigned int GetTransactionsUpdated() const;
@@ -473,23 +510,6 @@ public:
     std::pair<std::vector<CTransaction>, uint64_t> DrainRecentlyAdded();
     void SetNotifiedSequence(uint64_t recentlyAddedSequence);
     bool IsFullyNotified();
-
-    /** The minimum fee to get into the mempool, which may itself not be enough
-      *  for larger-sized transactions.
-      *  The minReasonableRelayFee constructor arg is used to bound the time it
-      *  takes the fee rate to go back down all the way to 0. When the feerate
-      *  would otherwise be half of this, it is set to 0 instead.
-      */
-    CFeeRate GetMinFee(size_t sizelimit) const;
-
-    /** Remove transactions from the mempool until its dynamic size is <= sizelimit.
-      *  pvNoSpendsRemaining, if set, will be populated with the list of transactions
-      *  which are not in mempool which no longer have any spends in this mempool.
-      */
-    void TrimToSize(size_t sizelimit, std::vector<uint256>* pvNoSpendsRemaining=NULL);
-
-    /** Expire all transaction (and their dependencies) in the mempool older than time. Return the number of removed transactions. */
-    int Expire(int64_t time);
 
     unsigned long size()
     {
@@ -592,6 +612,19 @@ public:
     bool GetNullifier(const uint256 &txid, ShieldedType type) const;
     bool GetCoins(const uint256 &txid, CCoins &coins) const;
     bool HaveCoins(const uint256 &txid) const;
+};
+
+// We want to sort transactions by coin age priority
+typedef std::pair<double, CTxMemPool::txiter> TxCoinAgePriority;
+
+struct TxCoinAgePriorityCompare
+{
+    bool operator()(const TxCoinAgePriority& a, const TxCoinAgePriority& b)
+    {
+        if (a.first == b.first)
+            return CompareTxMemPoolEntryByScore()(*(b.second), *(a.second)); //Reverse order to make sort less than
+        return a.first < b.first;
+    }
 };
 
 #endif // BITCOIN_TXMEMPOOL_H

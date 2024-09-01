@@ -6,8 +6,14 @@
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes
+from test_framework.util import (
+    assert_equal,
+    connect_nodes,
+    initialize_chain_clean,
+    start_node,
+    sync_blocks,
+    sync_mempools,
+)
 from test_framework.mininode import COIN
 
 import time

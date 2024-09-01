@@ -229,7 +229,7 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPo
 
     return CTxMemPoolEntry(tx, nFee, nTime, dPriority, nHeight,
                            hasNoDependencies, inChainValue,
-                           spendsCoinbase, nBranchId);
+                           spendsCoinbase, sigOpCount, nBranchId);
 }
 
 void Shutdown(void* parg)

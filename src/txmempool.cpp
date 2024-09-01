@@ -15,7 +15,6 @@
 #include "timedata.h"
 #include "util.h"
 #include "utilmoneystr.h"
-#include "utiltime.h"
 #include "validationinterface.h"
 #include "version.h"
 
@@ -24,14 +23,16 @@ using namespace std;
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                                  int64_t _nTime, double _entryPriority, unsigned int _entryHeight,
                                  bool poolHasNoInputsOf, CAmount _inChainInputValue,
-                                 bool _spendsCoinbase, uint32_t _nBranchId):
+                                 bool _spendsCoinbase, unsigned int _sigOps, uint32_t _nBranchId):
     tx(_tx), nFee(_nFee), nTime(_nTime), entryPriority(_entryPriority), entryHeight(_entryHeight),
     hadNoDependencies(poolHasNoInputsOf), inChainInputValue(_inChainInputValue),
-    spendsCoinbase(_spendsCoinbase), nBranchId(_nBranchId)
+    spendsCoinbase(_spendsCoinbase), sigOpCount(_sigOps), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
     nModSize = tx.CalculateModifiedSize(nTxSize);
     nUsageSize = RecursiveDynamicUsage(tx);
+
+    feeDelta = 0;
 
     nCountWithDescendants = 1;
     nSizeWithDescendants = nTxSize;
@@ -314,10 +315,15 @@ void CTxMemPoolEntry::UpdateState(int64_t modifySize, CAmount modifyFee, int64_t
     }
 }
 
+void CTxMemPoolEntry::UpdateFeeDelta(int64_t newFeeDelta)
+{
+    feeDelta = newFeeDelta;
+}
+
 CTxMemPool::CTxMemPool(const CFeeRate& _minReasonableRelayFee) :
     nTransactionsUpdated(0)
 {
-    clear();
+    _clear(); // unlocked clear
 
     // Sanity checks off by default for performance, because otherwise
     // accepting transactions becomes O(N^2) where N is the number
@@ -408,9 +414,18 @@ bool CTxMemPool::addUnchecked(const uint256& hash, const CTxMemPoolEntry &entry,
     for (const SpendDescription &spendDescription : tx.vShieldedSpend) {
         mapSaplingNullifiers[spendDescription.nullifier] = &tx;
     }
+
+    // Update transaction's score for any feeDelta created by PrioritiseTransaction
+    std::map<uint256, std::pair<double, CAmount> >::const_iterator pos = mapDeltas.find(hash);
+    if (pos != mapDeltas.end()) {
+        const std::pair<double, CAmount> &deltas = pos->second;
+        if (deltas.second) {
+            mapTx.modify(newit, update_fee_delta(deltas.second));
+        }
+    }
+
     nTransactionsUpdated++;
     totalTxSize += entry.GetTxSize();
-    cachedInnerUsage += entry.DynamicMemoryUsage();
     minerPolicyEstimator->processTransaction(entry, fCurrentEstimate);
 
     return true;
@@ -779,8 +794,6 @@ void CTxMemPool::removeForBlock(const std::vector<CTransaction>& vtx, unsigned i
     }
     // After the txs in the new block have been removed from the mempool, update policy estimates
     minerPolicyEstimator->processBlock(nBlockHeight, entries, fCurrentEstimate);
-    lastRollingFeeUpdate = GetTime();
-    blockSinceLastRollingFeeBump = true;
 }
 
 /**
@@ -805,18 +818,20 @@ void CTxMemPool::removeWithoutBranchId(uint32_t nMemPoolBranchId)
     }
 }
 
-void CTxMemPool::clear()
+void CTxMemPool::_clear()
 {
-    LOCK(cs);
     mapLinks.clear();
     mapTx.clear();
     mapNextTx.clear();
     totalTxSize = 0;
     cachedInnerUsage = 0;
-    lastRollingFeeUpdate = GetTime();
-    blockSinceLastRollingFeeBump = false;
-    rollingMinimumFeeRate = 0;
     ++nTransactionsUpdated;
+}
+
+void CTxMemPool::clear()
+{
+    LOCK(cs);
+    _clear();
 }
 
 void CTxMemPool::check(const CCoinsViewCache *pcoins) const
@@ -990,6 +1005,31 @@ void CTxMemPool::checkNullifiers(ShieldedType type) const
     }
 }
 
+bool CTxMemPool::CompareDepthAndScore(const uint256& hasha, const uint256& hashb)
+{
+    LOCK(cs);
+    indexed_transaction_set::const_iterator i = mapTx.find(hasha);
+    if (i == mapTx.end()) return false;
+    indexed_transaction_set::const_iterator j = mapTx.find(hashb);
+    if (j == mapTx.end()) return true;
+    // We don't actually compare by depth here because we haven't backported
+    // https://github.com/bitcoin/bitcoin/pull/6654
+    //
+    // But the method name is left as-is because renaming it is not worth the
+    // merge conflicts.
+    return CompareTxMemPoolEntryByScore()(*i, *j);
+}
+
+namespace {
+class DepthAndScoreComparator
+{
+    CTxMemPool *mp;
+public:
+    DepthAndScoreComparator(CTxMemPool *mempool) : mp(mempool) {}
+    bool operator()(const uint256& a, const uint256& b) { return mp->CompareDepthAndScore(a, b); }
+};
+}
+
 void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
 {
     vtxid.clear();
@@ -998,6 +1038,8 @@ void CTxMemPool::queryHashes(std::vector<uint256>& vtxid)
     vtxid.reserve(mapTx.size());
     for (indexed_transaction_set::iterator mi = mapTx.begin(); mi != mapTx.end(); ++mi)
         vtxid.push_back(mi->GetTx().GetHash());
+
+    std::sort(vtxid.begin(), vtxid.end(), DepthAndScoreComparator(this));
 }
 
 bool CTxMemPool::lookup(uint256 hash, CTransaction& result) const
@@ -1072,6 +1114,10 @@ void CTxMemPool::PrioritiseTransaction(const uint256 hash, const std::string str
         std::pair<double, CAmount> &deltas = mapDeltas[hash];
         deltas.first += dPriorityDelta;
         deltas.second += nFeeDelta;
+        txiter it = mapTx.find(hash);
+        if (it != mapTx.end()) {
+            mapTx.modify(it, update_fee_delta(deltas.second));
+        }
     }
     LogPrintf("PrioritiseTransaction: %s priority += %f, fee += %d\n", strHash, dPriorityDelta, FormatMoney(nFeeDelta));
 }
@@ -1169,9 +1215,9 @@ size_t CTxMemPool::DynamicMemoryUsage() const {
 
     size_t total = 0;
 
-    // Estimate the overhead of mapTx to be 6 pointers + an allocation, as no exact formula for
+    // Estimate the overhead of mapTx to be 9 pointers + an allocation, as no exact formula for
     // boost::multi_index_contained is implemented.
-    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 6 * sizeof(void*)) * mapTx.size();
+    total += memusage::MallocUsage(sizeof(CTxMemPoolEntry) + 9 * sizeof(void*)) * mapTx.size();
 
     // Three metadata maps inherited from Bitcoin Core
     total += memusage::DynamicUsage(mapNextTx) + memusage::DynamicUsage(mapDeltas) + memusage::DynamicUsage(mapLinks);
@@ -1232,22 +1278,6 @@ void CTxMemPool::RemoveStaged(setEntries &stage) {
     }
 }
 
-int CTxMemPool::Expire(int64_t time) {
-    LOCK(cs);
-    indexed_transaction_set::nth_index<2>::type::iterator it = mapTx.get<2>().begin();
-    setEntries toremove;
-    while (it != mapTx.get<2>().end() && it->GetTime() < time) {
-        toremove.insert(mapTx.project<0>(it));
-        it++;
-    }
-    setEntries stage;
-    for (txiter removeit : toremove) {
-        CalculateDescendants(removeit, stage);
-    }
-    RemoveStaged(stage);
-    return stage.size();
-}
-
 bool CTxMemPool::addUnchecked(const uint256&hash, const CTxMemPoolEntry &entry, bool fCurrentEstimate)
 {
     LOCK(cs);
@@ -1292,82 +1322,4 @@ const CTxMemPool::setEntries & CTxMemPool::GetMemPoolChildren(txiter entry) cons
     txlinksMap::const_iterator it = mapLinks.find(entry);
     assert(it != mapLinks.end());
     return it->second.children;
-}
-
-CFeeRate CTxMemPool::GetMinFee(size_t sizelimit) const {
-    LOCK(cs);
-    if (!blockSinceLastRollingFeeBump || rollingMinimumFeeRate == 0)
-        return CFeeRate(rollingMinimumFeeRate);
-
-    int64_t time = GetTime();
-    if (time > lastRollingFeeUpdate + 10) {
-        double halflife = ROLLING_FEE_HALFLIFE;
-        if (DynamicMemoryUsage() < sizelimit / 4)
-            halflife /= 4;
-        else if (DynamicMemoryUsage() < sizelimit / 2)
-            halflife /= 2;
-
-        rollingMinimumFeeRate = rollingMinimumFeeRate / pow(2.0, (time - lastRollingFeeUpdate) / halflife);
-        lastRollingFeeUpdate = time;
-
-        if (rollingMinimumFeeRate < minReasonableRelayFee.GetFeePerK() / 2) {
-            rollingMinimumFeeRate = 0;
-            return CFeeRate(0);
-        }
-    }
-    return std::max(CFeeRate(rollingMinimumFeeRate), minReasonableRelayFee);
-}
-
-void CTxMemPool::trackPackageRemoved(const CFeeRate& rate) {
-    AssertLockHeld(cs);
-    if (rate.GetFeePerK() > rollingMinimumFeeRate) {
-        rollingMinimumFeeRate = rate.GetFeePerK();
-        blockSinceLastRollingFeeBump = false;
-    }
-}
-
-void CTxMemPool::TrimToSize(size_t sizelimit, std::vector<uint256>* pvNoSpendsRemaining) {
-    LOCK(cs);
-
-    unsigned nTxnRemoved = 0;
-    CFeeRate maxFeeRateRemoved(0);
-    while (DynamicMemoryUsage() > sizelimit) {
-        indexed_transaction_set::nth_index<1>::type::iterator it = mapTx.get<1>().begin();
-
-        // We set the new mempool min fee to the feerate of the removed set, plus the
-        // "minimum reasonable fee rate" (ie some value under which we consider txn
-        // to have 0 fee). This way, we don't allow txn to enter mempool with feerate
-        // equal to txn which were removed with no block in between.
-        CFeeRate removed(it->GetFeesWithDescendants(), it->GetSizeWithDescendants());
-        removed += minReasonableRelayFee;
-        trackPackageRemoved(removed);
-        maxFeeRateRemoved = std::max(maxFeeRateRemoved, removed);
-
-        setEntries stage;
-        CalculateDescendants(mapTx.project<0>(it), stage);
-        nTxnRemoved += stage.size();
-
-        std::vector<CTransaction> txn;
-        if (pvNoSpendsRemaining) {
-            txn.reserve(stage.size());
-            for(txiter it : stage)
-                txn.push_back(it->GetTx());
-        }
-        RemoveStaged(stage);
-        if (pvNoSpendsRemaining) {
-            for (const CTransaction& tx : txn) {
-                for (const CTxIn& txin : tx.vin) {
-                    if (exists(txin.prevout.hash))
-                        continue;
-                    std::map<COutPoint, CInPoint>::iterator it = mapNextTx.lower_bound(COutPoint(txin.prevout.hash, 0));
-                    if (it == mapNextTx.end() || it->first.hash != txin.prevout.hash)
-                        pvNoSpendsRemaining->push_back(txin.prevout.hash);
-                }
-            }
-        }
-    }
-
-    if (maxFeeRateRemoved > CFeeRate(0)) {
-        LogPrint(BCLog::MEMPOOL, "Removed %u txn, rolling minimum fee bumped to %s\n", nTxnRemoved, maxFeeRateRemoved.ToString());
-    }
 }
