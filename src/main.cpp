@@ -3833,9 +3833,7 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
     // Check transactions
     for (const CTransaction& tx : block.vtx)
         if (!CheckTransaction(tx, state, verifier))
-            return error("%s: CheckTransaction of %s failed with %s", __func__,
-                tx.GetHash().ToString(),
-                FormatStateMessage(state));
+            return error("%s: CheckTransaction failed", __func__);
 
     unsigned int nSigOps = 0;
     for (const CTransaction& tx : block.vtx)
