@@ -338,6 +338,9 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransa
 /** Find block at height in a fork **/
 const CBlockIndex* FindBlockAtHeight(int nHeight, const CBlockIndex* pIndex);
 
+/** Convert CValidationState to a human-readable message for logging */
+std::string FormatStateMessage(const CValidationState &state);
+
 struct CNodeStateStats {
     int nMisbehavior;
     int nSyncHeight;

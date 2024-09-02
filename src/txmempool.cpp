@@ -464,7 +464,6 @@ void CTxMemPool::addAddressIndex(const CTxMemPoolEntry &entry, const CCoinsViewC
     mapAddressInserted.insert(make_pair(txhash, inserted));
 }
 
-// START insightexplorer
 void CTxMemPool::getAddressIndex(
     const std::vector<std::pair<uint160, int>>& addresses,
     std::vector<std::pair<CMempoolAddressDeltaKey, CMempoolAddressDelta>>& results)
