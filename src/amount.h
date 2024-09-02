@@ -17,10 +17,11 @@ static const CAmount COIN = 100000000;
 static const CAmount CENT = 1000000;
 
 extern const std::string CURRENCY_UNIT;
+extern const std::string MINOR_CURRENCY_UNIT;
 
 /** No amount larger than this (in zatoshi) is valid.
  *
- * Note that this constant is *not* the total money supply, which in Bitcoin
+ * Note that this constant is *not* the total money supply, which in BitcoinZ
  * currently happens to be less than 21,000,000,000 BTCZ for various reasons, but
  * rather a sanity check. As this sanity check is used by consensus-critical
  * validation code, the exact value of the MAX_MONEY constant is consensus

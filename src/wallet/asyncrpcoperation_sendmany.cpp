@@ -286,7 +286,7 @@ bool AsyncRPCOperation_sendmany::main_impl() {
         secret.MakeNewKey(true);
         CScript scriptPubKey = GetScriptForDestination(secret.GetPubKey().GetID());
         CTxOut out(CAmount(1), scriptPubKey);
-        CAmount dustThreshold = out.GetDustThreshold(minRelayTxFee);
+        CAmount dustThreshold = out.GetDustThreshold();
         CAmount dustChange = -1;
 
         std::vector<SendManyInputUTXO> selectedTInputs;

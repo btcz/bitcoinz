@@ -51,10 +51,17 @@ class AddressIndexTest(BitcoinTestFramework):
         initialize_chain_clean(self.options.tmpdir, 4)
 
     def setup_network(self):
+        base_args = [
+            '-minrelaytxfee=0',
+            '-debug',
+            '-txindex',
+            '-experimentalfeatures',
+            '-allowdeprecated=getnewaddress',
+        ]
         # -insightexplorer causes addressindex to be enabled (fAddressIndex = true)
-        args_insight = ('-debug', '-txindex', '-experimentalfeatures', '-insightexplorer')
+        args_insight = base_args + ['-insightexplorer']
         # -lightwallet also causes addressindex to be enabled
-        args_lightwallet = ('-debug', '-txindex', '-experimentalfeatures', '-lightwalletd')
+        args_lightwallet = base_args + ['-lightwalletd']
         self.nodes = start_nodes(4, self.options.tmpdir, [args_insight] * 3 + [args_lightwallet])
 
         connect_nodes(self.nodes[0], 1)

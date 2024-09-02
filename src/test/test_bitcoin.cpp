@@ -227,7 +227,7 @@ CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPo
     // Hack to assume either its completely dependent on other mempool txs or not at all
     CAmount inChainValue = hasNoDependencies ? txn.GetValueOut() : 0;
 
-    return CTxMemPoolEntry(tx, nFee, nTime, dPriority, nHeight,
+    return CTxMemPoolEntry(tx, nFee, nTime, nHeight,
                            hasNoDependencies, inChainValue,
                            spendsCoinbase, sigOpCount, nBranchId);
 }
