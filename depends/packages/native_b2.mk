@@ -10,9 +10,15 @@ else
 $(package)_toolset_$(host_os)=gcc
 endif
 
+ifneq ($(WITH_GUIX),)
+define $(package)_build_cmds
+  CXX="$($(package)_cxx)" CXXFLAGS="$($(package)_cxxflags)" ./build.sh "$($(package)_toolset_$(host_os))" "--cxxflags=-fno-use-cxa-atexit"
+endef
+else
 define $(package)_build_cmds
   CXX="$($(package)_cxx)" CXXFLAGS="$($(package)_cxxflags)" ./build.sh "$($(package)_toolset_$(host_os))"
 endef
+endif
 
 define $(package)_stage_cmds
   mkdir -p "$($(package)_staging_prefix_dir)"/bin/ && \
