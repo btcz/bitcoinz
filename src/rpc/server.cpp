@@ -489,9 +489,9 @@ std::string experimentalDisabledHelpMsg(const std::string& rpc, const std::vecto
         }
     }
     return "\nWARNING: " + rpc + " is disabled.\n" +
-        "To enable it, restart zcashd with the following command line options:\n"
+        "To enable it, restart bitcoinzd with the following command line options:\n"
         + cmd + "\n\n" +
-        "Alternatively add these two lines to the zcash.conf file:\n\n"
+        "Alternatively add these two lines to the bitcoinz.conf file:\n\n"
         + config;
 }
 

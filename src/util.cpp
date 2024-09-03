@@ -413,7 +413,7 @@ void ReadConfigFile(const std::string& confPath,
             }
 
             InterpretNegativeSetting(strKey, strValue);
-            // Don't overwrite existing settings so command line settings override zcash.conf
+            // Don't overwrite existing settings so command line settings override bitcoinz.conf
             if (mapSettingsRet.count(strKey) == 0)
                 mapSettingsRet[strKey] = strValue;
             mapMultiSettingsRet[strKey].push_back(strValue);
