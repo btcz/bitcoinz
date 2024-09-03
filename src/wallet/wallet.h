@@ -46,7 +46,6 @@ extern CWallet* pwalletMain;
 extern CFeeRate payTxFee;
 extern unsigned int nTxConfirmTarget;
 extern bool bSpendZeroConfChange;
-extern bool fPayAtLeastCustomFee;
 extern unsigned int nAnchorConfirmations;
 
 static const unsigned int DEFAULT_KEYPOOL_SIZE = 100;

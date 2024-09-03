@@ -47,6 +47,9 @@ def hex_str_to_bytes(hex_str):
 def str_to_b64str(string):
     return b64encode(string.encode('utf-8')).decode('ascii')
 
+def count_bytes(hex_string):
+    return len(bytearray.fromhex(hex_string))
+
 def sync_blocks(rpc_connections, wait=1):
     """
     Wait until everybody has the same block count, and has notified
