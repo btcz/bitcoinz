@@ -10,6 +10,7 @@
 #include "clientversion.h"
 #include "consensus/validation.h"
 #include "experimental_features.h"
+#include "fs.h"
 #include "key_io.h"
 #include "main.h"
 #include "primitives/transaction.h"
@@ -1461,9 +1462,11 @@ UniValue dumpbootstrap(const UniValue& params, bool fHelp)
             throw std::runtime_error("Start block number out of range.");
     }
 
-    boost::filesystem::path pathDest(strDest);
-    if (boost::filesystem::is_directory(pathDest))
+    fs::path pathDest;
+    pathDest = fs::system_complete(strDest);
+    if (fs::exists(pathDest) && fs::is_directory(pathDest)) {
         pathDest /= "bootstrap.dat";
+    }
 
     try {
         FILE* file = fopen(pathDest.string().c_str(), "wb");
@@ -1489,7 +1492,7 @@ UniValue dumpbootstrap(const UniValue& params, bool fHelp)
                     << (unsigned int)GetSerializeSize(fileout, block)
                     << block;
         }
-    } catch(const boost::filesystem::filesystem_error &e) {
+    } catch(const fs::filesystem_error& e) {
         throw JSONRPCError(RPC_MISC_ERROR, "Error: Bootstrap dump failed!");
     }
 

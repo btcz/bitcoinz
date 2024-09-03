@@ -3,6 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <fs.h>
 #include <logging.h>
 #include <util.h>
 #include <utilstrencodings.h>
@@ -253,7 +254,7 @@ void ShrinkDebugFile()
     size_t log_size = 0;
     try {
         log_size = fs::file_size(pathLog);
-    } catch (boost::filesystem::filesystem_error &) {}
+    } catch (fs::filesystem_error &) {}
 
     // If debug.log file is more than 10% bigger the RECENT_DEBUG_HISTORY_SIZE
     // trim it down by saving only the last RECENT_DEBUG_HISTORY_SIZE bytes
