@@ -75,7 +75,7 @@ crucial differences:
 
 1. Since only Windows and macOS build outputs require codesigning, the `HOSTS`
    environment variable will have a sane default value of `x86_64-w64-mingw32
-   x86_64-apple-darwin` instead of all the platforms.
+   x86_64-apple-darwin arm64-apple-darwin` instead of all the platforms.
 2. The `guix-codesign` command ***requires*** a `DETACHED_SIGS_REPO` flag.
     * _**DETACHED_SIGS_REPO**_
 
@@ -223,7 +223,7 @@ details.
   bootstrappable build.
 
   _(defaults to "x86\_64-linux-gnu aarch64-linux-gnu
-  x86\_64-w64-mingw32 x86\_64-apple-darwin")_
+  x86\_64-w64-mingw32 x86\_64-apple-darwin arm64-apple-darwin")_
 
 * _**SOURCES_PATH**_
 

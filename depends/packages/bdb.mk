@@ -23,7 +23,8 @@ endef
 
 define $(package)_preprocess_cmds
   patch -p1 <$($(package)_patch_dir)/clang-12-stpcpy-issue.diff && \
-  patch -p1 <$($(package)_patch_dir)/winioctl-and-atomic_init_db.patch
+  patch -p1 <$($(package)_patch_dir)/winioctl-and-atomic_init_db.patch && \
+  cp -f $(BASEDIR)/config.guess $(BASEDIR)/config.sub dist
 endef
 
 define $(package)_config_cmds

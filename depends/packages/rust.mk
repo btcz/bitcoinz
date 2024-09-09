@@ -18,6 +18,10 @@ $(package)_rust-std-x86_64-pc-linux-gnu_sha256_hash=ed301dff3a26da496784ca3de523
 $(package)_rust-std-x86_64-apple-darwin_file_name=rust-std-$($(package)_version)-x86_64-apple-darwin.tar.gz
 $(package)_rust-std-x86_64-apple-darwin_sha256_hash=069dcd20861c1031a2e1484ef4085503b1e239fdca6b7c6dd4d834c9cc8aff70
 
+# Rust-std aarch64-apple-darwin
+$(package)_rust-std-aarch64-apple-darwin_file_name=rust-std-$($(package)_version)-aarch64-apple-darwin.tar.gz
+$(package)_rust-std-aarch64-apple-darwin_sha256_hash=ffdbca3f1eaec4fefa6dd461bea44cb2e57a5e1ad0637fc0eabc02ccb8e7e804
+
 # Rust-std aarch64-unknown-linux-gnu
 $(package)_rust-std-aarch64-unknown-linux-gnu_file_name=rust-std-$($(package)_version)-aarch64-unknown-linux-gnu.tar.gz
 $(package)_rust-std-aarch64-unknown-linux-gnu_sha256_hash=6cdbe8c2b502ca90f42c581b8906b725ccc55bbb3427a332379236bf22be59b3
@@ -28,6 +32,7 @@ $(package)_rust-std-x86_64-w64-mingw32_sha256_hash=0d6a58268bd94d66280812c042c41
 
 $(package)_extra_sources  = $($(package)_rust-std-x86_64-pc-linux-gnu_file_name)
 $(package)_extra_sources += $($(package)_rust-std-x86_64-apple-darwin_file_name)
+$(package)_extra_sources += $($(package)_rust-std-aarch64-apple-darwin_file_name)
 $(package)_extra_sources += $($(package)_rust-std-aarch64-unknown-linux-gnu_file_name)
 $(package)_extra_sources += $($(package)_rust-std-x86_64-w64-mingw32_file_name)
 
@@ -36,6 +41,7 @@ ifneq ($(WITH_GUIX),)
 $(package)_rust_target_x86_64-pc-linux-gnu=x86_64-unknown-linux-gnu
 $(package)_rust_target_aarch64-unknown-linux-gnu=aarch64-unknown-linux-gnu
 $(package)_rust_target_x86_64-apple-darwin=x86_64-apple-darwin
+$(package)_rust_target_aarch64-apple-darwin=aarch64-apple-darwin
 $(package)_rust_target_x86_64-w64-mingw32=x86_64-pc-windows-gnu
 
 define rust_target
@@ -73,6 +79,7 @@ define $(package)_fetch_cmds
 echo "DEBUG: canonical_host=$(canonical_host) host_os=$(host_os) build=$(build) build_os=$(build_os) CC=$(CC) CXX=$(CXX)" && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_file_name_$(build_os)),$($(package)_file_name_$(build_os)),$($(package)_sha256_hash_$(build_os))) && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_rust-std-x86_64-pc-linux-gnu_file_name),$($(package)_rust-std-x86_64-pc-linux-gnu_file_name),$($(package)_rust-std-x86_64-pc-linux-gnu_sha256_hash)) && \
+$(call fetch_file,$(package),$($(package)_download_path),$($(package)_rust-std-aarch64-apple-darwin_file_name),$($(package)_rust-std-aarch64-apple-darwin_file_name),$($(package)_rust-std-aarch64-apple-darwin_sha256_hash)) && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_rust-std-x86_64-apple-darwin_file_name),$($(package)_rust-std-x86_64-apple-darwin_file_name),$($(package)_rust-std-x86_64-apple-darwin_sha256_hash)) && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_rust-std-aarch64-unknown-linux-gnu_file_name),$($(package)_rust-std-aarch64-unknown-linux-gnu_file_name),$($(package)_rust-std-aarch64-unknown-linux-gnu_sha256_hash)) && \
 $(call fetch_file,$(package),$($(package)_download_path),$($(package)_rust-std-x86_64-w64-mingw32_file_name),$($(package)_rust-std-x86_64-w64-mingw32_file_name),$($(package)_rust-std-x86_64-w64-mingw32_sha256_hash))
