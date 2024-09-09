@@ -60,7 +60,6 @@ private:
     int64_t nTime;             //!< Local time when entering the mempool
     unsigned int nHeight;      //!< Chain height when entering the mempool
     bool hadNoDependencies;    //!< Not dependent on any other txs when it entered the mempool
-    CAmount inChainInputValue; //! Sum of all txin values that are already in blockchain
     bool spendsCoinbase;       //!< keep track of transactions that spend a coinbase
     unsigned int sigOpCount;   //!< Legacy sig ops plus P2SH sig op count
     int64_t feeDelta;          //!< Used for determining the priority of the transaction for mining in a block
@@ -78,7 +77,7 @@ private:
 public:
     CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                     int64_t _nTime, unsigned int _nHeight,
-                    bool poolHasNoInputsOf, CAmount _inChainInputValue, bool spendsCoinbase,
+                    bool poolHasNoInputsOf, bool spendsCoinbase,
                     unsigned int nSigOps, uint32_t nBranchId);
     CTxMemPoolEntry(const CTxMemPoolEntry& other);
 

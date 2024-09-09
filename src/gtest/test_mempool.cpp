@@ -92,9 +92,8 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     CAmount nFees = 0;
     int64_t nTime = 0x58e5fed9;
     unsigned int nHeight = 92045;
-    CAmount inChainInputValue;
 
-    CTxMemPoolEntry entry(tx, nFees, nTime, nHeight, true, inChainInputValue, false, 0, SPROUT_BRANCH_ID);
+    CTxMemPoolEntry entry(tx, nFees, nTime, nHeight, true, false, 0, SPROUT_BRANCH_ID);
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");

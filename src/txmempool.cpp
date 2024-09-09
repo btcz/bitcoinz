@@ -22,11 +22,11 @@ using namespace std;
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
                                  int64_t _nTime, unsigned int _nHeight,
-                                 bool poolHasNoInputsOf, CAmount _inChainInputValue,
-                                 bool _spendsCoinbase, unsigned int _sigOps, uint32_t _nBranchId):
+                                 bool poolHasNoInputsOf, bool _spendsCoinbase,
+                                 unsigned int _sigOps, uint32_t _nBranchId):
     tx(_tx), nFee(_nFee), nTime(_nTime), nHeight(_nHeight),
-    hadNoDependencies(poolHasNoInputsOf), inChainInputValue(_inChainInputValue),
-    spendsCoinbase(_spendsCoinbase), sigOpCount(_sigOps), nBranchId(_nBranchId)
+    hadNoDependencies(poolHasNoInputsOf), spendsCoinbase(_spendsCoinbase),
+    sigOpCount(_sigOps), nBranchId(_nBranchId)
 {
     nTxSize = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);
     nUsageSize = RecursiveDynamicUsage(tx);
@@ -36,8 +36,6 @@ CTxMemPoolEntry::CTxMemPoolEntry(const CTransaction& _tx, const CAmount& _nFee,
     nCountWithDescendants = 1;
     nSizeWithDescendants = nTxSize;
     nModFeesWithDescendants = nFee;
-    CAmount nValueIn = tx.GetValueOut()+nFee;
-    assert(inChainInputValue <= nValueIn);
 }
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTxMemPoolEntry& other)
