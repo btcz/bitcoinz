@@ -203,6 +203,36 @@ UniValue getrawchangeaddress(const UniValue& params, bool fHelp)
     return EncodeDestination(keyID);
 }
 
+UniValue listaddresses(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 0)
+        throw runtime_error(
+            "listaddresses\n"
+            "\nReturns the list of transparent addresses belonging to the wallet.\n"
+            "\nResult:\n"
+            "[                     (json array of string)\n"
+            "  \"address\"       (string) a transparent address belonging to the wallet\n"
+            "  ,...\n"
+            "]\n"
+            "\nExamples:\n"
+            + HelpExampleCli("listaddresses", "")
+            + HelpExampleRpc("listaddresses", "")
+        );
+
+    LOCK2(cs_main, pwalletMain->cs_wallet);
+
+    // Find all addresses
+    UniValue ret(UniValue::VARR);
+    for (const std::pair<CTxDestination, CAddressBookData>& item : pwalletMain->mapAddressBook) {
+        const CTxDestination& dest = item.first;
+        ret.push_back(EncodeDestination(dest));
+    }
+    return ret;
+}
+
 static void SendMoney(const CTxDestination &address, CAmount nValue, bool fSubtractFeeFromAmount, CWalletTx& wtxNew)
 {
     CAmount curBalance = pwalletMain->GetBalance();
@@ -4387,6 +4417,7 @@ static const CRPCCommand commands[] =
     { "wallet",             "importaddress",            &importaddress,            true  },
     { "wallet",             "importpubkey",             &importpubkey,             true  },
     { "wallet",             "keypoolrefill",            &keypoolrefill,            true  },
+    { "wallet",             "listaddresses",            &listaddresses,            true  },
     { "wallet",             "listaddressgroupings",     &listaddressgroupings,     false },
     { "wallet",             "listlockunspent",          &listlockunspent,          false },
     { "wallet",             "listreceivedbyaddress",    &listreceivedbyaddress,    false },

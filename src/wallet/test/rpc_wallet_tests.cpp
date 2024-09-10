@@ -199,6 +199,12 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
+     * 	     listaddresses
+     *********************************/
+    BOOST_CHECK_THROW(CallRPC("listaddresses true"), runtime_error);
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
+
+    /*********************************
      * 	     fundrawtransaction
      *********************************/
     BOOST_CHECK_THROW(CallRPC("fundrawtransaction 28z"), runtime_error);
