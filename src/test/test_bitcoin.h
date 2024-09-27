@@ -5,10 +5,10 @@
 #include "key.h"
 
 #include "consensus/upgrades.h"
+#include "fs.h"
 #include "pubkey.h"
 #include "txdb.h"
 
-#include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
 /** Basic testing setup.
@@ -32,8 +32,8 @@ struct JoinSplitTestingSetup: public BasicTestingSetup {
  */
 struct TestingSetup: public JoinSplitTestingSetup {
     CCoinsViewDB *pcoinsdbview;
-    boost::filesystem::path orig_current_path;
-    boost::filesystem::path pathTemp;
+    fs::path orig_current_path;
+    fs::path pathTemp;
     boost::thread_group threadGroup;
 
     TestingSetup(const std::string& chainName = CBaseChainParams::MAIN);
@@ -72,15 +72,15 @@ struct TestMemPoolEntryHelper
     // Default values
     CAmount nFee;
     int64_t nTime;
-    double dPriority;
     unsigned int nHeight;
     bool hadNoDependencies;
     bool spendsCoinbase;
+    unsigned int sigOpCount;
     uint32_t nBranchId;
 
     TestMemPoolEntryHelper() :
-        nFee(0), nTime(0), dPriority(0.0), nHeight(1),
-        hadNoDependencies(false), spendsCoinbase(false),
+        nFee(0), nTime(0), nHeight(1),
+        hadNoDependencies(false), spendsCoinbase(false), sigOpCount(1),
         nBranchId(SPROUT_BRANCH_ID) { }
 
     CTxMemPoolEntry FromTx(CMutableTransaction &tx, CTxMemPool *pool = NULL);
@@ -88,10 +88,10 @@ struct TestMemPoolEntryHelper
     // Change the default value
     TestMemPoolEntryHelper &Fee(CAmount _fee) { nFee = _fee; return *this; }
     TestMemPoolEntryHelper &Time(int64_t _time) { nTime = _time; return *this; }
-    TestMemPoolEntryHelper &Priority(double _priority) { dPriority = _priority; return *this; }
     TestMemPoolEntryHelper &Height(unsigned int _height) { nHeight = _height; return *this; }
     TestMemPoolEntryHelper &HadNoDependencies(bool _hnd) { hadNoDependencies = _hnd; return *this; }
     TestMemPoolEntryHelper &SpendsCoinbase(bool _flag) { spendsCoinbase = _flag; return *this; }
+    TestMemPoolEntryHelper &SigOps(unsigned int _sigops) { sigOpCount = _sigops; return *this; }
     TestMemPoolEntryHelper &BranchId(uint32_t _branchId) { nBranchId = _branchId; return *this; }
 };
 

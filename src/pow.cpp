@@ -28,7 +28,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     // Reset the difficulty after the algo fork
     if (pindexLast->nHeight > chainParams.eh_epoch_1_end() - 1
         && pindexLast->nHeight < chainParams.eh_epoch_1_end() + params.nPowAveragingWindow) {
-        LogPrint("pow", "Reset the difficulty for the eh_epoch_2 algo change: %d\n", nProofOfWorkLimit);
+        LogPrint(BCLog::POW, "Reset the difficulty for the eh_epoch_2 algo change: %d\n", nProofOfWorkLimit);
         return nProofOfWorkLimit;
     }
 
@@ -115,7 +115,7 @@ bool CheckEquihashSolution(const CBlockHeader *pblock, const Consensus::Params& 
         default: return error("CheckEquihashSolution: Unsupported solution size of %d", nSolSize);
     }
 
-    LogPrint("pow", "selected n,k: %d,%d \n", n, k);
+    LogPrint(BCLog::POW, "selected n,k: %d,%d \n", n, k);
 
     // Hash state
     crypto_generichash_blake2b_state state;

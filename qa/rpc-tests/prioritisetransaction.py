@@ -6,8 +6,14 @@
 import sys; assert sys.version_info < (3,), ur"This script does not run under Python 3. Please use Python 2.7.x."
 
 from test_framework.test_framework import BitcoinTestFramework
-from test_framework.util import assert_equal, initialize_chain_clean, \
-    start_node, connect_nodes
+from test_framework.util import (
+    assert_equal,
+    connect_nodes,
+    initialize_chain_clean,
+    start_node,
+    sync_blocks,
+    sync_mempools,
+)
 from test_framework.mininode import COIN
 
 import time
@@ -22,8 +28,16 @@ class PrioritiseTransactionTest (BitcoinTestFramework):
     def setup_network(self, split=False):
         self.nodes = []
         # Start nodes with tiny block size of 11kb
-        self.nodes.append(start_node(0, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
-        self.nodes.append(start_node(1, self.options.tmpdir, ["-blockprioritysize=7000", "-blockmaxsize=11000", "-maxorphantx=1000", "-relaypriority=true", "-printpriority=1"]))
+        args = [
+            "-blockprioritysize=7000",
+            "-blockmaxsize=11000",
+            "-maxorphantx=1000",
+            "-relaypriority=true",
+            "-printpriority=1",
+            "-limitancestorcount=900",
+        ]
+        self.nodes.append(start_node(0, self.options.tmpdir, args))
+        self.nodes.append(start_node(1, self.options.tmpdir, args))
         connect_nodes(self.nodes[1], 0)
         self.is_network_split=False
         self.sync_all()

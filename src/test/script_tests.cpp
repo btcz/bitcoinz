@@ -16,10 +16,6 @@
 #include "util.h"
 #include "test/test_bitcoin.h"
 
-#if defined(HAVE_CONSENSUS_LIB)
-#include "script/zcashconsensus.h"
-#endif
-
 #include <fstream>
 #include <stdint.h>
 #include <string>
@@ -96,11 +92,6 @@ void DoTest(const CScript& scriptPubKey, const CScript& scriptSig, int flags, ui
     CMutableTransaction tx2 = tx;
     BOOST_CHECK_MESSAGE(VerifyScript(scriptSig, scriptPubKey, flags, MutableTransactionSignatureChecker(&tx, 0, txCredit.vout[0].nValue), consensusBranchId, &err) == expect, message);
     BOOST_CHECK_MESSAGE(expect == (err == SCRIPT_ERR_OK), std::string(ScriptErrorString(err)) + ": " + message);
-#if defined(HAVE_CONSENSUS_LIB)
-    CDataStream stream(SER_NETWORK, PROTOCOL_VERSION);
-    stream << tx2;
-    BOOST_CHECK_MESSAGE(zcashconsensus_verify_script(begin_ptr(scriptPubKey), scriptPubKey.size(), (const unsigned char*)&stream[0], stream.size(), 0, flags, NULL) == expect,message);
-#endif
 }
 
 void static NegateSignatureS(std::vector<unsigned char>& vchSig) {
@@ -217,10 +208,10 @@ public:
         spendTx = BuildSpendingTransaction(CScript(), creditTx);
     }
 
-    TestBuilder& Add(const CScript& script)
+    TestBuilder& Add(const CScript& _script)
     {
         DoPush();
-        spendTx.vin[0].scriptSig += script;
+        spendTx.vin[0].scriptSig += _script;
         return *this;
     }
 
@@ -310,11 +301,6 @@ public:
     std::string GetComment()
     {
         return comment;
-    }
-
-    const CScript& GetScriptPubKey()
-    {
-        return creditTx.vout[0].scriptPubKey;
     }
 };
 }

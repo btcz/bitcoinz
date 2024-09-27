@@ -7,7 +7,7 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, assert_false
-from test_framework.util import wait_and_assert_operationid_status
+from test_framework.util import assert_equal, assert_true, assert_false, DEFAULT_FEE, DEFAULT_FEE_ZATS
 from decimal import Decimal
 
 my_memo_str = 'c0ffee' # stay awake
@@ -15,8 +15,6 @@ my_memo = '633066666565'
 my_memo = my_memo + '0'*(1024-len(my_memo))
 
 no_memo = 'f6' + ('0'*1022) # see section 5.5 of the protocol spec
-
-fee = Decimal('0.0001')
 
 class ListReceivedTest (BitcoinTestFramework):
 
@@ -178,8 +176,8 @@ class ListReceivedTest (BitcoinTestFramework):
         } in outputs)
         assert({
             'address': zaddr1,
-            'value': Decimal('0.3999'),
-            'valueZat': 39990000,
+            'value': Decimal('0.4') - DEFAULT_FEE,
+            'valueZat': 40000000 - DEFAULT_FEE_ZATS,
             'memo': no_memo,
         } in outputs)
 
@@ -189,8 +187,9 @@ class ListReceivedTest (BitcoinTestFramework):
         assert_equal(2, len(r), "zaddr1 Should have received 2 notes")
 
         assert_equal(txid, r[0]['txid'])
-        assert_equal(Decimal('0.4')-fee, r[0]['amount'])
-        assert_true(r[0]['change'], "Note valued at (0.4-fee) should be change")
+        assert_equal(Decimal('0.4')-DEFAULT_FEE, r[0]['amount'])
+        assert_equal(40000000-DEFAULT_FEE_ZATS, r[0]['amountZat'])
+        assert_true(r[0]['change'], "Note valued at (0.4-"+str(DEFAULT_FEE)+") should be change")
         assert_equal(no_memo, r[0]['memo'])
 
         # The old note still exists (it's immutable), even though it is spent

@@ -14,6 +14,7 @@
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "fs.h"
 #include "key.h"
 #include "main.h"
 #include "miner.h"
@@ -21,11 +22,11 @@
 #include "random.h"
 #include "txdb.h"
 #include "txmempool.h"
-#include "ui_interface.h"
-#include "rpc/server.h"
 #include "rpc/register.h"
+#include "rpc/server.h"
+#include "script/sigcache.h"
+#include "ui_interface.h"
 
-#include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/thread.hpp>
 
@@ -34,7 +35,6 @@
 const std::function<std::string(const char*)> G_TRANSLATION_FUN = nullptr;
 
 CClientUIInterface uiInterface; // Declared but not defined in ui_interface.h
-ZCJoinSplit *pzcashParams;
 FastRandomContext insecure_rand_ctx(true);
 
 extern bool fPrintToConsole;
@@ -42,14 +42,12 @@ extern void noui_connect();
 
 JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : BasicTestingSetup(chainName)
 {
-    pzcashParams = ZCJoinSplit::Prepared();
-
-    boost::filesystem::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
-    boost::filesystem::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
-    boost::filesystem::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
+    fs::path sapling_spend = ZC_GetParamsDir() / "sapling-spend.params";
+    fs::path sapling_output = ZC_GetParamsDir() / "sapling-output.params";
+    fs::path sprout_groth16 = ZC_GetParamsDir() / "sprout-groth16.params";
 
     static_assert(
-        sizeof(boost::filesystem::path::value_type) == sizeof(codeunit),
+        sizeof(fs::path::value_type) == sizeof(codeunit),
         "librustzcash not configured correctly");
     auto sapling_spend_str = sapling_spend.native();
     auto sapling_output_str = sapling_output.native();
@@ -70,7 +68,6 @@ JoinSplitTestingSetup::JoinSplitTestingSetup(const std::string& chainName) : Bas
 
 JoinSplitTestingSetup::~JoinSplitTestingSetup()
 {
-    delete pzcashParams;
 }
 
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
@@ -79,6 +76,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
     ECC_Start();
     SetupEnvironment();
     SetupNetworking();
+    InitSignatureCache();
     fPrintToDebugLog = false; // don't want to write to debug.log file
     fCheckBlockIndex = true;
     SelectParams(chainName);
@@ -98,16 +96,21 @@ TestingSetup::TestingSetup(const std::string& chainName) : JoinSplitTestingSetup
         RegisterAllCoreRPCCommands(tableRPC);
 
         // Save current path, in case a test changes it
-        orig_current_path = boost::filesystem::current_path();
+        orig_current_path = fs::current_path();
 
         ClearDatadirCache();
-        pathTemp = GetTempPath() / strprintf("test_bitcoinz_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
-        boost::filesystem::create_directories(pathTemp);
+        pathTemp = fs::temp_directory_path() / strprintf("test_bitcoinz_%lu_%i", (unsigned long)GetTime(), (int)(GetRand(100000)));
+        fs::create_directories(pathTemp);
         mapArgs["-datadir"] = pathTemp.string();
         pblocktree = new CBlockTreeDB(1 << 20, true);
         pcoinsdbview = new CCoinsViewDB(1 << 23, true);
         pcoinsTip = new CCoinsViewCache(pcoinsdbview);
         InitBlockIndex(chainparams);
+        {
+            CValidationState state;
+            bool ok = ActivateBestChain(state, chainparams);
+            BOOST_CHECK(ok);
+        }
         nScriptCheckThreads = 3;
         for (int i=0; i < nScriptCheckThreads-1; i++)
             threadGroup.create_thread(&ThreadScriptCheck);
@@ -125,9 +128,9 @@ TestingSetup::~TestingSetup()
         delete pblocktree;
 
         // Restore the previous current path so temporary directory can be deleted
-        boost::filesystem::current_path(orig_current_path);
+        fs::current_path(orig_current_path);
 
-        boost::filesystem::remove_all(pathTemp);
+        fs::remove_all(pathTemp);
 }
 
 #ifdef ENABLE_MINING
@@ -161,7 +164,7 @@ TestChain100Setup::CreateAndProcessBlock(const std::vector<CMutableTransaction>&
     unsigned int n = ehparams[0].n;
     unsigned int k = ehparams[0].k;
 
-    CBlockTemplate *pblocktemplate = CreateNewBlock(chainparams, scriptPubKey);
+    CBlockTemplate *pblocktemplate = BlockAssembler(chainparams).CreateNewBlock(scriptPubKey);
     CBlock& block = pblocktemplate->block;
 
     // Replace mempool-selected txns with just coinbase plus passed-in txns:
@@ -219,9 +222,10 @@ TestChain100Setup::~TestChain100Setup()
 
 
 CTxMemPoolEntry TestMemPoolEntryHelper::FromTx(CMutableTransaction &tx, CTxMemPool *pool) {
-    return CTxMemPoolEntry(tx, nFee, nTime, dPriority, nHeight,
-                           pool ? pool->HasNoInputsOf(tx) : hadNoDependencies,
-                           spendsCoinbase, nBranchId);
+    CTransaction txn(tx);
+    bool hasNoDependencies = pool ? pool->HasNoInputsOf(tx) : hadNoDependencies;
+
+    return CTxMemPoolEntry(tx, nFee, nTime, nHeight, hasNoDependencies, spendsCoinbase, sigOpCount, nBranchId);
 }
 
 void Shutdown(void* parg)

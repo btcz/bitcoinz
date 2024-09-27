@@ -8,6 +8,7 @@
 #include "version.h"
 #include "serialize.h"
 #include "primitives/transaction.h"
+#include "proof_verifier.h"
 #include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
@@ -17,12 +18,9 @@
 
 using namespace libzcash;
 
-extern ZCJoinSplit* params;
-
 // Make the Groth proof for a Sprout statement,
 // and store the result in a JSDescription object.
 JSDescription makeSproutProof(
-        ZCJoinSplit& js,
         const std::array<JSInput, 2>& inputs,
         const std::array<JSOutput, 2>& outputs,
         const uint256& joinSplitPubKey,
@@ -30,24 +28,23 @@ JSDescription makeSproutProof(
         uint64_t vpub_new,
         const uint256& rt
 ){
-    return JSDescription(js, joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
+    return JSDescription(joinSplitPubKey, rt, inputs, outputs, vpub_old, vpub_new);
 }
 
 bool verifySproutProof(
-        ZCJoinSplit& js,
         const JSDescription& jsdesc,
         const uint256& joinSplitPubKey
 )
 {
-    auto verifier = libzcash::ProofVerifier::Strict();
-    return jsdesc.Verify(js, verifier, joinSplitPubKey);
+    auto verifier = ProofVerifier::Strict();
+    return verifier.VerifySprout(jsdesc, joinSplitPubKey);
 }
 
 
-void test_full_api(ZCJoinSplit* js)
+void test_full_api()
 {
     // Create verification context.
-    auto verifier = libzcash::ProofVerifier::Strict();
+    auto verifier = ProofVerifier::Strict();
 
     // The recipient's information.
     SproutSpendingKey recipient_key = SproutSpendingKey::random();
@@ -78,7 +75,6 @@ void test_full_api(ZCJoinSplit* js)
 
         // Perform the proofs
         jsdesc = makeSproutProof(
-            *js,
             inputs,
             outputs,
             joinSplitPubKey,
@@ -89,14 +85,14 @@ void test_full_api(ZCJoinSplit* js)
     }
 
     // Verify both PHGR and Groth Proof:
-    ASSERT_TRUE(verifySproutProof(*js, jsdesc, joinSplitPubKey));
+    ASSERT_TRUE(verifySproutProof(jsdesc, joinSplitPubKey));
 
     {
         SproutMerkleTree tree;
         JSDescription jsdesc2;
         // Recipient should decrypt
         // Now the recipient should spend the money again
-        auto h_sig = js->h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
+        auto h_sig = ZCJoinSplit::h_sig(jsdesc.randomSeed, jsdesc.nullifiers, joinSplitPubKey);
         ZCNoteDecryption decryptor(recipient_key.receiving_key());
 
         auto note_pt = SproutNotePlaintext::decrypt(
@@ -140,7 +136,6 @@ void test_full_api(ZCJoinSplit* js)
 
             // Perform the proofs
             jsdesc2 = makeSproutProof(
-                *js,
                 inputs,
                 outputs,
                 joinSplitPubKey2,
@@ -153,14 +148,13 @@ void test_full_api(ZCJoinSplit* js)
 
 
         // Verify Groth Proof:
-        ASSERT_TRUE(verifySproutProof(*js, jsdesc2, joinSplitPubKey2));
+        ASSERT_TRUE(verifySproutProof(jsdesc2, joinSplitPubKey2));
     }
 }
 
 // Invokes the API (but does not compute a proof)
 // to test exceptions
 void invokeAPI(
-    ZCJoinSplit* js,
     const std::array<JSInput, 2>& inputs,
     const std::array<JSOutput, 2>& outputs,
     uint64_t vpub_old,
@@ -178,7 +172,7 @@ void invokeAPI(
     std::array<SproutNote, 2> output_notes;
 
     // Groth
-    SproutProof proof = js->prove(
+    SproutProof proof = ZCJoinSplit::prove(
         inputs,
         outputs,
         output_notes,
@@ -197,7 +191,6 @@ void invokeAPI(
 }
 
 void invokeAPIFailure(
-    ZCJoinSplit* js,
     const std::array<JSInput, 2>& inputs,
     const std::array<JSOutput, 2>& outputs,
     uint64_t vpub_old,
@@ -207,7 +200,7 @@ void invokeAPIFailure(
 )
 {
     try {
-        invokeAPI(js, inputs, outputs, vpub_old, vpub_new, rt);
+        invokeAPI(inputs, outputs, vpub_old, vpub_new, rt);
         FAIL() << "It worked, when it shouldn't have!";
     } catch(std::invalid_argument const & err) {
         EXPECT_EQ(err.what(), reason);
@@ -324,7 +317,7 @@ TEST(Joinsplit, FullApiTest)
         increment_note_witnesses(note5.cm(), witnesses, tree);
 
         // Should work
-        invokeAPI(params,
+        invokeAPI(
         {
             JSInput(),
             JSInput()
@@ -338,7 +331,7 @@ TEST(Joinsplit, FullApiTest)
         tree.root());
 
         // lhs > MAX_MONEY
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(),
             JSInput()
@@ -353,7 +346,7 @@ TEST(Joinsplit, FullApiTest)
         "nonsensical vpub_old value");
 
         // rhs > MAX_MONEY
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(),
             JSInput()
@@ -368,7 +361,7 @@ TEST(Joinsplit, FullApiTest)
         "nonsensical vpub_new value");
 
         // input witness for the wrong element
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(witnesses[0], note1, sk),
             JSInput()
@@ -384,7 +377,7 @@ TEST(Joinsplit, FullApiTest)
 
         // input witness doesn't match up with
         // real root
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(witnesses[1], note1, sk),
             JSInput()
@@ -399,7 +392,7 @@ TEST(Joinsplit, FullApiTest)
         "joinsplit not anchored to the correct root");
 
         // input is in the tree now! this should work
-        invokeAPI(params,
+        invokeAPI(
         {
             JSInput(witnesses[1], note1, sk),
             JSInput()
@@ -413,7 +406,7 @@ TEST(Joinsplit, FullApiTest)
         tree.root());
 
         // Wrong secret key
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(witnesses[1], note1, SproutSpendingKey::random()),
             JSInput()
@@ -428,7 +421,7 @@ TEST(Joinsplit, FullApiTest)
         "input note not authorized to spend with given key");
 
         // Absurd input value
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(witnesses[3], note3, sk),
             JSInput()
@@ -443,7 +436,7 @@ TEST(Joinsplit, FullApiTest)
         "nonsensical input note value");
 
         // Absurd total input value
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(witnesses[4], note4, sk),
             JSInput(witnesses[5], note5, sk)
@@ -458,7 +451,7 @@ TEST(Joinsplit, FullApiTest)
         "nonsensical left hand size of joinsplit balance");
 
         // Absurd output value
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(),
             JSInput()
@@ -473,7 +466,7 @@ TEST(Joinsplit, FullApiTest)
         "nonsensical output value");
 
         // Absurd total output value
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(),
             JSInput()
@@ -488,7 +481,7 @@ TEST(Joinsplit, FullApiTest)
         "nonsensical right hand side of joinsplit balance");
 
         // Absurd total output value
-        invokeAPIFailure(params,
+        invokeAPIFailure(
         {
             JSInput(),
             JSInput()
@@ -503,7 +496,7 @@ TEST(Joinsplit, FullApiTest)
         "invalid joinsplit balance");
     }
 
-    test_full_api(params);
+    test_full_api();
 }
 
 TEST(Joinsplit, NotePlaintexts)

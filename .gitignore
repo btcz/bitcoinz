@@ -37,6 +37,7 @@ src/config/bitcoin-config.h
 src/config/bitcoin-config.h.in
 src/config/stamp-h1
 share/setup.nsi
+share/Info.plist
 
 cache/
 venv-mnf/
@@ -55,6 +56,7 @@ src/univalue/gen
 *.o-*
 .bitcoinz
 *.a
+*.lib
 *.pb.cc
 *.pb.h
 .vscode
@@ -66,9 +68,18 @@ src/univalue/gen
 *.json.h
 *.raw.h
 
+# Only ignore unexpected patches
+*.patch
+!contrib/guix/patches/*.patch
+!depends/patches/**/*.patch
+
 #libtool object files
 *.lo
 *.la
+
+# Rust
+.cargo/config.toml
+src/rust/target/
 
 # Compilation
 src/Makefile
@@ -109,7 +120,7 @@ qa/pull-tester/test.*/*
 
 /doc/doxygen/
 
-libzcashconsensus.pc
+contrib/devtools/split-debug.sh
 
 contrib/debian/files
 contrib/debian/substvars
@@ -122,3 +133,5 @@ src/fuzz.cpp
 
 src/zcash/CreateJoinSplit
 src/zcash/GenerateParams
+
+/guix-build-*

@@ -62,6 +62,7 @@ testScripts=(
     'decodescript.py'
     'blockchain.py'
     'disablewallet.py'
+    'sendheaders.py',
     'zcjoinsplit.py'
     'zcjoinsplitdoublespend.py'
     'zkey_import_export.py'
@@ -82,7 +83,6 @@ testScripts=(
 testScriptsExt=(
     'getblocktemplate_longpoll.py'
     'getblocktemplate_proposals.py'
-    'pruning.py'
     'forknotify.py'
     'hardforkdetection.py'
     'invalidateblock.py'
@@ -95,15 +95,15 @@ testScriptsExt=(
     'invalidblockrequest.py'
 #    'forknotify.py'
     'p2p-acceptblock.py'
+    'p2p-feefilter.py',
+    'pruning.py', # leave pruning last as it takes a REALLY long time
+    'mempool_packages.py'
+    'maxuploadtarget.py',
     'wallet_db_flush.py'
 );
 
 if [ "x$ENABLE_ZMQ" = "x1" ]; then
   testScripts+=('zmq_test.py')
-fi
-
-if [ "x$ENABLE_PROTON" = "x1" ]; then
-  testScripts+=('proton_test.py')
 fi
 
 extArg="-extended"

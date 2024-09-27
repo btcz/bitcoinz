@@ -8,7 +8,7 @@ import sys; assert sys.version_info < (3,), ur"This script does not run under Py
 from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, assert_true, bitcoind_processes, \
     connect_nodes_bi, start_node, start_nodes, wait_and_assert_operationid_status, \
-    get_coinbase_address
+    get_coinbase_address, DEFAULT_FEE
 
 from decimal import Decimal
 
@@ -26,8 +26,8 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # Tests using the default cached chain have one address per coinbase output
         mytaddr = get_coinbase_address(self.nodes[0])
         recipients = []
-        recipients.append({"address":myzaddr0, "amount":Decimal('10.0')-Decimal('0.0001')}) # utxo amount less fee
-        
+        recipients.append({"address": myzaddr0, "amount": Decimal('10.0') - DEFAULT_FEE}) # utxo amount less fee
+
         wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(mytaddr, recipients), timeout=120)
 
         self.sync_all()
@@ -54,7 +54,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         # send node 0 zaddr to note 2 zaddr
         recipients = []
         recipients.append({"address":myzaddr, "amount":7.0})
-        
+
         wait_and_assert_operationid_status(self.nodes[0], self.nodes[0].z_sendmany(myzaddr0, recipients), timeout=120)
 
         self.sync_all()
@@ -81,7 +81,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
 
         # check zaddr balance
         zsendmany2notevalue = Decimal('2500.0')
-        zsendmanyfee = Decimal('0.0001')
+        zsendmanyfee = DEFAULT_FEE
         zaddrremaining = zsendmanynotevalue - zsendmany2notevalue - zsendmanyfee
         assert_equal(self.nodes[3].z_getbalance(myzaddr3), zsendmany2notevalue)
         assert_equal(self.nodes[2].z_getbalance(myzaddr), zaddrremaining)
@@ -99,7 +99,7 @@ class WalletNullifiersTest (BitcoinTestFramework):
         mytaddr1 = self.nodes[1].getnewaddress()
         recipients = []
         recipients.append({"address":mytaddr1, "amount":1250.0})
-        
+
         wait_and_assert_operationid_status(self.nodes[1], self.nodes[1].z_sendmany(myzaddr, recipients), timeout=120)
 
         self.sync_all()

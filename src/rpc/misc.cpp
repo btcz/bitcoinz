@@ -11,7 +11,6 @@
 #include "net.h"
 #include "netbase.h"
 #include "rpc/server.h"
-#include "timedata.h"
 #include "txmempool.h"
 #include "util.h"
 #ifdef ENABLE_WALLET
@@ -56,7 +55,7 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "  \"walletversion\": xxxxx,     (numeric) the wallet version\n"
             "  \"balance\": xxxxxxx,         (numeric) the total BitcoinZ balance of the wallet\n"
             "  \"blocks\": xxxxxx,           (numeric) the current number of blocks processed in the server\n"
-            "  \"timeoffset\": xxxxx,        (numeric) the time offset\n"
+            "  \"timeoffset\": xxxxx,        (numeric) the time offset (deprecated; always 0)\n"
             "  \"connections\": xxxxx,       (numeric) the number of connections\n"
             "  \"proxy\": \"host:port\",     (string, optional) the proxy used by the server\n"
             "  \"difficulty\": xxxxxx,       (numeric) the current difficulty\n"
@@ -64,8 +63,8 @@ UniValue getinfo(const UniValue& params, bool fHelp)
             "  \"keypoololdest\": xxxxxx,    (numeric) the timestamp (seconds since GMT epoch) of the oldest pre-generated key in the key pool\n"
             "  \"keypoolsize\": xxxx,        (numeric) how many new keys are pre-generated\n"
             "  \"unlocked_until\": ttt,      (numeric) the timestamp in seconds since epoch (midnight Jan 1 1970 GMT) that the wallet is unlocked for transfers, or 0 if the wallet is locked\n"
-            "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee set in " + CURRENCY_UNIT + "/kB\n"
-            "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee for non-free transactions in " + CURRENCY_UNIT + "/kB\n"
+            "  \"paytxfee\": x.xxxx,         (numeric) the transaction fee rate set in " + CURRENCY_UNIT + " per 1000 bytes\n"
+            "  \"relayfee\": x.xxxx,         (numeric) minimum relay fee rate for transactions in " + CURRENCY_UNIT + " per 1000 bytes\n"
             "  \"errors\": \"...\"           (string) any error messages\n"
             "}\n"
             "\nExamples:\n"
@@ -83,31 +82,33 @@ UniValue getinfo(const UniValue& params, bool fHelp)
     GetProxy(NET_IPV4, proxy);
 
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("version", CLIENT_VERSION));
-    obj.push_back(Pair("protocolversion", PROTOCOL_VERSION));
+    obj.pushKV("version", CLIENT_VERSION);
+    obj.pushKV("build", FormatFullVersion());
+    obj.pushKV("subversion", strSubVersion);
+    obj.pushKV("protocolversion", PROTOCOL_VERSION);
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
-        obj.push_back(Pair("walletversion", pwalletMain->GetVersion()));
-        obj.push_back(Pair("balance",       ValueFromAmount(pwalletMain->GetBalance())));
+        obj.pushKV("walletversion", pwalletMain->GetVersion());
+        obj.pushKV("balance",       ValueFromAmount(pwalletMain->GetBalance()));
     }
 #endif
-    obj.push_back(Pair("blocks",        (int)chainActive.Height()));
-    obj.push_back(Pair("timeoffset",    GetTimeOffset()));
-    obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string())));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
-    obj.push_back(Pair("testnet",       Params().TestnetToBeDeprecatedFieldRPC()));
+    obj.pushKV("blocks",        (int)chainActive.Height());
+    obj.pushKV("timeoffset",    0);
+    obj.pushKV("connections",   (int)vNodes.size());
+    obj.pushKV("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : string()));
+    obj.pushKV("difficulty",    (double)GetDifficulty());
+    obj.pushKV("testnet",       Params().TestnetToBeDeprecatedFieldRPC());
 #ifdef ENABLE_WALLET
     if (pwalletMain) {
-        obj.push_back(Pair("keypoololdest", pwalletMain->GetOldestKeyPoolTime()));
-        obj.push_back(Pair("keypoolsize",   (int)pwalletMain->GetKeyPoolSize()));
+        obj.pushKV("keypoololdest", pwalletMain->GetOldestKeyPoolTime());
+        obj.pushKV("keypoolsize",   (int)pwalletMain->GetKeyPoolSize());
     }
     if (pwalletMain && pwalletMain->IsCrypted())
-        obj.push_back(Pair("unlocked_until", nWalletUnlockTime));
-    obj.push_back(Pair("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK())));
+        obj.pushKV("unlocked_until", nWalletUnlockTime);
+    obj.pushKV("paytxfee",      ValueFromAmount(payTxFee.GetFeePerK()));
 #endif
-    obj.push_back(Pair("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK())));
-    obj.push_back(Pair("errors",        GetWarnings("statusbar")));
+    obj.pushKV("relayfee",      ValueFromAmount(::minRelayTxFee.GetFeePerK()));
+    obj.pushKV("errors",        GetWarnings("statusbar"));
     return obj;
 }
 
@@ -120,10 +121,10 @@ public:
     UniValue operator()(const CKeyID &keyID) const {
         UniValue obj(UniValue::VOBJ);
         CPubKey vchPubKey;
-        obj.push_back(Pair("isscript", false));
+        obj.pushKV("isscript", false);
         if (pwalletMain && pwalletMain->GetPubKey(keyID, vchPubKey)) {
-            obj.push_back(Pair("pubkey", HexStr(vchPubKey)));
-            obj.push_back(Pair("iscompressed", vchPubKey.IsCompressed()));
+            obj.pushKV("pubkey", HexStr(vchPubKey));
+            obj.pushKV("iscompressed", vchPubKey.IsCompressed());
         }
         return obj;
     }
@@ -131,21 +132,21 @@ public:
     UniValue operator()(const CScriptID &scriptID) const {
         UniValue obj(UniValue::VOBJ);
         CScript subscript;
-        obj.push_back(Pair("isscript", true));
+        obj.pushKV("isscript", true);
         if (pwalletMain && pwalletMain->GetCScript(scriptID, subscript)) {
             std::vector<CTxDestination> addresses;
             txnouttype whichType;
             int nRequired;
             ExtractDestinations(subscript, whichType, addresses, nRequired);
-            obj.push_back(Pair("script", GetTxnOutputType(whichType)));
-            obj.push_back(Pair("hex", HexStr(subscript.begin(), subscript.end())));
+            obj.pushKV("script", GetTxnOutputType(whichType));
+            obj.pushKV("hex", HexStr(subscript.begin(), subscript.end()));
             UniValue a(UniValue::VARR);
             for (const CTxDestination& addr : addresses) {
                 a.push_back(EncodeDestination(addr));
             }
-            obj.push_back(Pair("addresses", a));
+            obj.pushKV("addresses", a);
             if (whichType == TX_MULTISIG)
-                obj.push_back(Pair("sigsrequired", nRequired));
+                obj.pushKV("sigsrequired", nRequired);
         }
         return obj;
     }
@@ -186,23 +187,23 @@ UniValue validateaddress(const UniValue& params, bool fHelp)
     bool isValid = IsValidDestination(dest);
 
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", isValid));
+    ret.pushKV("isvalid", isValid);
     if (isValid)
     {
         std::string currentAddress = EncodeDestination(dest);
-        ret.push_back(Pair("address", currentAddress));
+        ret.pushKV("address", currentAddress);
 
         CScript scriptPubKey = GetScriptForDestination(dest);
-        ret.push_back(Pair("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end())));
+        ret.pushKV("scriptPubKey", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
 
 #ifdef ENABLE_WALLET
         isminetype mine = pwalletMain ? IsMine(*pwalletMain, dest) : ISMINE_NO;
-        ret.push_back(Pair("ismine", (mine & ISMINE_SPENDABLE) ? true : false));
-        ret.push_back(Pair("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false));
+        ret.pushKV("ismine", (mine & ISMINE_SPENDABLE) ? true : false);
+        ret.pushKV("iswatchonly", (mine & ISMINE_WATCH_ONLY) ? true: false);
         UniValue detail = std::visit(DescribeAddressVisitor(), dest);
         ret.pushKVs(detail);
         if (pwalletMain && pwalletMain->mapAddressBook.count(dest))
-            ret.push_back(Pair("account", pwalletMain->mapAddressBook[dest].name));
+            ret.pushKV("account", pwalletMain->mapAddressBook[dest].name);
 #endif
     }
     return ret;
@@ -216,12 +217,12 @@ public:
 
     UniValue operator()(const libzcash::SproutPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("type", "sprout"));
-        obj.push_back(Pair("payingkey", zaddr.a_pk.GetHex()));
-        obj.push_back(Pair("transmissionkey", zaddr.pk_enc.GetHex()));
+        obj.pushKV("type", "sprout");
+        obj.pushKV("payingkey", zaddr.a_pk.GetHex());
+        obj.pushKV("transmissionkey", zaddr.pk_enc.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.push_back(Pair("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr)));
+            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
         }
 #endif
         return obj;
@@ -229,12 +230,12 @@ public:
 
     UniValue operator()(const libzcash::SaplingPaymentAddress &zaddr) const {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("type", "sapling"));
-        obj.push_back(Pair("diversifier", HexStr(zaddr.d)));
-        obj.push_back(Pair("diversifiedtransmissionkey", zaddr.pk_d.GetHex()));
+        obj.pushKV("type", "sapling");
+        obj.pushKV("diversifier", HexStr(zaddr.d));
+        obj.pushKV("diversifiedtransmissionkey", zaddr.pk_d.GetHex());
 #ifdef ENABLE_WALLET
         if (pwalletMain) {
-            obj.push_back(Pair("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr)));
+            obj.pushKV("ismine", HaveSpendingKeyForPaymentAddress(pwalletMain)(zaddr));
         }
 #endif
         return obj;
@@ -278,10 +279,10 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
     bool isValid = IsValidPaymentAddress(address);
 
     UniValue ret(UniValue::VOBJ);
-    ret.push_back(Pair("isvalid", isValid));
+    ret.pushKV("isvalid", isValid);
     if (isValid)
     {
-        ret.push_back(Pair("address", strAddress));
+        ret.pushKV("address", strAddress);
         UniValue detail = std::visit(DescribePaymentAddressVisitor(), address);
         ret.pushKVs(detail);
     }
@@ -294,7 +295,7 @@ UniValue z_validateaddress(const UniValue& params, bool fHelp)
  */
 CScript _createmultisig_redeemScript(const UniValue& params)
 {
-    int nRequired = params[0].get_int();
+    int nRequired = params[0].getInt<int>();
     const UniValue& keys = params[1].get_array();
 
     // Gather public keys
@@ -388,8 +389,8 @@ UniValue createmultisig(const UniValue& params, bool fHelp)
     CScriptID innerID(inner);
 
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("address", EncodeDestination(innerID)));
-    result.push_back(Pair("redeemScript", HexStr(inner.begin(), inner.end())));
+    result.pushKV("address", EncodeDestination(innerID));
+    result.pushKV("redeemScript", HexStr(inner.begin(), inner.end()));
 
     return result;
 }
@@ -471,7 +472,7 @@ UniValue setmocktime(const UniValue& params, bool fHelp)
     LOCK2(cs_main, cs_vNodes);
 
     RPCTypeCheck(params, boost::assign::list_of(UniValue::VNUM));
-    SetMockTime(params[0].get_int64());
+    SetMockTime(params[0].getInt<int64_t>());
 
     uint64_t t = GetTime();
     for (CNode* pnode : vNodes) {
@@ -550,7 +551,7 @@ static bool getAddressesFromParams(
     if (params[0].isStr()) {
         param_addresses.push_back(params[0].get_str());
     } else if (params[0].isObject()) {
-        UniValue addressValues = find_value(params[0].get_obj(), "addresses");
+        UniValue addressValues = params[0].get_obj().find_value("addresses");
         if (!addressValues.isArray()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
                 "Addresses is expected to be an array");
@@ -602,7 +603,7 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             "    \"address\"  (string) The base58check encoded address\n"
             "    \"txid\"  (string) The related txid\n"
             "    \"index\"  (number) The related input or output index\n"
-            "    \"satoshis\"  (number) The difference of zatoshis\n"
+            "    \"satoshis\"  (number) The difference of " + MINOR_CURRENCY_UNIT + "\n"
             "    \"timestamp\"  (number) The time the transaction entered the mempool (seconds)\n"
             "    \"prevtxid\"  (string) The previous txid (if spending)\n"
             "    \"prevout\"  (string) The previous transaction output index (if spending)\n"
@@ -639,14 +640,14 @@ UniValue getaddressmempool(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address type");
         }
         UniValue delta(UniValue::VOBJ);
-        delta.push_back(Pair("address", address));
-        delta.push_back(Pair("txid", it.first.txhash.GetHex()));
-        delta.push_back(Pair("index", (int)it.first.index));
-        delta.push_back(Pair("satoshis", it.second.amount));
-        delta.push_back(Pair("timestamp", it.second.time));
+        delta.pushKV("address", address);
+        delta.pushKV("txid", it.first.txhash.GetHex());
+        delta.pushKV("index", (int)it.first.index);
+        delta.pushKV("satoshis", it.second.amount);
+        delta.pushKV("timestamp", it.second.time);
         if (it.second.amount < 0) {
-            delta.push_back(Pair("prevtxid", it.second.prevhash.GetHex()));
-            delta.push_back(Pair("prevout", (int)it.second.prevout));
+            delta.pushKV("prevtxid", it.second.prevhash.GetHex());
+            delta.pushKV("prevout", (int)it.second.prevout);
         }
         result.push_back(delta);
     }
@@ -684,7 +685,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "    \"height\"  (number) The block height\n"
             "    \"outputIndex\"  (number) The output index\n"
             "    \"script\"  (string) The script hex encoded\n"
-            "    \"satoshis\"  (number) The number of zatoshis of the output\n"
+            "    \"satoshis\"  (number) The number of " + MINOR_CURRENCY_UNIT + " of the output\n"
             "  }, ...\n"
             "]\n\n"
             "(or, if chainInfo is true):\n\n"
@@ -697,7 +698,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             "        \"height\"      (number)  The block height\n"
             "        \"outputIndex\" (number)  The output index\n"
             "        \"script\"      (string)  The script hex encoded\n"
-            "        \"satoshis\"    (number)  The number of zatoshis of the output\n"
+            "        \"satoshis\"    (number)  The number of " + MINOR_CURRENCY_UNIT + " of the output\n"
             "      }, ...\n"
             "    ],\n"
             "  \"hash\"              (string)  The block hash\n"
@@ -715,7 +716,7 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
 
     bool includeChainInfo = false;
     if (params[0].isObject()) {
-        UniValue chainInfo = find_value(params[0].get_obj(), "chainInfo");
+        UniValue chainInfo = params[0].get_obj().find_value("chainInfo");
         if (!chainInfo.isNull()) {
             includeChainInfo = chainInfo.get_bool();
         }
@@ -743,12 +744,12 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Unknown address type");
         }
 
-        output.push_back(Pair("address", address));
-        output.push_back(Pair("txid", it.first.txhash.GetHex()));
-        output.push_back(Pair("outputIndex", (int)it.first.index));
-        output.push_back(Pair("script", HexStr(it.second.script.begin(), it.second.script.end())));
-        output.push_back(Pair("satoshis", it.second.satoshis));
-        output.push_back(Pair("height", it.second.blockHeight));
+        output.pushKV("address", address);
+        output.pushKV("txid", it.first.txhash.GetHex());
+        output.pushKV("outputIndex", (int)it.first.index);
+        output.pushKV("script", HexStr(it.second.script.begin(), it.second.script.end()));
+        output.pushKV("satoshis", it.second.satoshis);
+        output.pushKV("height", it.second.blockHeight);
         utxos.push_back(output);
     }
 
@@ -756,11 +757,11 @@ UniValue getaddressutxos(const UniValue& params, bool fHelp)
         return utxos;
 
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("utxos", utxos));
+    result.pushKV("utxos", utxos);
 
     LOCK(cs_main);  // for chainActive
-    result.push_back(Pair("hash", chainActive.Tip()->GetBlockHash().GetHex()));
-    result.push_back(Pair("height", (int)chainActive.Height()));
+    result.pushKV("hash", chainActive.Tip()->GetBlockHash().GetHex());
+    result.pushKV("height", (int)chainActive.Height());
     return result;
 }
 
@@ -769,19 +770,19 @@ static void getHeightRange(const UniValue& params, int& start, int& end)
     start = 0;
     end = 0;
     if (params[0].isObject()) {
-        UniValue startValue = find_value(params[0].get_obj(), "start");
-        UniValue endValue = find_value(params[0].get_obj(), "end");
+        UniValue startValue = params[0].get_obj().find_value("start");
+        UniValue endValue = params[0].get_obj().find_value("end");
         // If either is not specified, the other is ignored.
         if (!startValue.isNull() && !endValue.isNull()) {
-            start = startValue.get_int();
-            end = endValue.get_int();
+            start = startValue.getInt<int>();
+            end = endValue.getInt<int>();
             if (start <= 0 || end <= 0) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
                     "Start and end are expected to be greater than zero");
             }
             if (end < start) {
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                    "End value is expected to be greater than start");
+                    "End value is expected to be greater than or equal to start");
             }
         }
     }
@@ -840,7 +841,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "\nResult:\n"
             "[\n"
             "  {\n"
-            "    \"satoshis\"  (number) The difference of zatoshis\n"
+            "    \"satoshis\"  (number) The difference of " + MINOR_CURRENCY_UNIT + "\n"
             "    \"txid\"      (string) The related txid\n"
             "    \"index\"     (number) The related input or output index\n"
             "    \"height\"    (number) The block height\n"
@@ -852,7 +853,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
             "  \"deltas\":\n"
             "    [\n"
             "      {\n"
-            "        \"satoshis\"    (number) The difference of zatoshis\n"
+            "        \"satoshis\"    (number) The difference of " + MINOR_CURRENCY_UNIT + "\n"
             "        \"txid\"        (string) The related txid\n"
             "        \"index\"       (number) The related input or output index\n"
             "        \"height\"      (number) The block height\n"
@@ -890,7 +891,7 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
 
     bool includeChainInfo = false;
     if (params[0].isObject()) {
-        UniValue chainInfo = find_value(params[0].get_obj(), "chainInfo");
+        UniValue chainInfo = params[0].get_obj().find_value("chainInfo");
         if (!chainInfo.isNull()) {
             includeChainInfo = chainInfo.get_bool();
         }
@@ -904,12 +905,12 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
         }
 
         UniValue delta(UniValue::VOBJ);
-        delta.push_back(Pair("address", address));
-        delta.push_back(Pair("blockindex", (int)it.first.txindex));
-        delta.push_back(Pair("height", it.first.blockHeight));
-        delta.push_back(Pair("index", (int)it.first.index));
-        delta.push_back(Pair("satoshis", it.second));
-        delta.push_back(Pair("txid", it.first.txhash.GetHex()));
+        delta.pushKV("address", address);
+        delta.pushKV("blockindex", (int)it.first.txindex);
+        delta.pushKV("height", it.first.blockHeight);
+        delta.pushKV("index", (int)it.first.index);
+        delta.pushKV("satoshis", it.second);
+        delta.pushKV("txid", it.first.txhash.GetHex());
         deltas.push_back(delta);
     }
 
@@ -926,15 +927,15 @@ UniValue getaddressdeltas(const UniValue& params, bool fHelp)
         if (start > chainActive.Height() || end > chainActive.Height()) {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Start or end is outside chain range");
         }
-        startInfo.push_back(Pair("hash", chainActive[start]->GetBlockHash().GetHex()));
-        endInfo.push_back(Pair("hash", chainActive[end]->GetBlockHash().GetHex()));
+        startInfo.pushKV("hash", chainActive[start]->GetBlockHash().GetHex());
+        endInfo.pushKV("hash", chainActive[end]->GetBlockHash().GetHex());
     }
-    startInfo.push_back(Pair("height", start));
-    endInfo.push_back(Pair("height", end));
+    startInfo.pushKV("height", start);
+    endInfo.pushKV("height", end);
 
-    result.push_back(Pair("deltas", deltas));
-    result.push_back(Pair("start", startInfo));
-    result.push_back(Pair("end", endInfo));
+    result.pushKV("deltas", deltas);
+    result.pushKV("start", startInfo);
+    result.pushKV("end", endInfo);
 
     return result;
 }
@@ -963,8 +964,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
             "\"address\"  (string) The base58check encoded address\n"
             "\nResult:\n"
             "{\n"
-            "  \"balance\"  (string) The current balance in zatoshis\n"
-            "  \"received\"  (string) The total number of zatoshis received (including change)\n"
+            "  \"balance\"  (string) The current balance in " + MINOR_CURRENCY_UNIT + "\n"
+            "  \"received\"  (string) The total number of " + MINOR_CURRENCY_UNIT + " received (including change)\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getaddressbalance", "'{\"addresses\": [\"tmYXBYJj1K7vhejSec5osXK2QsGa5MTisUQ\"]}'")
@@ -991,8 +992,8 @@ UniValue getaddressbalance(const UniValue& params, bool fHelp)
         balance += it.second;
     }
     UniValue result(UniValue::VOBJ);
-    result.push_back(Pair("balance", balance));
-    result.push_back(Pair("received", received));
+    result.pushKV("balance", balance);
+    result.pushKV("received", received);
     return result;
 }
 
@@ -1094,15 +1095,15 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
             "Run './bitcoinz-cli help getspentinfo' for instructions on how to enable this feature.");
     }
 
-    UniValue txidValue = find_value(params[0].get_obj(), "txid");
-    UniValue indexValue = find_value(params[0].get_obj(), "index");
+    UniValue txidValue = params[0].get_obj().find_value("txid");
+    UniValue indexValue = params[0].get_obj().find_value("index");
 
     if (!txidValue.isStr())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid txid, must be a string");
     if (!indexValue.isNum())
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid index, must be an integer");
     uint256 txid = ParseHashV(txidValue, "txid");
-    int outputIndex = indexValue.get_int();
+    int outputIndex = indexValue.getInt<int>();
 
     CSpentIndexKey key(txid, outputIndex);
     CSpentIndexValue value;
@@ -1114,9 +1115,9 @@ UniValue getspentinfo(const UniValue& params, bool fHelp)
         }
     }
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("txid", value.txid.GetHex()));
-    obj.push_back(Pair("index", (int)value.inputIndex));
-    obj.push_back(Pair("height", value.blockHeight));
+    obj.pushKV("txid", value.txid.GetHex());
+    obj.pushKV("index", (int)value.inputIndex);
+    obj.pushKV("height", value.blockHeight);
 
     return obj;
 }

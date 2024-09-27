@@ -20,6 +20,7 @@
 #include <string>
 #ifdef WIN32
 #include <io.h>
+#include <wincon.h>
 #else
 #include <sys/ioctl.h>
 #endif
@@ -123,7 +124,7 @@ std::string WhichNetwork()
 
 int EstimateNetHeight(const Consensus::Params& params, int currentHeadersHeight, int64_t currentHeadersTime)
 {
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     if (currentHeadersTime >= now) {
         return currentHeadersHeight;
     }
@@ -492,7 +493,6 @@ int printInitMessage()
 }
 
 #ifdef WIN32
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 
 bool enableVTMode()
 {

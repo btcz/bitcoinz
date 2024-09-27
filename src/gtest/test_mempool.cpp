@@ -92,14 +92,11 @@ TEST(Mempool, PriorityStatsDoNotCrash) {
     CAmount nFees = 0;
     int64_t nTime = 0x58e5fed9;
     unsigned int nHeight = 92045;
-    double dPriority = view.GetPriority(tx, nHeight);
 
-    CTxMemPoolEntry entry(tx, nFees, nTime, dPriority, nHeight, true, false, SPROUT_BRANCH_ID);
+    CTxMemPoolEntry entry(tx, nFees, nTime, nHeight, true, false, 0, SPROUT_BRANCH_ID);
 
     // Check it does not crash (ie. the death test fails)
     EXPECT_NONFATAL_FAILURE(EXPECT_DEATH(testPool.addUnchecked(tx.GetHash(), entry), ""), "");
-
-    EXPECT_EQ(dPriority, MAX_PRIORITY);
 }
 
 // Valid overwinter v3 format tx gets rejected because overwinter hasn't activated yet.
@@ -119,7 +116,8 @@ TEST(Mempool, OverwinterNotActiveYet) {
 
     CTransaction tx1(mtx);
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    CFeeRate txFeeRate = CFeeRate(0);
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs, &txFeeRate));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-not-active");
 
     // Revert to default
@@ -144,7 +142,8 @@ TEST(Mempool, SproutV3TxFailsAsExpected) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    CFeeRate txFeeRate = CFeeRate(0);
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs, &txFeeRate));
     EXPECT_EQ(state1.GetRejectReason(), "version");
 }
 
@@ -166,7 +165,8 @@ TEST(Mempool, SproutV3TxWhenOverwinterActive) {
     CTransaction tx1(mtx);
 
     LOCK(cs_main);
-    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+    CFeeRate txFeeRate = CFeeRate(0);
+    EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs, &txFeeRate));
     EXPECT_EQ(state1.GetRejectReason(), "tx-overwinter-flag-not-set");
 
     // Revert to default
@@ -202,7 +202,8 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
 
         CValidationState state1;
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        CFeeRate txFeeRate = CFeeRate(0);
+        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs, &txFeeRate));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
@@ -219,7 +220,8 @@ TEST(Mempool, SproutNegativeVersionTxWhenOverwinterActive) {
 
         CValidationState state1;
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        CFeeRate txFeeRate = CFeeRate(0);
+        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs, &txFeeRate));
         EXPECT_EQ(state1.GetRejectReason(), "bad-txns-version-too-low");
     }
 
@@ -252,7 +254,8 @@ TEST(Mempool, ExpiringSoonTxRejection) {
         CTransaction tx1(mtx);
 
         LOCK(cs_main);
-        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs));
+        CFeeRate txFeeRate = CFeeRate(0);
+        EXPECT_FALSE(AcceptToMemoryPool(pool, state1, tx1, false, &missingInputs, &txFeeRate));
         EXPECT_EQ(state1.GetRejectReason(), "tx-expiring-soon");
     }
 

@@ -36,7 +36,7 @@ PaymentDisclosure::PaymentDisclosure(const uint256 &joinSplitPubKey, const Payme
     // Serialize and hash the payload to generate a signature
     uint256 dataToBeSigned = SerializeHash(payload, SER_GETHASH, 0);
 
-    LogPrint("paymentdisclosure", "Payment Disclosure: signing raw payload = %s\n", dataToBeSigned.ToString());
+    LogPrint(BCLog::ZPAYMENT, "Payment Disclosure: signing raw payload = %s\n", dataToBeSigned.ToString());
 
     // Prepare buffer to store ed25519 key pair in libsodium-compatible format
     unsigned char bufferKeyPair[64];
@@ -61,5 +61,5 @@ PaymentDisclosure::PaymentDisclosure(const uint256 &joinSplitPubKey, const Payme
     }
 
     std::string sigString = HexStr(payloadSig.data(), payloadSig.data() + payloadSig.size());
-    LogPrint("paymentdisclosure", "Payment Disclosure: signature = %s\n", sigString);
+    LogPrint(BCLog::ZPAYMENT, "Payment Disclosure: signature = %s\n", sigString);
 }

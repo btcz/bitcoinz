@@ -32,14 +32,14 @@ rust_crates := \
   crate_winapi_i686_pc_windows_gnu \
   crate_winapi \
   crate_winapi_x86_64_pc_windows_gnu
-rust_packages := rust $(rust_crates) librustzcash
-proton_packages := proton
-zcash_packages := libsodium utfcpp
-packages := boost libevent zeromq $(zcash_packages) googletest
-native_packages := native_ccache
 
+rust_packages := rust $(rust_crates)
+zcash_packages := libsodium utfcpp
+boost_packages := boost
+libevent_packages := libevent
+zmq_packages := zeromq
 wallet_packages=bdb
 
-ifneq ($(build_os),darwin)
-darwin_native_packages=native_cctools
-endif
+$(host_arch)_$(host_os)_native_packages += native_b2
+
+packages := googletest

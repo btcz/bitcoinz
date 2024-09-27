@@ -5,6 +5,7 @@
 #include "base58.h"
 #include "chainparams.h"
 #include "consensus/merkle.h"
+#include "fs.h"
 #include "key_io.h"
 #include "main.h"
 #include "primitives/block.h"
@@ -12,15 +13,10 @@
 #include "transaction_builder.h"
 #include "utiltest.h"
 #include "wallet/wallet.h"
-#include "zcash/JoinSplit.hpp"
 #include "zcash/Note.hpp"
 #include "zcash/NoteEncryption.hpp"
 
-#include <boost/filesystem.hpp>
-
 using ::testing::Return;
-
-extern ZCJoinSplit* params;
 
 ACTION(ThrowLogicError) {
     throw std::logic_error("Boom");
@@ -32,7 +28,7 @@ public:
     MOCK_METHOD0(TxnCommit, bool());
     MOCK_METHOD0(TxnAbort, bool());
 
-    MOCK_METHOD2(WriteTx, bool(uint256 hash, const CWalletTx& wtx));
+    MOCK_METHOD1(WriteTx, bool(const CWalletTx& wtx));
     MOCK_METHOD1(WriteWitnessCacheSize, bool(int64_t nWitnessCacheSize));
     MOCK_METHOD1(WriteBestBlock, bool(const CBlockLocator& loc));
 };
@@ -71,36 +67,6 @@ public:
         CWallet::MarkAffectedTransactionsDirty(tx);
     }
 };
-
-CWalletTx GetValidSproutReceive(
-    const libzcash::SproutSpendingKey& sk,
-    CAmount value,
-    bool randomInputs,
-    int32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
-    int32_t version = SAPLING_TX_VERSION)
-{
-    return GetValidSproutReceive(*params, sk, value, randomInputs, versionGroupId, version);
-}
-
-CWalletTx GetInvalidCommitmentSproutReceive(
-    const libzcash::SproutSpendingKey& sk,
-    CAmount value,
-    bool randomInputs,
-    int32_t versionGroupId = SAPLING_VERSION_GROUP_ID,
-    int32_t version = SAPLING_TX_VERSION)
-{
-    return GetInvalidCommitmentSproutReceive(*params, sk, value, randomInputs, versionGroupId, version);
-}
-
-libzcash::SproutNote GetSproutNote(const libzcash::SproutSpendingKey& sk,
-                       const CTransaction& tx, size_t js, size_t n) {
-    return GetSproutNote(*params, sk, tx, js, n);
-}
-
-CWalletTx GetValidSproutSpend(const libzcash::SproutSpendingKey& sk,
-                        const libzcash::SproutNote& note, CAmount value) {
-    return GetValidSproutSpend(*params, sk, note, value);
-}
 
 std::vector<SaplingOutPoint> SetSaplingNoteData(CWalletTx& wtx) {
     mapSaplingNoteData_t saplingNoteData;
@@ -154,8 +120,8 @@ std::pair<uint256, uint256> GetWitnessesAndAnchors(
 
 TEST(WalletTests, SetupDatadirLocationRunAsFirstTest) {
     // Get temporary and unique path for file.
-    boost::filesystem::path pathTemp = boost::filesystem::temp_directory_path() / boost::filesystem::unique_path();
-    boost::filesystem::create_directories(pathTemp);
+    fs::path pathTemp = fs::temp_directory_path() / fs::unique_path();
+    fs::create_directories(pathTemp);
     mapArgs["-datadir"] = pathTemp.string();
 }
 
@@ -474,8 +440,7 @@ TEST(WalletTests, CheckSproutNoteCommitmentAgainstNotePlaintext) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vJoinSplit[0].h_sig(
-        *params, wtx.joinSplitPubKey);
+    auto hSig = wtx.vJoinSplit[0].h_sig(wtx.joinSplitPubKey);
 
     ASSERT_THROW(wallet.GetSproutNoteNullifier(
         wtx.vJoinSplit[0],
@@ -496,8 +461,7 @@ TEST(WalletTests, GetSproutNoteNullifier) {
     auto note = GetSproutNote(sk, wtx, 0, 1);
     auto nullifier = note.nullifier(sk);
 
-    auto hSig = wtx.vJoinSplit[0].h_sig(
-        *params, wtx.joinSplitPubKey);
+    auto hSig = wtx.vJoinSplit[0].h_sig(wtx.joinSplitPubKey);
 
     auto ret = wallet.GetSproutNoteNullifier(
         wtx.vJoinSplit[0],
@@ -1615,19 +1579,19 @@ TEST(WalletTests, WriteWitnessCache) {
         .WillRepeatedly(Return(true));
 
     // WriteTx fails
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+    EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillOnce(Return(false));
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
     wallet.SetBestChain(walletdb, loc);
 
     // WriteTx throws
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+    EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillOnce(ThrowLogicError());
     EXPECT_CALL(walletdb, TxnAbort())
         .Times(1);
     wallet.SetBestChain(walletdb, loc);
-    EXPECT_CALL(walletdb, WriteTx(wtx.GetHash(), wtx))
+    EXPECT_CALL(walletdb, WriteTx(wtx))
         .WillRepeatedly(Return(true));
 
     // WriteWitnessCacheSize fails
@@ -1736,15 +1700,15 @@ TEST(WalletTests, SetBestChainIgnoresTxsWithoutShieldedData) {
 
     EXPECT_CALL(walletdb, TxnBegin())
         .WillOnce(Return(true));
-    EXPECT_CALL(walletdb, WriteTx(wtxTransparent.GetHash(), wtxTransparent))
+    EXPECT_CALL(walletdb, WriteTx(wtxTransparent))
         .Times(0);
-    EXPECT_CALL(walletdb, WriteTx(wtxSprout.GetHash(), wtxSprout))
+    EXPECT_CALL(walletdb, WriteTx(wtxSprout))
         .Times(1).WillOnce(Return(true));
-    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent.GetHash(), wtxSproutTransparent))
+    EXPECT_CALL(walletdb, WriteTx(wtxSproutTransparent))
         .Times(0);
-    EXPECT_CALL(walletdb, WriteTx(wtxSapling.GetHash(), wtxSapling))
+    EXPECT_CALL(walletdb, WriteTx(wtxSapling))
         .Times(1).WillOnce(Return(true));
-    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent.GetHash(), wtxSaplingTransparent))
+    EXPECT_CALL(walletdb, WriteTx(wtxSaplingTransparent))
         .Times(0);
     EXPECT_CALL(walletdb, WriteWitnessCacheSize(0))
         .WillOnce(Return(true));
@@ -2004,7 +1968,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto scriptPubKey = GetScriptForDestination(tsk.GetPubKey().GetID());
 
     // Generate shielding tx from transparent to Sapling
-    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, 0.0001 t-ZEC fee
+    // 0.0005 t-ZEC in, 0.0004 z-ZEC out, default fee
     auto builder = TransactionBuilder(consensusParams, 1, &keystore);
     builder.AddTransparentInput(COutPoint(), scriptPubKey, 50000);
     builder.AddSaplingOutput(extfvk.fvk.ovk, pk, 40000, {});
@@ -2059,7 +2023,7 @@ TEST(WalletTests, MarkAffectedSaplingTransactionsDirty) {
     auto witness = saplingTree.witness();
 
     // Create a Sapling-only transaction
-    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, 0.0001 t-ZEC fee, 0.00005 z-ZEC change
+    // 0.0004 z-ZEC in, 0.00025 z-ZEC out, default fee, 0.00005 z-ZEC change
     auto builder2 = TransactionBuilder(consensusParams, 2);
     builder2.AddSaplingSpend(expsk, note, anchor, witness);
     builder2.AddSaplingOutput(extfvk.fvk.ovk, pk, 25000, {});

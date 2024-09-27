@@ -11,7 +11,7 @@ from test_framework.test_framework import BitcoinTestFramework
 from test_framework.util import assert_equal, initialize_chain_clean, \
     initialize_datadir, start_nodes, start_node, connect_nodes_bi, \
     bitcoind_processes, wait_and_assert_operationid_status, \
-    get_coinbase_address
+    get_coinbase_address, DEFAULT_FEE
 
 from decimal import Decimal
 
@@ -55,23 +55,21 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
 
         # Send 12500 coins to our zaddr.
         recipients = []
-        recipients.append({"address":myzaddr, "amount":Decimal('12500.0') - Decimal('0.0001')})
+        recipients.append({"address":myzaddr, "amount":Decimal('12500.0') - DEFAULT_FEE})
         myopid = self.nodes[0].z_sendmany(mytaddr, recipients)
         wait_and_assert_operationid_status(self.nodes[0], myopid)
         self.nodes[0].generate(1)
 
         # Ensure the block times of the latest blocks exceed the variability
-        self.nodes[0].setmocktime(starttime + 3000)
-        self.nodes[0].generate(1)
-        self.nodes[0].setmocktime(starttime + 6000)
-        self.nodes[0].generate(1)
-        self.nodes[0].setmocktime(starttime + 9000)
-        self.nodes[0].generate(1)
+        # but fall inside the future timestamp soft fork rule.
+        for i in range(10):
+            self.nodes[0].setmocktime(starttime + (900 * (i + 1)))
+            self.nodes[0].generate(1)
         self.sync_all()
 
         # Confirm the balance on node 0.
         resp = self.nodes[0].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('12500.0') - Decimal('0.0001'))
+        assert_equal(Decimal(resp), Decimal('12500.0') - DEFAULT_FEE})
 
         # Export the key for the zaddr from node 0.
         key = self.nodes[0].z_exportkey(myzaddr)
@@ -93,12 +91,12 @@ class Wallet1941RegressionTest (BitcoinTestFramework):
         assert_equal(Decimal(resp), 0)
 
         # Re-import the key on node 1, scanning from before the transaction.
-        self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 110)
+        self.nodes[1].z_importkey(key, 'yes', self.nodes[1].getblockchaininfo()['blocks'] - 120)
 
         # Confirm that the balance on node 1 is valid now (node 1 must
         # have rescanned)
         resp = self.nodes[1].z_getbalance(myzaddr)
-        assert_equal(Decimal(resp), Decimal('12500.0') - Decimal('0.0001'))
+        assert_equal(Decimal(resp), Decimal('12500.0') - DEFAULT_FEE})
 
 
 if __name__ == '__main__':

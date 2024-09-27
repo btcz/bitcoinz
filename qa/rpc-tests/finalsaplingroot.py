@@ -31,7 +31,9 @@ class FinalSaplingRootTest(BitcoinTestFramework):
 
     def setup_network(self, split=False):
         self.nodes = start_nodes(4, self.options.tmpdir, extra_args=[[
-            '-txindex'                # Avoid JSONRPC error: No information available about transaction
+            '-minrelaytxfee=0',
+            '-txindex', # Avoid JSONRPC error: No information available about transaction
+            '-reindex', # Required due to enabling -txindex
             ]] * 4 )
         connect_nodes_bi(self.nodes,0,1)
         connect_nodes_bi(self.nodes,1,2)

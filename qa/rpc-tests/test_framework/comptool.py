@@ -28,20 +28,6 @@ generator that returns TestInstance objects.  See below for definition.
 # on_getheaders: provide headers via BlockStore
 # on_getdata: provide blocks via BlockStore
 
-def wait_until(predicate, attempts=float('inf'), timeout=float('inf')):
-    attempt = 0
-    elapsed = 0
-
-    while attempt < attempts and elapsed < timeout:
-        with mininode_lock:
-            if predicate():
-                return True
-        attempt += 1
-        elapsed += 0.05
-        time.sleep(0.05)
-
-    return False
-
 class TestNode(NodeConnCB):
 
     def __init__(self, block_store, tx_store):

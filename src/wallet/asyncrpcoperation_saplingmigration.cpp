@@ -14,7 +14,6 @@
 #include <optional>
 #include <variant>
 
-const CAmount FEE = 10000;
 const int MIGRATION_EXPIRY_DELTA = 450;
 
 AsyncRPCOperation_saplingmigration::AsyncRPCOperation_saplingmigration(int targetHeight) : targetHeight_(targetHeight) {}
@@ -33,8 +32,8 @@ void AsyncRPCOperation_saplingmigration::main() {
     try {
         success = main_impl();
     } catch (const UniValue& objError) {
-        int code = find_value(objError, "code").get_int();
-        std::string message = find_value(objError, "message").get_str();
+        int code = objError.find_value("code").getInt<int>();
+        std::string message = objError.find_value("message").get_str();
         set_error_code(code);
         set_error_message(message);
     } catch (const runtime_error& e) {
@@ -70,11 +69,11 @@ void AsyncRPCOperation_saplingmigration::main() {
 }
 
 bool AsyncRPCOperation_saplingmigration::main_impl() {
-    LogPrint("zrpcunsafe", "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
+    LogPrint(BCLog::ZRPCUNSAFE, "%s: Beginning AsyncRPCOperation_saplingmigration.\n", getId());
     auto consensusParams = Params().GetConsensus();
     auto nextActivationHeight = NextActivationHeight(targetHeight_, consensusParams);
     if (nextActivationHeight && targetHeight_ + MIGRATION_EXPIRY_DELTA >= nextActivationHeight.value()) {
-        LogPrint("zrpcunsafe", "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
+        LogPrint(BCLog::ZRPCUNSAFE, "%s: Migration txs would be created before a NU activation but may expire after. Skipping this round.\n", getId());
         setMigrationResult(0, 0, std::vector<std::string>());
         return true;
     }
@@ -94,7 +93,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     }
     // If the remaining amount to be migrated is less than 0.01 ZEC, end the migration.
     if (availableFunds < CENT) {
-        LogPrint("zrpcunsafe", "%s: Available Sprout balance (%s) less than required minimum (%s). Stopping.\n",
+        LogPrint(BCLog::ZRPCUNSAFE, "%s: Available Sprout balance (%s) less than required minimum (%s). Stopping.\n",
             getId(), FormatMoney(availableFunds), FormatMoney(CENT));
         setMigrationResult(0, 0, std::vector<std::string>());
         return true;
@@ -112,9 +111,9 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
     CCoinsViewCache coinsView(pcoinsTip);
     do {
         CAmount amountToSend = chooseAmount(availableFunds);
-        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, pzcashParams, &coinsView, &cs_main);
+        auto builder = TransactionBuilder(consensusParams, targetHeight_, pwalletMain, &coinsView, &cs_main);
         builder.SetExpiryHeight(targetHeight_ + MIGRATION_EXPIRY_DELTA);
-        LogPrint("zrpcunsafe", "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - FEE));
+        LogPrint(BCLog::ZRPCUNSAFE, "%s: Beginning creating transaction with Sapling output amount=%s\n", getId(), FormatMoney(amountToSend - DEFAULT_FEE));
         std::vector<SproutNoteEntry> fromNotes;
         CAmount fromNoteAmount = 0;
         while (fromNoteAmount < amountToSend) {
@@ -125,7 +124,7 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
         availableFunds -= fromNoteAmount;
         for (const SproutNoteEntry& sproutEntry : fromNotes) {
             std::string data(sproutEntry.memo.begin(), sproutEntry.memo.end());
-            LogPrint("zrpcunsafe", "%s: Adding Sprout note input (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
+            LogPrint(BCLog::ZRPCUNSAFE, "%s: Adding Sprout note input (txid=%s, vJoinSplit=%d, jsoutindex=%d, amount=%s, memo=%s)\n",
                 getId(),
                 sproutEntry.jsop.hash.ToString().substr(0, 10),
                 sproutEntry.jsop.js,
@@ -147,36 +146,36 @@ bool AsyncRPCOperation_saplingmigration::main_impl() {
             }
             builder.AddSproutInput(sproutSk, sproutEntry.note, vInputWitnesses[0].value());
         }
-        // The amount chosen *includes* the 0.0001 ZEC fee for this transaction, i.e.
-        // the value of the Sapling output will be 0.0001 ZEC less.
-        builder.SetFee(FEE);
-        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - FEE);
+        // The amount chosen *includes* the default fee for this transaction, i.e.
+        // the value of the Sapling output will be 0.00001 ZEC less.
+        builder.SetFee(DEFAULT_FEE);
+        builder.AddSaplingOutput(ovkForShieldingFromTaddr(seed), migrationDestAddress, amountToSend - DEFAULT_FEE);
         CTransaction tx = builder.Build().GetTxOrThrow();
         if (isCancelled()) {
-            LogPrint("zrpcunsafe", "%s: Canceled. Stopping.\n", getId());
+            LogPrint(BCLog::ZRPCUNSAFE, "%s: Canceled. Stopping.\n", getId());
             break;
         }
         pwalletMain->AddPendingSaplingMigrationTx(tx);
-        LogPrint("zrpcunsafe", "%s: Added pending migration transaction with txid=%s\n", getId(), tx.GetHash().ToString());
+        LogPrint(BCLog::ZRPCUNSAFE, "%s: Added pending migration transaction with txid=%s\n", getId(), tx.GetHash().ToString());
         ++numTxCreated;
-        amountMigrated += amountToSend - FEE;
+        amountMigrated += amountToSend - DEFAULT_FEE;
         migrationTxIds.push_back(tx.GetHash().ToString());
     } while (numTxCreated < 5 && availableFunds > CENT);
 
-    LogPrint("zrpcunsafe", "%s: Created %d transactions with total Sapling output amount=%s\n", getId(), numTxCreated, FormatMoney(amountMigrated));
+    LogPrint(BCLog::ZRPCUNSAFE, "%s: Created %d transactions with total Sapling output amount=%s\n", getId(), numTxCreated, FormatMoney(amountMigrated));
     setMigrationResult(numTxCreated, amountMigrated, migrationTxIds);
     return true;
 }
 
 void AsyncRPCOperation_saplingmigration::setMigrationResult(int numTxCreated, const CAmount& amountMigrated, const std::vector<std::string>& migrationTxIds) {
     UniValue res(UniValue::VOBJ);
-    res.push_back(Pair("num_tx_created", numTxCreated));
-    res.push_back(Pair("amount_migrated", FormatMoney(amountMigrated)));
+    res.pushKV("num_tx_created", numTxCreated);
+    res.pushKV("amount_migrated", FormatMoney(amountMigrated));
     UniValue txIds(UniValue::VARR);
     for (const std::string& txId : migrationTxIds) {
         txIds.push_back(txId);
     }
-    res.push_back(Pair("migration_txids", txIds));
+    res.pushKV("migration_txids", txIds);
     set_result(res);
 }
 
@@ -234,7 +233,7 @@ void AsyncRPCOperation_saplingmigration::cancel() {
 UniValue AsyncRPCOperation_saplingmigration::getStatus() const {
     UniValue v = AsyncRPCOperation::getStatus();
     UniValue obj = v.get_obj();
-    obj.push_back(Pair("method", "saplingmigration"));
-    obj.push_back(Pair("target_height", targetHeight_));
+    obj.pushKV("method", "saplingmigration");
+    obj.pushKV("target_height", targetHeight_);
     return obj;
 }

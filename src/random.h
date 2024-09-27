@@ -21,6 +21,34 @@ int GetRandInt(int nMax);
 uint256 GetRandHash();
 
 /**
+ * Implementation of a C++ Uniform Random Number Generator, backed by GetRandBytes.
+ */
+class ZcashRandomEngine
+{
+public:
+    typedef uint64_t result_type;
+
+    explicit ZcashRandomEngine() {}
+
+    static constexpr result_type min() {
+        return std::numeric_limits<result_type>::min();
+    }
+    static constexpr result_type max() {
+        return std::numeric_limits<result_type>::max();
+    }
+
+    result_type operator()() {
+        result_type nRand = 0;
+        GetRandBytes((unsigned char*)&nRand, sizeof(nRand));
+        return nRand;
+    }
+
+    double entropy() const noexcept {
+        return 0;
+    }
+};
+
+/**
  * Identity function for MappedShuffle, so that elements retain their original order.
  */
  int GenIdentity(int n);

@@ -9,7 +9,6 @@
 #include "timedata.h"
 #include "version.h"
 
-const CAmount DEFAULT_FEE = 10000;
 const TxWeight ZERO_WEIGHT = TxWeight(0, 0);
 
 void RecentlyEvictedList::pruneList()
@@ -17,7 +16,7 @@ void RecentlyEvictedList::pruneList()
     if (txIdSet.empty()) {
         return;
     }
-    int64_t now = GetAdjustedTime();
+    int64_t now = GetTime();
     while (txIdsAndTimes.size() > 0 && now - txIdsAndTimes.front().second > timeToKeep) {
         txIdSet.erase(txIdsAndTimes.front().first);
         txIdsAndTimes.pop_front();
@@ -31,7 +30,7 @@ void RecentlyEvictedList::add(const uint256& txId)
         txIdSet.erase(txIdsAndTimes.front().first);
         txIdsAndTimes.pop_front();
     }
-    txIdsAndTimes.push_back(std::make_pair(txId, GetAdjustedTime()));
+    txIdsAndTimes.push_back(std::make_pair(txId, GetTime()));
     txIdSet.insert(txId);
 }
 
@@ -124,10 +123,10 @@ std::optional<uint256> WeightedTxTree::maybeDropRandom()
     if (totalTxWeight.cost <= capacity) {
         return std::nullopt;
     }
-    LogPrint("mempool", "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
+    LogPrint(BCLog::MEMPOOL, "Mempool cost limit exceeded (cost=%d, limit=%d)\n", totalTxWeight.cost, capacity);
     int randomWeight = GetRand(totalTxWeight.evictionWeight);
     WeightedTxInfo drop = txIdAndWeights[findByEvictionWeight(0, randomWeight)];
-    LogPrint("mempool", "Evicting transaction (txid=%s, cost=%d, evictionWeight=%d)\n",
+    LogPrint(BCLog::MEMPOOL, "Evicting transaction (txid=%s, cost=%d, evictionWeight=%d)\n",
         drop.txId.ToString(), drop.txWeight.cost, drop.txWeight.evictionWeight);
     remove(drop.txId);
     return drop.txId;

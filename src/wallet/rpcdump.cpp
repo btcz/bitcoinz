@@ -101,9 +101,6 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importprivkey", "\"mykey\", \"testing\", false")
         );
 
-    if (fPruneMode)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
-
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -117,6 +114,9 @@ UniValue importprivkey(const UniValue& params, bool fHelp)
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
+
+    if (fRescan && fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan is disabled in pruned mode");
 
     CKey key = DecodeSecret(strSecret);
     if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
@@ -210,9 +210,6 @@ UniValue importaddress(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importaddress", "\"myscript\", \"testing\", false")
         );
 
-    if (fPruneMode)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Importing addresses is disabled in pruned mode");
-
     string strLabel = "";
     if (params.size() > 1)
         strLabel = params[1].get_str();
@@ -221,6 +218,9 @@ UniValue importaddress(const UniValue& params, bool fHelp)
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
+
+    if (fRescan && fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan is disabled in pruned mode");
 
     // Whether to import a p2sh version, too
     bool fP2SH = false;
@@ -274,9 +274,6 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("importpubkey", "\"mypubkey\", \"testing\", false")
         );
 
-    if (fPruneMode)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Importing public keys is disabled in pruned mode");
-
     string strLabel = "";
     if (params.size() > 1)
         strLabel = params[1].get_str();
@@ -285,6 +282,9 @@ UniValue importpubkey(const UniValue& params, bool fHelp)
     bool fRescan = true;
     if (params.size() > 2)
         fRescan = params[2].get_bool();
+
+    if (fRescan && fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan is disabled in pruned mode");
 
     if (!IsHex(params[0].get_str()))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Pubkey must be a hex string");
@@ -399,14 +399,14 @@ UniValue importwallet_impl(const UniValue& params, bool fHelp, bool fImportZKeys
                 auto addResult = std::visit(
                     AddSpendingKeyToWallet(pwalletMain, Params().GetConsensus(), nTime, hdKeypath, seedFpStr, true), spendingkey);
                 if (addResult == KeyAlreadyExists){
-                    LogPrint("zrpc", "Skipping import of zaddr (key already present)\n");
+                    LogPrint(BCLog::ZRPC, "Skipping import of zaddr (key already present)\n");
                 } else if (addResult == KeyNotAdded) {
                     // Something went wrong
                     fGood = false;
                 }
                 continue;
             } else {
-                LogPrint("zrpc", "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
+                LogPrint(BCLog::ZRPC, "Importing detected an error: invalid spending key. Trying as a transparent key...\n");
                 // Not a valid spending key, so carry on and see if it's a BitcoinZ style t-address.
             }
         }
@@ -557,7 +557,7 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
 
     EnsureWalletIsUnlocked();
 
-    boost::filesystem::path exportdir;
+    fs::path exportdir;
     try {
         exportdir = GetExportDir();
     } catch (const std::runtime_error& e) {
@@ -571,9 +571,9 @@ UniValue dumpwallet_impl(const UniValue& params, bool fHelp, bool fDumpZKeys)
     if (clean.compare(unclean) != 0) {
         throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Filename is invalid as only alphanumeric characters are allowed.  Try '%s' instead.", clean));
     }
-    boost::filesystem::path exportfilepath = exportdir / clean;
+    fs::path exportfilepath = exportdir / clean;
 
-    if (boost::filesystem::exists(exportfilepath)) {
+    if (fs::exists(exportfilepath)) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot overwrite existing file " + exportfilepath.string());
     }
 
@@ -699,9 +699,6 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
             + HelpExampleRpc("z_importkey", "\"mykey\", \"no\"")
         );
 
-    if (fPruneMode)
-        throw JSONRPCError(RPC_WALLET_ERROR, "Importing keys is disabled in pruned mode");
-
     LOCK2(cs_main, pwalletMain->cs_wallet);
 
     EnsureWalletIsUnlocked();
@@ -726,15 +723,18 @@ UniValue z_importkey(const UniValue& params, bool fHelp)
                         RPC_INVALID_PARAMETER,
                         "rescan must be \"yes\", \"no\" or \"whenkeyisnew\"");
                 }
-                fRescan = jVal[0].getBool();
+                fRescan = jVal[0].get_bool();
             }
         }
     }
 
+    if (fRescan && fPruneMode)
+        throw JSONRPCError(RPC_WALLET_ERROR, "Rescan is disabled in pruned mode");
+
     // Height to rescan from
     int nRescanHeight = 0;
     if (params.size() > 2)
-        nRescanHeight = params[2].get_int();
+        nRescanHeight = params[2].getInt<int>();
     if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
     }
@@ -827,7 +827,7 @@ UniValue z_importviewingkey(const UniValue& params, bool fHelp)
     // Height to rescan from
     int nRescanHeight = 0;
     if (params.size() > 2) {
-        nRescanHeight = params[2].get_int();
+        nRescanHeight = params[2].getInt<int>();
     }
     if (nRescanHeight < 0 || nRescanHeight > chainActive.Height()) {
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");

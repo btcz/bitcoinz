@@ -24,11 +24,6 @@ static const int DEFAULT_CONNECT_TIMEOUT = 5000;
 //! -dns default
 static const int DEFAULT_NAME_LOOKUP = true;
 
-#ifdef WIN32
-// In MSVC, this is defined as a macro, undefine it to prevent a compile and link error
-#undef SetPort
-#endif
-
 enum Network
 {
     NET_UNROUTABLE = 0,
@@ -48,8 +43,8 @@ class CNetAddr
     public:
         CNetAddr();
         CNetAddr(const struct in_addr& ipv4Addr);
-        explicit CNetAddr(const char *pszIp, bool fAllowLookup = false);
-        explicit CNetAddr(const std::string &strIp, bool fAllowLookup = false);
+        explicit CNetAddr(const char *pszIp);
+        explicit CNetAddr(const std::string &strIp);
         void Init();
         void SetIP(const CNetAddr& ip);
 
@@ -118,7 +113,10 @@ class CSubNet
 
     public:
         CSubNet();
-        explicit CSubNet(const std::string &strSubnet, bool fAllowLookup = false);
+        explicit CSubNet(const std::string &strSubnet);
+
+        //constructor for single ip subnet (<ipv4>/32 or <ipv6>/128)
+        explicit CSubNet(const CNetAddr &addr);
 
         bool Match(const CNetAddr &addr) const;
 
@@ -128,6 +126,15 @@ class CSubNet
         friend bool operator==(const CSubNet& a, const CSubNet& b);
         friend bool operator!=(const CSubNet& a, const CSubNet& b);
         friend bool operator<(const CSubNet& a, const CSubNet& b);
+
+        ADD_SERIALIZE_METHODS;
+
+        template <typename Stream, typename Operation>
+        inline void SerializationOp(Stream& s, Operation ser_action) {
+            READWRITE(network);
+            READWRITE(FLATDATA(netmask));
+            READWRITE(FLATDATA(valid));
+        }
 };
 
 /** A combination of a network address (CNetAddr) and a (TCP) port */
@@ -141,12 +148,11 @@ class CService : public CNetAddr
         CService(const CNetAddr& ip, unsigned short port);
         CService(const struct in_addr& ipv4Addr, unsigned short port);
         CService(const struct sockaddr_in& addr);
-        explicit CService(const char *pszIpPort, int portDefault, bool fAllowLookup = false);
-        explicit CService(const char *pszIpPort, bool fAllowLookup = false);
-        explicit CService(const std::string& strIpPort, int portDefault, bool fAllowLookup = false);
-        explicit CService(const std::string& strIpPort, bool fAllowLookup = false);
+        explicit CService(const char *pszIpPort, int portDefault);
+        explicit CService(const char *pszIpPort);
+        explicit CService(const std::string& strIpPort, int portDefault);
+        explicit CService(const std::string& strIpPort);
         void Init();
-        void SetPort(unsigned short portIn);
         unsigned short GetPort() const;
         bool GetSockAddr(struct sockaddr* paddr, socklen_t *addrlen) const;
         bool SetSockAddr(const struct sockaddr* paddr);
@@ -193,9 +199,9 @@ bool GetProxy(enum Network net, proxyType &proxyInfoOut);
 bool IsProxy(const CNetAddr &addr);
 bool SetNameProxy(const proxyType &addrProxy);
 bool HaveNameProxy();
-bool LookupHost(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions = 0, bool fAllowLookup = true);
-bool Lookup(const char *pszName, CService& addr, int portDefault = 0, bool fAllowLookup = true);
-bool Lookup(const char *pszName, std::vector<CService>& vAddr, int portDefault = 0, bool fAllowLookup = true, unsigned int nMaxSolutions = 0);
+bool LookupHost(const char *pszName, std::vector<CNetAddr>& vIP, unsigned int nMaxSolutions, bool fAllowLookup);
+bool Lookup(const char *pszName, CService& addr, int portDefault, bool fAllowLookup);
+bool Lookup(const char *pszName, std::vector<CService>& vAddr, int portDefault, bool fAllowLookup, unsigned int nMaxSolutions);
 bool LookupNumeric(const char *pszName, CService& addr, int portDefault = 0);
 bool ConnectSocket(const CService &addr, SOCKET& hSocketRet, int nTimeout, bool *outProxyConnectionFailed = 0);
 bool ConnectSocketByName(CService &addr, SOCKET& hSocketRet, const char *pszDest, int portDefault, int nTimeout, bool *outProxyConnectionFailed = 0);

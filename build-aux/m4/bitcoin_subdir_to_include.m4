@@ -1,19 +1,19 @@
+dnl Copyright (c) 2017-2024 The BitcoinZ community
 dnl Copyright (c) 2016-2019 The Zcash developers
 dnl Copyright (c) 2013-2019 The Bitcoin Core developers
-dnl Copyright (c) 2013-2019 Bitcoin Developers
 dnl Distributed under the MIT software license, see the accompanying
 dnl file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
 dnl BITCOIN_SUBDIR_TO_INCLUDE([CPPFLAGS-VARIABLE-NAME],[SUBDIRECTORY-NAME],[HEADER-FILE])
 dnl SUBDIRECTORY-NAME must end with a path separator
 AC_DEFUN([BITCOIN_SUBDIR_TO_INCLUDE],[
-  if test "x$2" = "x"; then
+  if test "$2" = ""; then
     AC_MSG_RESULT([default])
   else
     echo "#include <$2$3.h>" >conftest.cpp
     newinclpath=`${CXXCPP} ${CPPFLAGS} -M conftest.cpp 2>/dev/null | [ tr -d '\\n\\r\\\\' | sed -e 's/^.*[[:space:]:]\(\/[^[:space:]]*\)]$3[\.h[[:space:]].*$/\1/' -e t -e d`]
     AC_MSG_RESULT([${newinclpath}])
-    if test "x${newinclpath}" != "x"; then
+    if test "${newinclpath}" != ""; then
       eval "$1=\"\$$1\"' -I${newinclpath}'"
     fi
   fi

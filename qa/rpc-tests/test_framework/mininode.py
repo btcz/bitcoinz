@@ -771,7 +771,7 @@ class CTransaction(object):
             r += " vJoinSplit=%r" % (self.vJoinSplit,)
             if len(self.vJoinSplit) > 0:
                 r += " joinSplitPubKey=%064x joinSplitSig=%064x" \
-                    (self.joinSplitPubKey, self.joinSplitSig)
+                    % (self.joinSplitPubKey, self.joinSplitSig)
         if len(self.shieldedSpends) > 0 or len(self.shieldedOutputs) > 0:
             r += " bindingSig=%064x" % (self.bindingSig,)
         r += ")"
@@ -1133,8 +1133,8 @@ class msg_inv(object):
 class msg_getdata(object):
     command = "getdata"
 
-    def __init__(self):
-        self.inv = []
+    def __init__(self, inv=None):
+        self.inv = inv if inv != None else []
 
     def deserialize(self, f):
         self.inv = deser_vector(f, CInv)
@@ -1304,6 +1304,22 @@ class msg_mempool(object):
         return "msg_mempool()"
 
 
+class msg_sendheaders(object):
+    command = "sendheaders"
+
+    def __init__(self):
+        pass
+
+    def deserialize(self, f):
+        pass
+
+    def serialize(self):
+        return ""
+
+    def __repr__(self):
+        return "msg_sendheaders()"
+
+
 # getheaders message has
 # number of entries
 # vector of hashes
@@ -1381,6 +1397,37 @@ class msg_reject(object):
         return "msg_reject: %s %d %s [%064x]" \
             % (self.message, self.code, self.reason, self.data)
 
+# Helper function
+def wait_until(predicate, attempts=float('inf'), timeout=float('inf')):
+    attempt = 0
+    elapsed = 0
+
+    while attempt < attempts and elapsed < timeout:
+        with mininode_lock:
+            if predicate():
+                return True
+        attempt += 1
+        elapsed += 0.05
+        time.sleep(0.05)
+
+    return False
+
+class msg_feefilter(object):
+    command = "feefilter"
+
+    def __init__(self, feerate=0L):
+        self.feerate = feerate
+
+    def deserialize(self, f):
+        self.feerate = struct.unpack("<Q", f.read(8))[0]
+
+    def serialize(self):
+        r = ""
+        r += struct.pack("<Q", self.feerate)
+        return r
+
+    def __repr__(self):
+        return "msg_feefilter(feerate=%08x)" % self.feerate
 
 class msg_filteradd(object):
     command = "filteradd"
@@ -1419,6 +1466,17 @@ class msg_filterclear(object):
 class NodeConnCB(object):
     def __init__(self):
         self.verack_received = False
+
+    # Spin until verack message is received from the node.
+    # Tests may want to use this as a signal that the test can begin.
+    # This can be called from the testing thread, so it needs to acquire the
+    # global lock.
+    def wait_for_verack(self):
+        while True:
+            with mininode_lock:
+                if self.verack_received:
+                    return
+            time.sleep(0.05)
 
     # Derived classes should call this function once to set the message map
     # which associates the derived classes' functions to incoming messages
@@ -1487,7 +1545,34 @@ class NodeConnCB(object):
     def on_close(self, conn): pass
     def on_mempool(self, conn): pass
     def on_pong(self, conn, message): pass
+    def on_feefilter(self, conn, message): pass
 
+# More useful callbacks and functions for NodeConnCB's which have a single NodeConn
+class SingleNodeConnCB(NodeConnCB):
+    def __init__(self):
+        NodeConnCB.__init__(self)
+        self.connection = None
+        self.ping_counter = 1
+        self.last_pong = msg_pong()
+
+    def add_connection(self, conn):
+        self.connection = conn
+
+    # Wrapper for the NodeConn's send_message function
+    def send_message(self, message):
+        self.connection.send_message(message)
+
+    def on_pong(self, conn, message):
+        self.last_pong = message
+
+    # Sync up with the node
+    def sync_with_ping(self, timeout=30):
+        def received_pong():
+            return (self.last_pong.nonce == self.ping_counter)
+        self.send_message(msg_ping(nonce=self.ping_counter))
+        success = wait_until(received_pong, timeout)
+        self.ping_counter += 1
+        return success
 
 # The actual NodeConn class
 # This class provides an interface for a p2p connection to a specified node
@@ -1509,7 +1594,8 @@ class NodeConn(asyncore.dispatcher):
         "headers": msg_headers,
         "getheaders": msg_getheaders,
         "reject": msg_reject,
-        "mempool": msg_mempool
+        "mempool": msg_mempool,
+        "feefilter": msg_feefilter
     }
     MAGIC_BYTES = {
         "mainnet": "\x24\xe9\x27\x64",   # mainnet
@@ -1517,7 +1603,7 @@ class NodeConn(asyncore.dispatcher):
         "regtest": "\xaa\xe8\x3f\x5f"    # regtest
     }
 
-    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", protocol_version=SAPLING_PROTO_VERSION):
+    def __init__(self, dstaddr, dstport, rpc, callback, net="regtest", services=1, protocol_version=SAPLING_PROTO_VERSION):
         asyncore.dispatcher.__init__(self, map=mininode_socket_map)
         self.log = logging.getLogger("NodeConn(%s:%d)" % (dstaddr, dstport))
         self.dstaddr = dstaddr
@@ -1535,6 +1621,7 @@ class NodeConn(asyncore.dispatcher):
 
         # stuff version msg into sendbuf
         vt = msg_version(protocol_version)
+        vt.nServices = services
         vt.addrTo.ip = self.dstaddr
         vt.addrTo.port = self.dstport
         vt.addrFrom.ip = "0.0.0.0"

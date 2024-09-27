@@ -23,6 +23,9 @@ import re
 
 from authproxy import AuthServiceProxy
 
+DEFAULT_FEE = Decimal('0.00001')
+DEFAULT_FEE_ZATS = 1000
+
 def p2p_port(n):
     return 11000 + n + os.getpid()%999
 def rpc_port(n):
@@ -43,6 +46,9 @@ def hex_str_to_bytes(hex_str):
 
 def str_to_b64str(string):
     return b64encode(string.encode('utf-8')).decode('ascii')
+
+def count_bytes(hex_string):
+    return len(bytearray.fromhex(hex_string))
 
 def sync_blocks(rpc_connections, wait=1):
     """
@@ -92,7 +98,7 @@ def initialize_datadir(dirname, n):
     datadir = os.path.join(dirname, "node"+str(n))
     if not os.path.isdir(datadir):
         os.makedirs(datadir)
-    with open(os.path.join(datadir, "zcash.conf"), 'w') as f:
+    with open(os.path.join(datadir, "bitcoinz.conf"), 'w') as f:
         f.write("regtest=1\n")
         f.write("showmetrics=0\n")
         f.write("rpcuser=rt\n")

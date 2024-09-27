@@ -6,6 +6,7 @@
 #include "rpc/client.h"
 
 #include "consensus/merkle.h"
+#include "fs.h"
 #include "experimental_features.h"
 #include "key_io.h"
 #include "main.h"
@@ -35,7 +36,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
-#include <boost/filesystem.hpp>
 
 #include <univalue.h>
 
@@ -47,13 +47,13 @@ extern UniValue CallRPC(string args);
 extern CWallet* pwalletMain;
 
 bool find_error(const UniValue& objError, const std::string& expected) {
-    return find_value(objError, "message").get_str().find(expected) != string::npos;
+    return objError.find_value("message").get_str().find(expected) != string::npos;
 }
 
-static UniValue ValueFromString(const std::string &str)
+static UniValue ValueFromString(const std::string& str) noexcept
 {
     UniValue value;
-    BOOST_CHECK(value.setNumStr(str));
+    value.setNumStr(str);
     return value;
 }
 
@@ -108,31 +108,14 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     CPubKey demoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination demoAddress(CTxDestination(demoPubkey.GetID()));
     UniValue retValue;
-    string strAccount = "";
     string strPurpose = "receive";
-    BOOST_CHECK_NO_THROW({ /*Initialize Wallet with an account */
+    BOOST_CHECK_NO_THROW({ /*Initialize Wallet with the demo pubkey*/
         CWalletDB walletdb(pwalletMain->strWalletFile);
-        CAccount account;
-        account.vchPubKey = demoPubkey;
-        pwalletMain->SetAddressBook(account.vchPubKey.GetID(), strAccount, strPurpose);
-        walletdb.WriteAccount(strAccount, account);
+        pwalletMain->SetAddressBook(demoPubkey.GetID(), "", strPurpose);
     });
 
     CPubKey setaccountDemoPubkey = pwalletMain->GenerateNewKey();
     CTxDestination setaccountDemoAddress(CTxDestination(setaccountDemoPubkey.GetID()));
-
-    /*********************************
-     * 			setaccount
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " \"\""));
-    /* Accounts are disabled */
-    BOOST_CHECK_THROW(CallRPC("setaccount " + EncodeDestination(setaccountDemoAddress) + " nullaccount"), runtime_error);
-    /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV is not owned by the test wallet. */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1GpgV nullaccount"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("setaccount"), runtime_error);
-    /* t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg (34 chars) is an illegal address (should be 35 chars) */
-    BOOST_CHECK_THROW(CallRPC("setaccount t1VtArtnn1dGPiD2WFfMXYXW5mHM3q1Gpg nullaccount"), runtime_error);
-
 
     /*********************************
      *                  getbalance
@@ -162,16 +145,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK_THROW(CallRPC("listreceivedbyaddress 0 true extra"), runtime_error);
 
     /*********************************
-     * 		listreceivedbyaccount
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount"));
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount 0"));
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount not_int"), runtime_error);
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount 0 not_bool"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("listreceivedbyaccount 0 true"));
-    BOOST_CHECK_THROW(CallRPC("listreceivedbyaccount 0 true extra"), runtime_error);
-
-    /*********************************
      *          listsinceblock
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listsinceblock"));
@@ -180,20 +153,15 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      *          listtransactions
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listtransactions"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress)));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " 20"));
-    BOOST_CHECK_NO_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " 20 0"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions *"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions * 20"));
+    BOOST_CHECK_NO_THROW(CallRPC("listtransactions * 20 0"));
     BOOST_CHECK_THROW(CallRPC("listtransactions " + EncodeDestination(demoAddress) + " not_int"), runtime_error);
 
     /*********************************
      *          listlockunspent
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("listlockunspent"));
-
-    /*********************************
-     *          listaccounts
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("listaccounts"));
 
     /*********************************
      *          listaddressgroupings
@@ -209,24 +177,6 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
      * 		getnewaddress
      *********************************/
     BOOST_CHECK_NO_THROW(CallRPC("getnewaddress"));
-    BOOST_CHECK_NO_THROW(CallRPC("getnewaddress \"\""));
-    /* Accounts are deprecated */
-    BOOST_CHECK_THROW(CallRPC("getnewaddress getnewaddress_demoaccount"), runtime_error);
-
-    /*********************************
-     * 		getaccountaddress
-     *********************************/
-    BOOST_CHECK_NO_THROW(CallRPC("getaccountaddress \"\""));
-    /* Accounts are deprecated */
-    BOOST_CHECK_THROW(CallRPC("getaccountaddress accountThatDoesntExists"), runtime_error);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getaccountaddress " + strAccount));
-    BOOST_CHECK(DecodeDestination(retValue.get_str()) == demoAddress);
-
-    /*********************************
-     * 			getaccount
-     *********************************/
-    BOOST_CHECK_THROW(CallRPC("getaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(CallRPC("getaccount " + EncodeDestination(demoAddress)));
 
     /*********************************
      * 	signmessage + verifymessage
@@ -249,17 +199,10 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
     BOOST_CHECK(CallRPC("verifymessage " + EncodeDestination(demoAddress) + " " + retValue.get_str() + " mymessage").get_bool() == true);
 
     /*********************************
-     * 		getaddressesbyaccount
+     * 	     listaddresses
      *********************************/
-    BOOST_CHECK_THROW(CallRPC("getaddressesbyaccount"), runtime_error);
-    BOOST_CHECK_NO_THROW(retValue = CallRPC("getaddressesbyaccount " + strAccount));
-    UniValue arr = retValue.get_array();
-    BOOST_CHECK_EQUAL(4, arr.size());
-    bool notFound = true;
-    for (auto a : arr.getValues()) {
-        notFound &= DecodeDestination(a.get_str()) != demoAddress;
-    }
-    BOOST_CHECK(!notFound);
+    BOOST_CHECK_THROW(CallRPC("listaddresses true"), runtime_error);
+    BOOST_CHECK_NO_THROW(retValue = CallRPC("listaddresses"));
 
     /*********************************
      * 	     fundrawtransaction
@@ -275,39 +218,39 @@ BOOST_AUTO_TEST_CASE(rpc_wallet)
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 50000"));
     UniValue obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 12500.0);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 12500.0);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 0.0);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653599")); // Blossom activation - 1
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 11875.0);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 625.0);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 11875.0);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 625.0);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 653600")); // Blossom activation
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 11875.0);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 625.0);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 11875.0);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 625.0);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046399"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5937.5);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 312.5);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 5937.5);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 312.5);
 
     // slow start + blossom activation + (pre blossom halving - blossom activation) * 2
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 1046400"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 5937.5);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 312.5);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 5937.5);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 312.5);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726399"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 1562.5);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 1562.5);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 0.0);
 
     BOOST_CHECK_NO_THROW(retValue = CallRPC("getblocksubsidy 2726400"));
     obj = retValue.get_obj();
-    BOOST_CHECK_EQUAL(find_value(obj, "miner").get_real(), 1562.5);
-    BOOST_CHECK_EQUAL(find_value(obj, "founders").get_real(), 0.0);
+    BOOST_CHECK_EQUAL(obj.find_value("miner").get_real(), 1562.5);
+    BOOST_CHECK_EQUAL(obj.find_value("founders").get_real(), 0.0);
 
     /*
      * getblock
@@ -386,46 +329,46 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_validateaddress)
     // This address is not valid, it belongs to another network
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress ztaaga95QAPyp1kSQ1hD2kguCpzyMHjxWZqaYDEkzbvo7uYQYAw2S8X4Kx98AvhhofMtQL8PAXKHuZsmhRcanavKRKmdCzk"));
     UniValue resultObj = retValue.get_obj();
-    bool b = find_value(resultObj, "isvalid").get_bool();
+    bool b = resultObj.find_value("isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, false);
 
     // This address is valid, but the spending key is not in this wallet
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zcfA19SDAKRYHLoRDoShcoz4nPohqWxuHcqg8WAxsiB2jFrrs6k7oSvst3UZvMYqpMNSRBkxBsnyjjngX5L55FxMzLKach8"));
     resultObj = retValue.get_obj();
-    b = find_value(resultObj, "isvalid").get_bool();
+    b = resultObj.find_value("isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, true);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "type").get_str(), "sprout");
-    b = find_value(resultObj, "ismine").get_bool();
+    BOOST_CHECK_EQUAL(resultObj.find_value("type").get_str(), "sprout");
+    b = resultObj.find_value("ismine").get_bool();
     BOOST_CHECK_EQUAL(b, false);
 
     // Let's import a spending key to the wallet and validate its payment address
     BOOST_CHECK_NO_THROW(CallRPC("z_importkey SKxoWv77WGwFnUJitQKNEcD636bL4X5Gd6wWmgaA4Q9x8jZBPJXT"));
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zcWsmqT4X2V4jgxbgiCzyrAfRT1vi1F4sn7M5Pkh66izzw8Uk7LBGAH3DtcSMJeUb2pi3W4SQF8LMKkU2cUuVP68yAGcomL"));
     resultObj = retValue.get_obj();
-    b = find_value(resultObj, "isvalid").get_bool();
+    b = resultObj.find_value("isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, true);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "type").get_str(), "sprout");
-    b = find_value(resultObj, "ismine").get_bool();
+    BOOST_CHECK_EQUAL(resultObj.find_value("type").get_str(), "sprout");
+    b = resultObj.find_value("ismine").get_bool();
     BOOST_CHECK_EQUAL(b, true);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "payingkey").get_str(), "f5bb3c888ccc9831e3f6ba06e7528e26a312eec3acc1823be8918b6a3a5e20ad");
-    BOOST_CHECK_EQUAL(find_value(resultObj, "transmissionkey").get_str(), "7a58c7132446564e6b810cf895c20537b3528357dc00150a8e201f491efa9c1a");
+    BOOST_CHECK_EQUAL(resultObj.find_value("payingkey").get_str(), "f5bb3c888ccc9831e3f6ba06e7528e26a312eec3acc1823be8918b6a3a5e20ad");
+    BOOST_CHECK_EQUAL(resultObj.find_value("transmissionkey").get_str(), "7a58c7132446564e6b810cf895c20537b3528357dc00150a8e201f491efa9c1a");
 
     // This Sapling address is not valid, it belongs to another network
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress ztestsapling1knww2nyjc62njkard0jmx7hlsj6twxmxwprn7anvrv4dc2zxanl3nemc0qx2hvplxmd2uau8gyw"));
     resultObj = retValue.get_obj();
-    b = find_value(resultObj, "isvalid").get_bool();
+    b = resultObj.find_value("isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, false);
 
     // This Sapling address is valid, but the spending key is not in this wallet
     BOOST_CHECK_NO_THROW(retValue = CallRPC("z_validateaddress zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9slya"));
     resultObj = retValue.get_obj();
-    b = find_value(resultObj, "isvalid").get_bool();
+    b = resultObj.find_value("isvalid").get_bool();
     BOOST_CHECK_EQUAL(b, true);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "type").get_str(), "sapling");
-    b = find_value(resultObj, "ismine").get_bool();
+    BOOST_CHECK_EQUAL(resultObj.find_value("type").get_str(), "sapling");
+    b = resultObj.find_value("ismine").get_bool();
     BOOST_CHECK_EQUAL(b, false);
-    BOOST_CHECK_EQUAL(find_value(resultObj, "diversifier").get_str(), "1787997c30e94f050c634d");
-    BOOST_CHECK_EQUAL(find_value(resultObj, "diversifiedtransmissionkey").get_str(), "34ed1f60f5db5763beee1ddbb37dd5f7e541d4d4fbdcc09fbfcc6b8e949bbe9d");
+    BOOST_CHECK_EQUAL(resultObj.find_value("diversifier").get_str(), "1787997c30e94f050c634d");
+    BOOST_CHECK_EQUAL(resultObj.find_value("diversifiedtransmissionkey").get_str(), "34ed1f60f5db5763beee1ddbb37dd5f7e541d4d4fbdcc09fbfcc6b8e949bbe9d");
 }
 
 BOOST_AUTO_TEST_CASE(rpc_wallet_z_importkey_paymentaddress) {
@@ -435,13 +378,13 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importkey_paymentaddress) {
     auto testAddress = [](const std::string& type, const std::string& key) {
         UniValue ret;
         BOOST_CHECK_NO_THROW(ret = CallRPC("z_importkey " + key));
-        auto defaultAddr = find_value(ret, "address").get_str();
-        BOOST_CHECK_EQUAL(type, find_value(ret, "type").get_str());
+        auto defaultAddr = ret.find_value("address").get_str();
+        BOOST_CHECK_EQUAL(type, ret.find_value("type").get_str());
         BOOST_CHECK_NO_THROW(ret = CallRPC("z_validateaddress " + defaultAddr));
         ret = ret.get_obj();
-        BOOST_CHECK_EQUAL(true, find_value(ret, "isvalid").get_bool());
-        BOOST_CHECK_EQUAL(true, find_value(ret, "ismine").get_bool());
-        BOOST_CHECK_EQUAL(type, find_value(ret, "type").get_str());
+        BOOST_CHECK_EQUAL(true, ret.find_value("isvalid").get_bool());
+        BOOST_CHECK_EQUAL(true, ret.find_value("ismine").get_bool());
+        BOOST_CHECK_EQUAL(type, ret.find_value("type").get_str());
     };
 
     testAddress("sapling", "secret-extended-key-main1qya4wae0qqqqqqpxfq3ukywunn"
@@ -472,9 +415,9 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_exportwallet)
     BOOST_CHECK(addrs.size()==1);
 
     // Set up paths
-    boost::filesystem::path tmppath = boost::filesystem::temp_directory_path();
-    boost::filesystem::path tmpfilename = boost::filesystem::unique_path("%%%%%%%%");
-    boost::filesystem::path exportfilepath = tmppath / tmpfilename;
+    fs::path tmppath = fs::temp_directory_path();
+    fs::path tmpfilename = fs::unique_path("%%%%%%%%");
+    fs::path exportfilepath = tmppath / tmpfilename;
 
     // export will fail since exportdir is not set
     BOOST_CHECK_THROW(CallRPC(string("z_exportwallet ") + tmpfilename.string()), runtime_error);
@@ -558,8 +501,8 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_z_importwallet)
     std::string testWalletDump = (formatobject % testKey % testAddr).str();
 
     // write test data to file
-    boost::filesystem::path temp = boost::filesystem::temp_directory_path() /
-            boost::filesystem::unique_path();
+    fs::path temp = fs::temp_directory_path() /
+            fs::unique_path();
     const std::string path = temp.string();
     std::ofstream file(path);
     file << testWalletDump;
@@ -960,7 +903,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
 
     for (UniValue v : array.getValues()) {
         UniValue obj = v.get_obj();
-        UniValue id = find_value(obj, "id");
+        UniValue id = obj.find_value("id");
 
         UniValue result;
         // removes result from internal storage
@@ -969,7 +912,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_getoperations)
         BOOST_CHECK(resultArray.size() == 1);
 
         UniValue resultObj = resultArray[0].get_obj();
-        UniValue resultId = find_value(resultObj, "id");
+        UniValue resultId = resultObj.find_value("id");
         BOOST_CHECK_EQUAL(id.get_str(), resultId.get_str());
 
         // verify the operation has been removed
@@ -1020,7 +963,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_parameters)
     BOOST_CHECK_THROW(CallRPC("z_sendmany "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
             "[{\"address\":\"tmQP9L3s31cLsghVYf2Jb5MhKj1jRBPoeQn\", \"amount\":50.0}] "
-            "1 -0.0001"
+            "1 -0.00001"
             ), runtime_error);
 
     // invalid fee amount, bigger than MAX_MONEY
@@ -1103,11 +1046,11 @@ BOOST_AUTO_TEST_CASE(asyncrpcoperation_sign_send_raw_transaction) {
     // Raw joinsplit is a zaddr->zaddr
     std::string raw = "020000000000000000000100000000000000001027000000000000183a0d4c46c369078705e39bcfebee59a978dbd210ce8de3efc9555a03fbabfd3cea16693d730c63850d7e48ccde79854c19adcb7e9dcd7b7d18805ee09083f6b16e1860729d2d4a90e2f2acd009cf78b5eb0f4a6ee4bdb64b1262d7ce9eb910c460b02022991e968d0c50ee44908e4ccccbc591d0053bcca154dd6d6fc400a29fa686af4682339832ccea362a62aeb9df0d5aa74f86a1e75ac0f48a8ccc41e0a940643c6c33e1d09223b0a46eaf47a1bb4407cfc12b1dcf83a29c0cef51e45c7876ca5b9e5bae86d92976eb3ef68f29cd29386a8be8451b50f82bf9da10c04651868655194da8f6ed3d241bb5b5ff93a3e2bbe44644544d88bcde5cc35978032ee92699c7a61fcbb395e7583f47e698c4d53ede54f956629400bf510fb5e22d03158cc10bdcaaf29e418ef18eb6480dd9c8b9e2a377809f9f32a556ef872febd0021d4ad013aa9f0b7255e98e408d302abefd33a71180b720271835b487ab309e160b06dfe51932120fb84a7ede16b20c53599a11071592109e10260f265ee60d48c62bfe24074020e9b586ce9e9356e68f2ad1a9538258234afe4b83a209f178f45202270eaeaeecaf2ce3100b2c5a714f75f35777a9ebff5ebf47059d2bbf6f3726190216468f2b152673b766225b093f3a2f827c86d6b48b42117fec1d0ac38dd7af700308dcfb02eba821612b16a2c164c47715b9b0c93900893b1aba2ea03765c94d87022db5be06ab338d1912e0936dfe87586d0a8ee49144a6cd2e306abdcb652faa3e0222739deb23154d778b50de75069a4a2cce1208cd1ced3cb4744c9888ce1c2fcd2e66dc31e62d3aa9e423d7275882525e9981f92e84ac85975b8660739407efbe1e34c2249420fde7e17db3096d5b22e83d051d01f0e6e7690dca7d168db338aadf0897fedac10de310db2b1bff762d322935dddbb60c2efb8b15d231fa17b84630371cb275c209f0c4c7d0c68b150ea5cd514122215e3f7fcfb351d69514788d67c2f3c8922581946e3a04bdf1f07f15696ca76eb95b10698bf1188fd882945c57657515889d042a6fc45d38cbc943540c4f0f6d1c45a1574c81f3e42d1eb8702328b729909adee8a5cfed7c79d54627d1fd389af941d878376f7927b9830ca659bf9ab18c5ca5192d52d02723008728d03701b8ab3e1c4a3109409ec0b13df334c7deec3523eeef4c97b5603e643de3a647b873f4c1b47fbfc6586ba66724f112e51fc93839648005043620aa3ce458e246d77977b19c53d98e3e812de006afc1a79744df236582943631d04cc02941ac4be500e4ed9fb9e3e7cc187b1c4050fad1d9d09d5fd70d5d01d615b439d8c0015d2eb10398bcdbf8c4b2bd559dbe4c288a186aed3f86f608da4d582e120c4a896e015e2241900d1daeccd05db968852677c71d752bec46de9962174b46f980e8cc603654daf8b98a3ee92dac066033954164a89568b70b1780c2ce2410b2f816dbeddb2cd463e0c8f21a52cf6427d9647a6fd4bafa8fb4cd4d47ac057b0160bee86c6b2fb8adce214c2bcdda277512200adf0eaa5d2114a2c077b009836a68ec254bfe56f51d147b9afe2ddd9cb917c0c2de19d81b7b8fd9f4574f51fa1207630dc13976f4d7587c962f761af267de71f3909a576e6bedaf6311633910d291ac292c467cc8331ef577aef7646a5d949322fa0367a49f20597a13def53136ee31610395e3e48d291fd8f58504374031fe9dcfba5e06086ebcf01a9106f6a4d6e16e19e4c5bb893f7da79419c94eca31a384be6fa1747284dee0fc3bbc8b1b860172c10b29c1594bb8c747d7fe05827358ff2160f49050001625ffe2e880bd7fc26cd0ffd89750745379a8e862816e08a5a2008043921ab6a4976064ac18f7ee37b6628bc0127d8d5ebd3548e41d8881a082d86f20b32e33094f15a0e6ea6074b08c6cd28142de94713451640a55985051f5577eb54572699d838cb34a79c8939e981c0c277d06a6e2ce69ccb74f8a691ff08f81d8b99e6a86223d29a2b7c8e7b041aba44ea678ae654277f7e91cbfa79158b989164a3d549d9f4feb0cc43169699c13e321fe3f4b94258c75d198ff9184269cd6986c55409e07528c93f64942c6c283ce3917b4bf4c3be2fe3173c8c38cccb35f1fbda0ca88b35a599c0678cb22aa8eabea8249dbd2e4f849fffe69803d299e435ebcd7df95854003d8eda17a74d98b4be0e62d45d7fe48c06a6f464a14f8e0570077cc631279092802a89823f031eef5e1028a6d6fdbd502869a731ee7d28b4d6c71b419462a30d31442d3ee444ffbcbd16d558c9000c97e949c2b1f9d6f6d8db7b9131ebd963620d3fc8595278d6f8fdf49084325373196d53e64142fa5a23eccd6ef908c4d80b8b3e6cc334b7f7012103a3682e4678e9b518163d262a39a2c1a69bf88514c52b7ccd7cc8dc80e71f7c2ec0701cff982573eb0c2c4daeb47fa0b586f4451c10d1da2e5d182b03dd067a5e971b3a6138ca6667aaf853d2ac03b80a1d5870905f2cfb6c78ec3c3719c02f973d638a0f973424a2b0f2b0023f136d60092fe15fba4bc180b9176bd0ff576e053f1af6939fe9ca256203ffaeb3e569f09774d2a6cbf91873e56651f4d6ff77e0b5374b0a1a201d7e523604e0247644544cc571d48c458a4f96f45580b";
     UniValue obj(UniValue::VOBJ);
-    obj.push_back(Pair("rawtxn", raw));
+    obj.pushKV("rawtxn", raw);
     // Verify test mode is returning output (since no input taddrs, signed and unsigned are the same).
     std::pair<CTransaction, UniValue> txAndResult = SignSendRawTransaction(obj, std::nullopt, true);
     UniValue resultObj = txAndResult.second.get_obj();
-    std::string hex = find_value(resultObj, "hex").get_str();
+    std::string hex = resultObj.find_value("hex").get_str();
     BOOST_CHECK_EQUAL(hex, raw);
 }
 
@@ -1340,7 +1283,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_sendmany_taddr_to_sapling)
 
     auto consensusParams = Params().GetConsensus();
     retValue = CallRPC("getblockcount");
-    int nextBlockHeight = retValue.get_int() + 1;
+    int nextBlockHeight = retValue.getInt<int>() + 1;
 
     // Add a fake transaction to the wallet
     CMutableTransaction mtx = CreateNewContextualCMutableTransaction(consensusParams, nextBlockHeight);
@@ -1451,7 +1394,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_zkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    fs::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
@@ -1512,7 +1455,7 @@ BOOST_AUTO_TEST_CASE(rpc_wallet_encrypted_wallet_sapzkeys)
     strWalletPass.reserve(100);
     strWalletPass = "hello";
 
-    boost::filesystem::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
+    fs::current_path(GetArg("-datadir","/tmp/thisshouldnothappen"));
     BOOST_CHECK(pwalletMain->EncryptWallet(strWalletPass));
 
     // Verify we can still list the keys imported
@@ -1616,7 +1559,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_shieldcoinbase_parameters)
     BOOST_CHECK_THROW(CallRPC("z_shieldcoinbase "
             "tmRr6yJonqGK23UVhrKuyvTpF8qxQQjKigJ "
             "tnpoQJVnYBZZqkFadj2bJJLThNCxbADGB5gSGeYTAGGrT5tejsxY9Zc1BtY8nnHmZkB "
-            "-0.0001"
+            "-0.00001"
             ), runtime_error);
 
     // invalid fee amount, bigger than MAX_MONEY
@@ -1773,7 +1716,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
         "Invalid parameter, duplicated address: " + taddr1);
 
     // invalid fee amount, cannot be negative
-    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " -0.0001",
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " -0.00001",
         "Amount out of range");
 
     // invalid fee amount, bigger than MAX_MONEY
@@ -1782,11 +1725,11 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
 //FIXME        "Amount out of range");
 
     // invalid transparent limit, must be at least 0
-    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " 0.0001 -1",
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " 0.00001 -1",
         "Limit on maximum number of UTXOs cannot be negative");
 
     // invalid shielded limit, must be at least 0
-    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " 0.0001 100 -1",
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + taddr2 + " 0.00001 100 -1",
         "Limit on maximum number of notes cannot be negative");
 
     CheckRPCThrows("z_mergetoaddress [\"ANY_TADDR\",\"" + taddr1 + "\"] " + taddr2,
@@ -1802,7 +1745,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_parameters)
     std::vector<char> v (2 * (ZC_MEMO_SIZE+1));     // x2 for hexadecimal string format
     std::fill(v.begin(),v.end(), 'A');
     std::string badmemo(v.begin(), v.end());
-    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.0001 100 100 " + badmemo,
+    CheckRPCThrows("z_mergetoaddress [\"" + taddr1 + "\"] " + aSproutAddr + " 0.00001 100 100 " + badmemo,
         "Invalid parameter, size of memo is larger than maximum allowed 512");
 
     // Mutable tx containing contextual information we need to build tx
@@ -1903,7 +1846,7 @@ BOOST_AUTO_TEST_CASE(rpc_z_mergetoaddress_internals)
         operation->main();
         BOOST_CHECK(operation->isFailed());
         std::string msg = operation->getErrorMessage();
-        BOOST_CHECK( msg.find("Insufficient funds, have 0.00 and miners fee is 0.0001") != string::npos);
+        BOOST_CHECK( msg.find("Insufficient funds, have 0.00 and miners fee is 0.00001") != string::npos);
     }
 
     // get_memo_from_hex_string())
@@ -2061,8 +2004,8 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
     for(int i=0; i<=delta + 1; i++) {
         auto retObj = FakeMine(i, false);
 
-        BOOST_CHECK_EQUAL(find_value(retObj, "confirmations").get_real(), -1);
-        auto status = find_value(retObj, "status").get_str();
+	BOOST_CHECK_EQUAL(retObj.find_value("confirmations").get_real(), -1);
+        auto status = retObj.find_value("status").get_str();
         if (i >= delta - TX_EXPIRING_SOON_THRESHOLD && i <= delta)
             BOOST_CHECK_EQUAL(status, "expiringsoon");
         else if (i >= delta - TX_EXPIRING_SOON_THRESHOLD)
@@ -2074,8 +2017,8 @@ void TestWTxStatus(const Consensus::Params consensusParams, const int delta) {
     // Now mine including the transaction, check status
     auto retObj = FakeMine(delta + 2, true);
 
-    BOOST_CHECK_EQUAL(find_value(retObj, "confirmations").get_real(), 1);
-    BOOST_CHECK_EQUAL(find_value(retObj, "status").get_str(), "mined");
+    BOOST_CHECK_EQUAL(retObj.find_value("confirmations").get_real(), 1);
+    BOOST_CHECK_EQUAL(retObj.find_value("status").get_str(), "mined");
 
     // Cleanup
     chainActive.SetTip(NULL);
