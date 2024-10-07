@@ -57,6 +57,8 @@ static const CAmount DEFAULT_TRANSACTION_MINFEE = 1000;
 static const CAmount MIN_CHANGE = CENT;
 //! Default for -spendzeroconfchange
 static const bool DEFAULT_SPEND_ZEROCONF_CHANGE = true;
+//! Default for -sendchangeback
+static const bool DEFAULT_SEND_CHANGE_BACK = false;
 //! -txconfirmtarget default
 static const unsigned int DEFAULT_TX_CONFIRM_TARGET = 2;
 static const bool DEFAULT_WALLETBROADCAST = true;
