@@ -16,7 +16,7 @@ Install required dependencies:
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool libncurses-dev unzip git python3 python-is-python3 \
-      zlib1g-dev wget bsdmainutils automake
+      zlib1g-dev wget bsdmainutils automake cmake
 ```
 
 Execute the build command:
