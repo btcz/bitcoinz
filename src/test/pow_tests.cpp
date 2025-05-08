@@ -29,22 +29,6 @@ BOOST_AUTO_TEST_CASE(get_next_work)
     CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
-
-BOOST_AUTO_TEST_CASE(get_next_work_blossom)
-{
-    const Consensus::Params& params = RegtestActivateBlossom(true);
-    BOOST_CHECK_EQUAL(75, params.PoWTargetSpacing(0));
-
-    int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
-    int64_t nThisTime = 1000001445;
-    arith_uint256 bnAvg;
-    bnAvg.SetCompact(0x1d00ffff);
-    BOOST_CHECK_GT(0x1d011eb8,
-    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
-
-    RegtestDeactivateBlossom();
-}
-
 /* Test the constraint on the upper bound for next work */
 BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
 {
@@ -57,20 +41,6 @@ BOOST_AUTO_TEST_CASE(get_next_work_pow_limit)
     bnAvg.SetCompact(0x1f07ffff);
     BOOST_CHECK_EQUAL(0x1f07ffff,
     CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
-}
-
-BOOST_AUTO_TEST_CASE(get_next_work_pow_limit_blossom)
-{
-    const Consensus::Params& params = RegtestActivateBlossom(true);
-
-    int64_t nLastRetargetTime = 1231006505;
-    int64_t nThisTime = 1233061996;
-    arith_uint256 bnAvg;
-    bnAvg.SetCompact(0x1f07ffff);
-    BOOST_CHECK_EQUAL(0x1f07ffff,
-    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
-
-    RegtestDeactivateBlossom();
 }
 
 /* Test the constraint on the lower bound for actual time taken */
@@ -89,20 +59,6 @@ BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual)
     CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
 }
 
-BOOST_AUTO_TEST_CASE(get_next_work_lower_limit_actual_blossom)
-{
-    const Consensus::Params& params = RegtestActivateBlossom(true);
-
-    int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
-    int64_t nThisTime = 1000000458;
-    arith_uint256 bnAvg;
-    bnAvg.SetCompact(0x1c05a3f4);
-    BOOST_CHECK_EQUAL(0x1c04e4e8,
-    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
-
-    RegtestDeactivateBlossom();
-}
-
 /* Test the constraint on the upper bound for actual time taken */
 BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
 {
@@ -116,20 +72,6 @@ BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual)
     bnAvg.SetCompact(0x1c387f6f);
     BOOST_CHECK_EQUAL(0x1c4bb500,
     CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
-}
-
-BOOST_AUTO_TEST_CASE(get_next_work_upper_limit_actual_blossom)
-{
-    const Consensus::Params& params = RegtestActivateBlossom(true);
-
-    int64_t nLastRetargetTime = 1000000000; // NOTE: Not an actual block time
-    int64_t nThisTime = 1000002908;
-    arith_uint256 bnAvg;
-    bnAvg.SetCompact(0x1c387f6f);
-    BOOST_CHECK_EQUAL(0x1c4a93bb,
-    CalculateNextWorkRequired(bnAvg, nThisTime, nLastRetargetTime, params, 0));
-
-    RegtestDeactivateBlossom();
 }
 
 void GetBlockProofEquivalentTimeImpl(const Consensus::Params& params) {
@@ -156,12 +98,6 @@ BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test)
 {
     SelectParams(CBaseChainParams::MAIN);
     GetBlockProofEquivalentTimeImpl(Params().GetConsensus());
-}
-
-BOOST_AUTO_TEST_CASE(GetBlockProofEquivalentTime_test_blossom)
-{
-    GetBlockProofEquivalentTimeImpl(RegtestActivateBlossom(true));
-    RegtestDeactivateBlossom();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

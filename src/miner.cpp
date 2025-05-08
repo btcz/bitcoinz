@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2016-2023 The Zcash developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 
@@ -8,13 +9,14 @@
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/funding.h"
 #include "consensus/merkle.h"
 #include "consensus/upgrades.h"
 #include "consensus/validation.h"
-#include "hash.h"
 #ifdef ENABLE_MINING
 #include "crypto/equihash.h"
 #endif
+#include "hash.h"
 #include "key_io.h"
 #include "main.h"
 #include "metrics.h"
@@ -38,6 +40,7 @@
 #endif
 #include <mutex>
 #include <queue>
+#include <variant>
 
 using namespace std;
 
@@ -71,6 +74,7 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
     int64_t nOldTime = pblock->nTime;
     int64_t nNewTime = std::max(pindexPrev->GetMedianTimePast()+1, GetTime());
 
+    // The timestamp of a given block template should not go backwards.
     if (nOldTime < nNewTime)
         pblock->nTime = nNewTime;
 
@@ -182,17 +186,42 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn)
     CMutableTransaction coinbaseTx = CreateNewContextualCMutableTransaction(chainparams.GetConsensus(), nHeight);
     coinbaseTx.vin.resize(1);
     coinbaseTx.vin[0].prevout.SetNull();
+
+    const auto block_subsidy = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
-    coinbaseTx.vout[0].nValue = GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+    coinbaseTx.vout[0].nValue = block_subsidy;
 
-    if ((nHeight > chainparams.GetCommunityFeeStartHeight()) && (nHeight <= chainparams.GetLastCommunityFeeBlockHeight())) {
-        // Community Fee is 5% of the block subsidy
-        auto vCommunityFee = coinbaseTx.vout[0].nValue * 0.05;
-        // Take some reward away from us
-        coinbaseTx.vout[0].nValue -= vCommunityFee;
-        // And give it to the community
-        coinbaseTx.vout.push_back(CTxOut(vCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight)));
+    // Add community fee and funding stream outputs
+    const Consensus::Params& consensusParams = chainparams.GetConsensus();
+
+    if (nHeight > 0) {
+        if (chainparams.GetConsensus().NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY)) {
+            LogPrint(BCLog::POW, "%s: Constructing funding stream outputs for height %d", __func__, nHeight);
+
+            auto fundingStreamElements = Consensus::GetActiveFundingStreamElements(
+                nHeight,
+                block_subsidy,
+                chainparams.GetConsensus());
+
+            for (Consensus::FundingStreamElement fselem : fundingStreamElements) {
+                LogPrint(BCLog::POW, "%s: Adding transparent funding stream output of value %d", __func__, fselem.second);
+                // Take some reward away from us
+                coinbaseTx.vout[0].nValue -= fselem.second;
+                // And give it to the community
+                coinbaseTx.vout.push_back(CTxOut(fselem.second, std::get<CScript>(fselem.first)));
+            }
+        } else if ((nHeight > consensusParams.GetCommunityFeeStartHeight()) && (nHeight <= consensusParams.GetLastCommunityFeeBlockHeight())) {
+            LogPrint(BCLog::POW, "%s: Constructing funding stream outputs for height %d", __func__, nHeight);
+            // Community Fee is 5% of the block subsidy
+            auto vCommunityFee = block_subsidy * 0.05;
+            LogPrint(BCLog::POW, "%s: Adding transparent funding stream output of value %d", __func__, vCommunityFee);
+            // Take some reward away from us
+            coinbaseTx.vout[0].nValue -= vCommunityFee;
+            // And give it to the community
+            coinbaseTx.vout.push_back(CTxOut(vCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight)));
+        }
     }
 
     // Set to 0 so expiry height does not apply to coinbase txs
@@ -218,8 +247,6 @@ CBlockTemplate* BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn)
     nonce <<= 32;
     nonce >>= 16;
     pblock->nNonce = ArithToUint256(nonce);
-
-    uint32_t prevConsensusBranchId = CurrentEpochBranchId(pindexPrev->nHeight, chainparams.GetConsensus());
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
@@ -419,7 +446,9 @@ class MinerAddressScript : public CReserveScript
 
 void GetScriptForMinerAddress(boost::shared_ptr<CReserveScript> &script)
 {
-    CTxDestination addr = DecodeDestination(GetArg("-mineraddress", ""));
+    KeyIO keyIO(Params());
+
+    CTxDestination addr = keyIO.DecodeDestination(GetArg("-mineraddress", ""));
     if (!IsValidDestination(addr)) {
         return;
     }
@@ -487,7 +516,6 @@ void static BitcoinMiner(const CChainParams& chainparams)
     boost::shared_ptr<CReserveScript> coinbaseScript;
     GetMainSignals().ScriptForMining(coinbaseScript);
 
-
     // Get the height of current tip
     int nHeight = chainActive.Height();
     if (nHeight == -1) {
@@ -520,8 +548,9 @@ void static BitcoinMiner(const CChainParams& chainparams)
         // Throw an error if no script was provided.  This can happen
         // due to some internal error but also if the keypool is empty.
         // In the latter case, already the pointer is NULL.
-        if (!coinbaseScript || coinbaseScript->reserveScript.empty())
+        if (!coinbaseScript || coinbaseScript->reserveScript.empty()) {
             throw std::runtime_error("No coinbase script available (mining requires a wallet or -mineraddress)");
+        }
 
         while (true) {
             if (chainparams.MiningRequiresPeers()) {
@@ -545,7 +574,11 @@ void static BitcoinMiner(const CChainParams& chainparams)
             // Create new block
             //
             unsigned int nTransactionsUpdatedLast = mempool.GetTransactionsUpdated();
-            CBlockIndex* pindexPrev = chainActive.Tip();
+            CBlockIndex* pindexPrev;
+            {
+                LOCK(cs_main);
+                pindexPrev = chainActive.Tip();
+            }
 
             unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(chainparams).CreateNewBlock(coinbaseScript->reserveScript));
             if (!pblocktemplate.get())

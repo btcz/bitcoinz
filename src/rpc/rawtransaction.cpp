@@ -52,9 +52,10 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fInclud
     out.pushKV("reqSigs", nRequired);
     out.pushKV("type", GetTxnOutputType(type));
 
+    KeyIO keyIO(Params());
     UniValue a(UniValue::VARR);
     for (const CTxDestination& addr : addresses) {
-        a.push_back(EncodeDestination(addr));
+        a.push_back(keyIO.EncodeDestination(addr));
     }
     out.pushKV("addresses", a);
 }
@@ -166,6 +167,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
 
     entry.pushKV("hex", EncodeHexTx(tx));
 
+    KeyIO keyIO(Params());
     UniValue vin(UniValue::VARR);
     for (const CTxIn& txin : tx.vin) {
         UniValue in(UniValue::VOBJ);
@@ -189,7 +191,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
                 CTxDestination dest =
                     DestFromAddressHash(spentInfo.addressType, spentInfo.addressHash);
                 if (IsValidDestination(dest)) {
-                    in.pushKV("address", EncodeDestination(dest));
+                    in.pushKV("address", keyIO.EncodeDestination(dest));
                 }
             }
         }
@@ -554,7 +556,7 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
             "    }\n"
             "3. locktime              (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs\n"
             "4. expiryheight          (numeric, optional, default="
-                + strprintf("nextblockheight+%d (pre-Blossom) or nextblockheight+%d (post-Blossom)", DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA) + ") "
+                + strprintf("nextblockheight+%d", DEFAULT_TX_EXPIRY_DELTA) + ") "
                 "Expiry height of transaction (if Overwinter is active)\n"
             "\nResult:\n"
             "\"transaction\"            (string) hex string of the transaction\n"
@@ -629,32 +631,29 @@ UniValue createrawtransaction(const UniValue& params, bool fHelp)
         rawTx.vin.push_back(in);
     }
 
+    KeyIO keyIO(Params());
+
     std::set<CTxDestination> destinations;
     vector<string> addrList = sendTo.getKeys();
     for (const std::string& name_ : addrList) {
-
-
-
-      // Add data field acceptence
-      if (name_ == "data") {
-          std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
-          CTxOut out(0, CScript() << OP_RETURN << data);
-          rawTx.vout.push_back(out);
-      } else {
-          CTxDestination destination = DecodeDestination(name_);
-          if (!IsValidDestination(destination)) {
-              throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid BitcoinZ address: ") + name_);
-          }
-          if (!destinations.insert(destination).second) {
-              throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
-          }
-          CScript scriptPubKey = GetScriptForDestination(destination);
-          CAmount nAmount = AmountFromValue(sendTo[name_]);
-          CTxOut out(nAmount, scriptPubKey);
-          rawTx.vout.push_back(out);
-      }
-
-
+        // Add data field acceptence
+        if (name_ == "data") {
+            std::vector<unsigned char> data = ParseHexV(sendTo[name_].getValStr(),"Data");
+            CTxOut out(0, CScript() << OP_RETURN << data);
+            rawTx.vout.push_back(out);
+        } else {
+            CTxDestination destination = keyIO.DecodeDestination(name_);
+            if (!IsValidDestination(destination)) {
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string("Invalid BitcoinZ address: ") + name_);
+            }
+            if (!destinations.insert(destination).second) {
+                throw JSONRPCError(RPC_INVALID_PARAMETER, std::string("Invalid parameter, duplicated address: ") + name_);
+            }
+            CScript scriptPubKey = GetScriptForDestination(destination);
+            CAmount nAmount = AmountFromValue(sendTo[name_]);
+            CTxOut out(nAmount, scriptPubKey);
+            rawTx.vout.push_back(out);
+        }
     }
 
     return EncodeHexTx(rawTx);
@@ -793,7 +792,8 @@ UniValue decodescript(const UniValue& params, bool fHelp)
     }
     ScriptPubKeyToJSON(script, r, false);
 
-    r.pushKV("p2sh", EncodeDestination(CScriptID(script)));
+    KeyIO keyIO(Params());
+    r.pushKV("p2sh", keyIO.EncodeDestination(CScriptID(script)));
     return r;
 }
 
@@ -918,6 +918,8 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         view.SetBackend(viewDummy); // switch back to avoid locking mempool for too long
     }
 
+    KeyIO keyIO(Params());
+
     bool fGivenKeys = false;
     CBasicKeyStore tempKeystore;
     if (params.size() > 2 && !params[2].isNull()) {
@@ -925,7 +927,7 @@ UniValue signrawtransaction(const UniValue& params, bool fHelp)
         UniValue keys = params[2].get_array();
         for (size_t idx = 0; idx < keys.size(); idx++) {
             UniValue k = keys[idx];
-            CKey key = DecodeSecret(k.get_str());
+            CKey key = keyIO.DecodeSecret(k.get_str());
             if (!key.IsValid())
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
             tempKeystore.AddKey(key);

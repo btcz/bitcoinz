@@ -117,6 +117,7 @@ BITCOIN_CORE_H = \
   compat/sanity.h \
   compressor.h \
   consensus/consensus.h \
+  consensus/funding.h \
   consensus/merkle.h \
   consensus/params.h \
   consensus/upgrades.h \
@@ -131,6 +132,7 @@ BITCOIN_CORE_H = \
   httpserver.h \
   init.h \
   key.h \
+  key_constants.h \
   key_io.h \
   keystore.h \
   dbwrapper.h \
@@ -346,6 +348,7 @@ libbitcoin_common_a_SOURCES = \
   chainparams.cpp \
   coins.cpp \
   compressor.cpp \
+  consensus/funding.cpp \
   consensus/merkle.cpp \
   consensus/params.cpp \
   consensus/upgrades.cpp \

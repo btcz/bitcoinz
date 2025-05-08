@@ -48,8 +48,14 @@ static const EHparameters eh96_5 = {96,5,68};
 static const EHparameters eh48_5 = {48,5,36};
 static const unsigned int MAX_EH_PARAM_LIST_LEN = 2;
 
+class CBaseKeyConstants : public KeyConstants {
+public:
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
+    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
 
-
+    std::vector<unsigned char> base58Prefixes[KeyConstants::MAX_BASE58_TYPES];
+    std::string bech32HRPs[KeyConstants::MAX_BECH32_TYPES];
+};
 
 /**
  * CChainParams defines various tweakable parameters of a given instance of the
@@ -58,33 +64,9 @@ static const unsigned int MAX_EH_PARAM_LIST_LEN = 2;
  * a regression test mode which is intended for private networks only. It has
  * minimal difficulty to ensure that blocks can be found instantly.
  */
-class CChainParams
+class CChainParams: public KeyConstants
 {
 public:
-    enum Base58Type {
-        PUBKEY_ADDRESS,
-        SCRIPT_ADDRESS,
-        SECRET_KEY,
-        EXT_PUBLIC_KEY,
-        EXT_SECRET_KEY,
-
-        ZCPAYMENT_ADDRESS,
-        ZCSPENDING_KEY,
-        ZCVIEWING_KEY,
-
-        MAX_BASE58_TYPES
-    };
-
-    enum Bech32Type {
-        SAPLING_PAYMENT_ADDRESS,
-        SAPLING_FULL_VIEWING_KEY,
-        SAPLING_INCOMING_VIEWING_KEY,
-        SAPLING_EXTENDED_SPEND_KEY,
-        SAPLING_EXTENDED_FVK,
-
-        MAX_BECH32_TYPES
-    };
-
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
@@ -117,16 +99,18 @@ public:
     /** Return the BIP70 network string (main, test or regtest) */
     std::string NetworkIDString() const { return strNetworkID; }
     const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
-    const std::string& Bech32HRP(Bech32Type type) const { return bech32HRPs[type]; }
+    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const {
+        return keyConstants.Base58Prefix(type);
+    }
+    const std::string& Bech32HRP(Bech32Type type) const {
+        return keyConstants.Bech32HRP(type);
+    }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     /** Return the community fee address and script for a given block height */
     std::string GetCommunityFeeAddressAtHeight(int height) const;
     CScript GetCommunityFeeScriptAtHeight(int height) const;
     std::string GetCommunityFeeAddressAtIndex(int i) const;
-    int GetCommunityFeeStartHeight() const { return vCommunityFeeStartHeight; };
-    int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
     /** Enforce coinbase consensus rule in regtest mode */
     void SetRegTestCoinbaseMustBeShielded() { consensus.fCoinbaseMustBeShielded = true; }
     int GetFutureBlockTimeWindow(int height) const;
@@ -142,8 +126,7 @@ protected:
     unsigned long eh_epoch_1_endblock = 150000;
     unsigned long eh_epoch_2_startblock = 140000;
     std::vector<CDNSSeedData> vSeeds;
-    std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
-    std::string bech32HRPs[MAX_BECH32_TYPES];
+    CBaseKeyConstants keyConstants;
     std::string strNetworkID;
     std::string strCurrencyUnits;
     uint32_t bip44CoinType;
@@ -156,8 +139,6 @@ protected:
     bool fTestnetToBeDeprecatedFieldRPC = false;
     CCheckpointData checkpointData;
     std::vector<std::string> vCommunityFeeAddress;
-    int vCommunityFeeStartHeight;
-    int vCommunityFeeLastHeight;
     MapFutureBlockTimeWindows futureBlockTimeWindows;
     CAmount nSproutValuePoolCheckpointHeight = 0;
     CAmount nSproutValuePoolCheckpointBalance = 0;
@@ -192,5 +173,10 @@ void UpdateRegtestPow(int64_t nPowMaxAdjustDown, int64_t nPowMaxAdjustUp, uint25
 int validEHparameterList(EHparameters *ehparams, unsigned long blockheight, const CChainParams& params);
 
 bool checkEHParamaters(int solSize, int height, const CChainParams& params);
+
+/**
+ * Allows modifying the regtest funding stream parameters.
+ */
+void UpdateFundingStreamParameters(Consensus::FundingStreamIndex idx, Consensus::FundingStream fs);
 
 #endif // BITCOIN_CHAINPARAMS_H

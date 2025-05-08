@@ -49,10 +49,21 @@ public:
 
 void CreateJoinSplitSignature(CMutableTransaction& mtx, uint32_t consensusBranchId);
 
-CMutableTransaction GetValidTransaction() {
-    uint32_t consensusBranchId = SPROUT_BRANCH_ID;
-
+CMutableTransaction GetValidTransaction(uint32_t consensusBranchId=SPROUT_BRANCH_ID) {
     CMutableTransaction mtx;
+    if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = OVERWINTER_VERSION_GROUP_ID;
+        mtx.nVersion = OVERWINTER_TX_VERSION;
+    } else if (consensusBranchId == NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId) {
+        mtx.fOverwintered = true;
+        mtx.nVersionGroupId = SAPLING_VERSION_GROUP_ID;
+        mtx.nVersion = SAPLING_TX_VERSION;
+    } else if (consensusBranchId != SPROUT_BRANCH_ID) {
+        // Unsupported consensus branch ID
+        assert(false);
+    }
+
     mtx.vin.resize(2);
     mtx.vin[0].prevout.hash = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vin[0].prevout.n = 0;
@@ -67,6 +78,12 @@ CMutableTransaction GetValidTransaction() {
     mtx.vJoinSplit[0].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000001");
     mtx.vJoinSplit[1].nullifiers.at(0) = uint256S("0000000000000000000000000000000000000000000000000000000000000002");
     mtx.vJoinSplit[1].nullifiers.at(1) = uint256S("0000000000000000000000000000000000000000000000000000000000000003");
+
+    if (mtx.nVersion >= SAPLING_TX_VERSION) {
+        libzcash::GrothProof emptyProof;
+        mtx.vJoinSplit[0].proof = emptyProof;
+        mtx.vJoinSplit[1].proof = emptyProof;
+    }
 
     CreateJoinSplitSignature(mtx, consensusBranchId);
     return mtx;
@@ -692,15 +709,6 @@ TEST(ChecktransactionTests, OverwinterExpiryHeight) {
     }
 }
 
-TEST(ChecktransactionTests, BlossomExpiryHeight) {
-    const Consensus::Params& params = RegtestActivateBlossom(false, 100);
-    CMutableTransaction preBlossomMtx = CreateNewContextualCMutableTransaction(params, 99);
-    EXPECT_EQ(preBlossomMtx.nExpiryHeight, 100 - 1);
-    CMutableTransaction blossomMtx = CreateNewContextualCMutableTransaction(params, 100);
-    EXPECT_EQ(blossomMtx.nExpiryHeight, 100 + 40);
-    RegtestDeactivateBlossom();
-}
-
 // Test that a Sprout tx with a negative version number is detected
 // given the new Overwinter logic
 TEST(ChecktransactionTests, SproutTxVersionTooLow) {
@@ -915,19 +923,19 @@ TEST(ChecktransactionTests, OverwinteredContextualCreateTx) {
 
     // Overwinter activates
     ContextualCreateTxCheck(params, overwinterActivationHeight,
-        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, overwinterActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
+        OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, overwinterActivationHeight + DEFAULT_TX_EXPIRY_DELTA);
     // Close to Sapling activation
-    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 2,
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_TX_EXPIRY_DELTA - 2,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 2);
-    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA - 1,
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_TX_EXPIRY_DELTA - 1,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA,
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_TX_EXPIRY_DELTA,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 1,
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_TX_EXPIRY_DELTA + 1,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 2,
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_TX_EXPIRY_DELTA + 2,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
-    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA + 3,
+    ContextualCreateTxCheck(params, saplingActivationHeight - DEFAULT_TX_EXPIRY_DELTA + 3,
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Just before Sapling activation
     ContextualCreateTxCheck(params, saplingActivationHeight - 4,
@@ -940,7 +948,7 @@ TEST(ChecktransactionTests, OverwinteredContextualCreateTx) {
         OVERWINTER_TX_VERSION, true, OVERWINTER_VERSION_GROUP_ID, saplingActivationHeight - 1);
     // Sapling activates
     ContextualCreateTxCheck(params, saplingActivationHeight,
-        SAPLING_TX_VERSION, true, SAPLING_VERSION_GROUP_ID, saplingActivationHeight + DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA);
+        SAPLING_TX_VERSION, true, SAPLING_VERSION_GROUP_ID, saplingActivationHeight + DEFAULT_TX_EXPIRY_DELTA);
     // Revert to default
     RegtestDeactivateSapling();
 }
@@ -1005,4 +1013,60 @@ TEST(ChecktransactionTests, BadTxReceivedOverNetwork)
             FAIL() << "Expected std::ios_base::failure 'Unknown transaction format', got some other exception";
         }
     }
+}
+
+TEST(ChecktransactionTests, CanopyRejectsNonzeroVPubOld) {
+
+    RegtestActivateSapling();
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with nonzero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 1;
+    mtx.vJoinSplit[0].vpub_new = 0;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // Before Canopy, nonzero vpub_old is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    // After Canopy, nonzero vpub_old is accepted in non-contextual checks but rejected in contextual checks
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", false, "")).Times(1);
+    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
+}
+
+TEST(ChecktransactionTests, CanopyAcceptsZeroVPubOld) {
+
+    CMutableTransaction mtx = GetValidTransaction(NetworkUpgradeInfo[Consensus::UPGRADE_SAPLING].nBranchId);
+
+    // Make a JoinSplit with zero vpub_old
+    mtx.vJoinSplit.resize(1);
+    mtx.vJoinSplit[0].vpub_old = 0;
+    mtx.vJoinSplit[0].vpub_new = 1;
+    mtx.vJoinSplit[0].proof = libzcash::GrothProof();
+    CreateJoinSplitSignature(mtx, NetworkUpgradeInfo[Consensus::UPGRADE_CANOPY].nBranchId);
+
+    CTransaction tx(mtx);
+
+    // After Canopy, zero value vpub_old (i.e. unshielding) is accepted in both non-contextual and contextual checks
+    MockCValidationState state;
+
+    RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+
+    EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+
+    RegtestDeactivateCanopy();
+
 }

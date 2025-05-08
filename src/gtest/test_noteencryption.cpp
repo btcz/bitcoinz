@@ -11,6 +11,8 @@
 #include "zcash/Address.hpp"
 #include "crypto/sha256.h"
 #include "librustzcash.h"
+#include "consensus/params.h"
+#include "utiltest.h"
 
 class TestNoteDecryption : public ZCNoteDecryption {
 public:
@@ -23,6 +25,11 @@ public:
 
 TEST(Noteencryption, NotePlaintext)
 {
+    SelectParams(CBaseChainParams::REGTEST);
+
+    const Consensus::Params& (*activations [])() = {RegtestActivateSapling, RegtestActivateCanopy};
+    void (*deactivations [])() = {RegtestDeactivateSapling, RegtestDeactivateCanopy};
+
     using namespace libzcash;
     auto xsk = SaplingSpendingKey(uint256()).expanded_spending_key();
     auto fvk = xsk.full_viewing_key();
@@ -35,128 +42,133 @@ TEST(Noteencryption, NotePlaintext)
         memo[i] = (unsigned char) i;
     }
 
-    SaplingNote note(addr, 39393);
-    auto cmu_opt = note.cmu();
-    if (!cmu_opt) {
-        FAIL();
-    }
-    uint256 cmu = cmu_opt.value();
-    SaplingNotePlaintext pt(note, memo);
+    for (int ver = 0; ver < 2; ver++){
+        auto params = (*activations[ver])();
 
-    auto res = pt.encrypt(addr.pk_d);
-    if (!res) {
-        FAIL();
-    }
+        SaplingNote note(addr, 39393);
+        auto cmu_opt = note.cmu();
+        if (!cmu_opt) {
+            FAIL();
+        }
+        uint256 cmu = cmu_opt.value();
+        SaplingNotePlaintext pt(note, memo);
 
-    auto enc = res.value();
+        auto res = pt.encrypt(addr.pk_d);
+        if (!res) {
+            FAIL();
+        }
 
-    auto ct = enc.first;
-    auto encryptor = enc.second;
-    auto epk = encryptor.get_epk();
+        auto enc = res.value();
 
-    // Try to decrypt with incorrect commitment
-    ASSERT_FALSE(SaplingNotePlaintext::decrypt(
-        ct,
-        ivk,
-        epk,
-        uint256()
-    ));
+        auto ct = enc.first;
+        auto encryptor = enc.second;
+        auto epk = encryptor.get_epk();
 
-    // Try to decrypt with correct commitment
-    auto foo = SaplingNotePlaintext::decrypt(
-        ct,
-        ivk,
-        epk,
-        cmu
-    );
+        // Try to decrypt with incorrect commitment
+        ASSERT_FALSE(SaplingNotePlaintext::decrypt(
+            ct,
+            ivk,
+            epk,
+            uint256()
+        ));
 
-    if (!foo) {
-        FAIL();
-    }
+        // Try to decrypt with correct commitment
+        auto foo = SaplingNotePlaintext::decrypt(
+            ct,
+            ivk,
+            epk,
+            cmu
+        );
 
-    auto bar = foo.value();
+        if (!foo) {
+            FAIL();
+        }
 
-    ASSERT_TRUE(bar.value() == pt.value());
-    ASSERT_TRUE(bar.memo() == pt.memo());
-    ASSERT_TRUE(bar.d == pt.d);
-    ASSERT_TRUE(bar.rcm == pt.rcm);
+        auto bar = foo.value();
 
-    auto foobar = bar.note(ivk);
+        ASSERT_TRUE(bar.value() == pt.value());
+        ASSERT_TRUE(bar.memo() == pt.memo());
+        ASSERT_TRUE(bar.d == pt.d);
+        ASSERT_TRUE(bar.rcm == pt.rcm);
 
-    if (!foobar) {
-        FAIL();
-    }
+        auto foobar = bar.note(ivk);
 
-    auto new_note = foobar.value();
+        if (!foobar) {
+            FAIL();
+        }
 
-    ASSERT_TRUE(note.value() == new_note.value());
-    ASSERT_TRUE(note.d == new_note.d);
-    ASSERT_TRUE(note.pk_d == new_note.pk_d);
-    ASSERT_TRUE(note.r == new_note.r);
-    ASSERT_TRUE(note.cmu() == new_note.cmu());
+        auto new_note = foobar.value();
 
-    SaplingOutgoingPlaintext out_pt;
-    out_pt.pk_d = note.pk_d;
-    out_pt.esk = encryptor.get_esk();
+        ASSERT_TRUE(note.value() == new_note.value());
+        ASSERT_TRUE(note.d == new_note.d);
+        ASSERT_TRUE(note.pk_d == new_note.pk_d);
+        ASSERT_TRUE(note.r == new_note.r);
+        ASSERT_TRUE(note.cmu() == new_note.cmu());
 
-    auto ovk = random_uint256();
-    auto cv = random_uint256();
-    auto cm = random_uint256();
+        SaplingOutgoingPlaintext out_pt;
+        out_pt.pk_d = note.pk_d;
+        out_pt.esk = encryptor.get_esk();
 
-    auto out_ct = out_pt.encrypt(
-        ovk,
-        cv,
-        cm,
-        encryptor
-    );
+        auto ovk = random_uint256();
+        auto cv = random_uint256();
+        auto cm = random_uint256();
 
-    auto decrypted_out_ct = out_pt.decrypt(
-        out_ct,
-        ovk,
-        cv,
-        cm,
-        encryptor.get_epk()
-    );
+        auto out_ct = out_pt.encrypt(
+            ovk,
+            cv,
+            cm,
+            encryptor
+        );
 
-    if (!decrypted_out_ct) {
-        FAIL();
-    }
+        auto decrypted_out_ct = out_pt.decrypt(
+            out_ct,
+            ovk,
+            cv,
+            cm,
+            encryptor.get_epk()
+        );
 
-    auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
+        if (!decrypted_out_ct) {
+            FAIL();
+        }
 
-    ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
-    ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
+        auto decrypted_out_ct_unwrapped = decrypted_out_ct.value();
 
-    // Test sender won't accept invalid commitments
-    ASSERT_FALSE(
-        SaplingNotePlaintext::decrypt(
+        ASSERT_TRUE(decrypted_out_ct_unwrapped.pk_d == out_pt.pk_d);
+        ASSERT_TRUE(decrypted_out_ct_unwrapped.esk == out_pt.esk);
+
+        // Test sender won't accept invalid commitments
+        ASSERT_FALSE(
+            SaplingNotePlaintext::decrypt(
+                ct,
+                epk,
+                decrypted_out_ct_unwrapped.esk,
+                decrypted_out_ct_unwrapped.pk_d,
+                uint256()
+            )
+        );
+
+        // Test sender can decrypt the note ciphertext.
+        foo = SaplingNotePlaintext::decrypt(
             ct,
             epk,
             decrypted_out_ct_unwrapped.esk,
             decrypted_out_ct_unwrapped.pk_d,
-            uint256()
-        )
-    );
+            cmu
+        );
 
-    // Test sender can decrypt the note ciphertext.
-    foo = SaplingNotePlaintext::decrypt(
-        ct,
-        epk,
-        decrypted_out_ct_unwrapped.esk,
-        decrypted_out_ct_unwrapped.pk_d,
-        cmu
-    );
+        if (!foo) {
+            FAIL();
+        }
 
-    if (!foo) {
-        FAIL();
+        bar = foo.value();
+
+        ASSERT_TRUE(bar.value() == pt.value());
+        ASSERT_TRUE(bar.memo() == pt.memo());
+        ASSERT_TRUE(bar.d == pt.d);
+        ASSERT_TRUE(bar.rcm == pt.rcm);
+        (*deactivations[ver])();
     }
-
-    bar = foo.value();
-
-    ASSERT_TRUE(bar.value() == pt.value());
-    ASSERT_TRUE(bar.memo() == pt.memo());
-    ASSERT_TRUE(bar.d == pt.d);
-    ASSERT_TRUE(bar.rcm == pt.rcm);
 }
 
 TEST(Noteencryption, SaplingApi)
