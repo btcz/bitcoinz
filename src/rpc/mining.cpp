@@ -6,6 +6,7 @@
 #include "amount.h"
 #include "chainparams.h"
 #include "consensus/consensus.h"
+#include "consensus/funding.h"
 #include "consensus/merkle.h"
 #include "consensus/validation.h"
 #include "core_io.h"
@@ -551,11 +552,13 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
     if (strMode != "template")
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid mode");
 
-    if (vNodes.empty())
-        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "BitcoinZ is not connected!");
+    if (Params().NetworkIDString() != "regtest") {
+        if (vNodes.empty())
+            throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "BitcoinZ is not connected!");
 
-    if (IsInitialBlockDownload(Params()))
-        throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "BitcoinZ is downloading blocks...");
+        if (IsInitialBlockDownload(Params()))
+            throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "BitcoinZ is downloading blocks...");
+    }
 
     static unsigned int nTransactionsUpdatedLast;
 
@@ -652,6 +655,8 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
 
     UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
 
+    KeyIO keyIO(Params());
+
     UniValue txCoinbase = NullUniValue;
     UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
@@ -696,7 +701,7 @@ UniValue getblocktemplate(const UniValue& params, bool fHelp)
                 ExtractDestinations(scriptPublicKey, whichType, addresses, nRequired);
                 UniValue o(UniValue::VARR);
                 for (const CTxDestination& addr : addresses) {
-                    o.push_back(EncodeDestination(addr));
+                    o.push_back(keyIO.EncodeDestination(addr));
                 }
                 entry.pushKV("foundersraddress", o);
 
@@ -878,7 +883,15 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
             "  \"founders\" : x.xxx        (numeric) The community fee amount in " + CURRENCY_UNIT + ".\n"
-            "}\n"
+            "  \"fundingstreams\" : [          (array) An array of funding stream descriptions (present only when Canopy has activated).\n"
+            "    {\n"
+            "      \"recipient\" : \"...\",        (string) A description of the funding stream recipient.\n"
+            "      \"specification\" : \"url\",    (string) A URL for the specification of this funding stream.\n"
+            "      \"value\" : x.xxx             (numeric) The funding stream amount in " + CURRENCY_UNIT + ".\n"
+            "      \"valueZat\" : xxxx           (numeric) The funding stream amount in " + MINOR_CURRENCY_UNIT + ".\n"
+            "      \"address\" :                 (string) The transparent or Sapling address of the funding stream recipient.\n"
+            "    }, ...\n"
+            "  ]\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
             + HelpExampleRpc("getblockubsidy", "1000")
@@ -889,14 +902,34 @@ UniValue getblocksubsidy(const UniValue& params, bool fHelp)
     if (nHeight < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
-    CAmount nReward = GetBlockSubsidy(nHeight, Params().GetConsensus());
+    auto consensus = Params().GetConsensus();
+    CAmount nBlockSubsidy = GetBlockSubsidy(nHeight, consensus);
+    CAmount nMinerReward = nBlockSubsidy;
     CAmount nCommunityFee = 0;
-    if ((nHeight > Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
-        nCommunityFee = nReward * 0.05;
-        nReward -= nCommunityFee;
-    }
+    bool canopyActive = consensus.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_CANOPY);
+
     UniValue result(UniValue::VOBJ);
-    result.pushKV("miner", ValueFromAmount(nReward));
+
+    if (canopyActive) {
+        UniValue fundingstreams(UniValue::VARR);
+        auto fsinfos = Consensus::GetActiveFundingStreams(nHeight, consensus);
+        for (auto fsinfo : fsinfos) {
+            CAmount nStreamAmount = fsinfo.Value(nBlockSubsidy);
+            nMinerReward -= nStreamAmount;
+
+            UniValue fsobj(UniValue::VOBJ);
+            fsobj.pushKV("recipient", fsinfo.recipient);
+            fsobj.pushKV("specification", fsinfo.specification);
+            fsobj.pushKV("value", ValueFromAmount(nStreamAmount));
+            fundingstreams.push_back(fsobj);
+        }
+        result.pushKV("fundingstreams", fundingstreams);
+    } else if ((nHeight > consensus.GetCommunityFeeStartHeight()) && (nHeight <= consensus.GetLastCommunityFeeBlockHeight())) {
+        nCommunityFee = nBlockSubsidy * 0.05;
+        nMinerReward -= nCommunityFee;
+    }
+
+    result.pushKV("miner", ValueFromAmount(nMinerReward));
     result.pushKV("founders", ValueFromAmount(nCommunityFee));
     return result;
 }

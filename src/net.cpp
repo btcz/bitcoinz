@@ -438,6 +438,10 @@ void CNode::CloseSocketDisconnect()
             CloseSocket(hSocket);
         }
     }
+    {
+        LOCK(cs_inventory);
+        filterInventoryKnown.reset();
+    }
 
     // in case this fails, we'll empty the recv buffer when the CNode is deleted
     TRY_LOCK(cs_vRecvMsg, lockRecv);
@@ -1111,9 +1115,12 @@ void ThreadSocketHandler()
                     {
                         TRY_LOCK(pnode->cs_inventory, lockInv);
                         if (lockInv) {
-                            TRY_LOCK(pnode->cs_vSend, lockSend);
-                            if (lockSend) {
-                                fDelete = true;
+                            TRY_LOCK(pnode->cs_vRecvMsg, lockRecv);
+                            if (lockRecv) {
+                                TRY_LOCK(pnode->cs_vSend, lockSend);
+                                if (lockSend) {
+                                    fDelete = true;
+                                }
                             }
                         }
                     }
@@ -1178,8 +1185,8 @@ void ThreadSocketHandler()
 
                 bool select_send;
                 {
-                    TRY_LOCK(pnode->cs_vSend, lockSend);
-                    select_send = lockSend && !pnode->vSendMsg.empty();
+                    LOCK(pnode->cs_vSend);
+                    select_send = !pnode->vSendMsg.empty();
                 }
 
                 bool select_recv;

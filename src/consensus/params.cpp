@@ -5,7 +5,12 @@
 
 #include "params.h"
 
+#include <amount.h>
+#include <key_io.h>
+#include <script/standard.h>
 #include "upgrades.h"
+
+#include <variant>
 
 namespace Consensus {
     bool Params::NetworkUpgradeActive(int nHeight, Consensus::UpgradeIndex idx) const {
@@ -13,33 +18,127 @@ namespace Consensus {
     }
 
     int Params::Halving(int nHeight) const {
-        // zip208
-        // Halving(height) :=
-        // floor((height - SlowStartShift) / PreBlossomHalvingInterval), if not IsBlossomActivated(height)
-        // floor((BlossomActivationHeight - SlowStartShift) / PreBlossomHalvingInterval + (height - BlossomActivationHeight) / PostBlossomHalvingInterval), otherwise
-        if (NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
-            int64_t blossomActivationHeight = vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-            // Ideally we would say:
-            // halvings = (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
-            //     + (nHeight - blossomActivationHeight) / consensusParams.nPostBlossomSubsidyHalvingInterval;
-            // But, (blossomActivationHeight - consensusParams.SubsidySlowStartShift()) / consensusParams.nPreBlossomSubsidyHalvingInterval
-            // would need to be treated as a rational number in order for this to work.
-            // Define scaledHalvings := halvings * consensusParams.nPostBlossomSubsidyHalvingInterval;
-            int64_t scaledHalvings = ((blossomActivationHeight - SubsidySlowStartShift()) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO)
-                + (nHeight - blossomActivationHeight);
-            return (int) (scaledHalvings / nPostBlossomSubsidyHalvingInterval);
-        } else {
-            return (nHeight - SubsidySlowStartShift()) / nPreBlossomSubsidyHalvingInterval;
-        }
+        return (nHeight / nSubsidyHalvingInterval);
     }
 
+    /**
+     * This method determines the block height of the `halvingIndex`th
+     * halving, as known at the specified `nHeight` block height.
+     *
+     * Previous implementations of this logic were specialized to the
+     * first halving.
+     */
+    int Params::HalvingHeight(int halvingIndex) const {
+        assert(halvingIndex > 0);
+
+        return (nSubsidyHalvingInterval * halvingIndex);
+    }
+
+    int Params::GetCommunityFeeStartHeight() const {
+        return vCommunityFeeStartHeight;
+    }
+
+    int Params::GetLastCommunityFeeBlockHeight() const {
+        return vCommunityFeeLastHeight;
+    }
+
+    int Params::FundingPeriodIndex(int fundingStreamStartHeight, int nHeight) const {
+        int firstHalvingHeight = HalvingHeight(1);
+
+        // If the start height of the funding period is not aligned to a multiple of the
+        // funding period length, the first funding period will be shorter than the
+        // funding period length.
+        auto startPeriodOffset = (fundingStreamStartHeight - firstHalvingHeight) % nFundingPeriodLength;
+        if (startPeriodOffset < 0) startPeriodOffset += nFundingPeriodLength; // C++ '%' is remainder, not modulus!
+
+        return (nHeight - fundingStreamStartHeight + startPeriodOffset) / nFundingPeriodLength;
+    }
+
+    std::variant<FundingStream, FundingStreamError> FundingStream::ValidateFundingStream(
+        const Consensus::Params& params,
+        const int startHeight,
+        const int endHeight,
+        const std::vector<FundingStreamAddress>& addresses
+    ) {
+        if (!params.NetworkUpgradeActive(startHeight, Consensus::UPGRADE_CANOPY)) {
+            return FundingStreamError::CANOPY_NOT_ACTIVE;
+        }
+
+        if (endHeight < startHeight) {
+            return FundingStreamError::ILLEGAL_RANGE;
+        }
+
+        if (params.FundingPeriodIndex(startHeight, endHeight - 1) >= addresses.size()) {
+            return FundingStreamError::INSUFFICIENT_ADDRESSES;
+        }
+
+        return FundingStream(startHeight, endHeight, addresses);
+    };
+
+    class GetFundingStreamOrThrow {
+    public:
+        FundingStream operator()(const FundingStream& fs) const {
+            return fs;
+        }
+
+        FundingStream operator()(const FundingStreamError& e) const {
+            switch (e) {
+                case FundingStreamError::CANOPY_NOT_ACTIVE:
+                    throw std::runtime_error("Canopy network upgrade not active at funding stream start height.");
+                case FundingStreamError::ILLEGAL_RANGE:
+                    throw std::runtime_error("Illegal start/end height combination for funding stream.");
+                case FundingStreamError::INSUFFICIENT_ADDRESSES:
+                    throw std::runtime_error("Insufficient payment addresses to fully exhaust funding stream.");
+                default:
+                    throw std::runtime_error("Unrecognized error validating funding stream.");
+            };
+        }
+    };
+
+    FundingStream FundingStream::ParseFundingStream(
+        const Consensus::Params& params,
+        const KeyConstants& keyConstants,
+        const int startHeight,
+        const int endHeight,
+        const std::vector<std::string>& strAddresses)
+    {
+        KeyIO keyIO(keyConstants);
+
+        // Parse the address strings into concrete types.
+        std::vector<FundingStreamAddress> addresses;
+        for (auto addr : strAddresses) {
+            auto taddr = keyIO.DecodeDestination(addr);
+            if (IsValidDestination(taddr)) {
+                addresses.push_back(GetScriptForDestination(taddr));
+            }
+        }
+
+        auto validationResult = FundingStream::ValidateFundingStream(params, startHeight, endHeight, addresses);
+        return std::visit(GetFundingStreamOrThrow(), validationResult);
+    };
+
+    void Params::AddZIP207FundingStream(
+        const KeyConstants& keyConstants,
+        FundingStreamIndex idx,
+        int startHeight,
+        int endHeight,
+        const std::vector<std::string>& strAddresses)
+    {
+        if (startHeight >= 0) {
+            vFundingStreams[idx] = FundingStream::ParseFundingStream(*this, keyConstants, startHeight, endHeight, strAddresses);
+        }
+    };
+
+    FundingStreamAddress FundingStream::RecipientAddress(const Consensus::Params& params, int nHeight) const
+    {
+        auto addressIndex = params.FundingPeriodIndex(startHeight, nHeight);
+
+        assert(addressIndex >= 0 && addressIndex < addresses.size());
+        return addresses[addressIndex];
+    };
+
     int64_t Params::PoWTargetSpacing(int nHeight) const {
-        // zip208
-        // PoWTargetSpacing(height) :=
-        // PreBlossomPoWTargetSpacing, if not IsBlossomActivated(height)
-        // PostBlossomPoWTargetSpacing, otherwise.
-        bool blossomActive = NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM);
-        return blossomActive ? nPostBlossomPowTargetSpacing : nPreBlossomPowTargetSpacing;
+        return nPowTargetSpacing;
     }
 
     int64_t Params::AveragingWindowTimespan(int nHeight) const {

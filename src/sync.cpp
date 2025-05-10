@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include <boost/thread.hpp>
+#include <set>
 
 #ifdef DEBUG_LOCKCONTENTION
 void PrintLockContention(const char* pszName, const char* pszFile, int nLine)

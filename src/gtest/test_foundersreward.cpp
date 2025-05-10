@@ -3,6 +3,7 @@
 #include "main.h"
 #include "utilmoneystr.h"
 #include "chainparams.h"
+#include "consensus/funding.h"
 #include "fs.h"
 #include "utilstrencodings.h"
 #include "zcash/Address.hpp"
@@ -40,6 +41,7 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
     pubkeys.resize(3);
     CPubKey newKey;
     std::vector<std::string> addresses;
+    KeyIO keyIO(Params());
     for (int i = 0; i < numKeys; i++) {
         ASSERT_TRUE(pWallet->GetKeyFromPool(newKey));
         pubkeys[0] = newKey;
@@ -59,7 +61,7 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
         pWallet->AddCScript(result);
         pWallet->SetAddressBook(innerID, "", "receive");
 
-        std::string address = EncodeDestination(innerID);
+        std::string address = keyIO.EncodeDestination(innerID);
         addresses.push_back(address);
     }
 
@@ -86,7 +88,8 @@ TEST(FoundersRewardTest, create_testnet_2of3multisig) {
 // Utility method to check the number of unique addresses from 1 to maxHeight
 void checkNumberOfUniqueAddresses(int nUnique) {
     std::set<std::string> addresses;
-    for (int i = 1; i <= Params().GetLastCommunityFeeBlockHeight(); i++) {
+    auto consensusParams = Params().GetConsensus();
+    for (int i = 1; i <= consensusParams.GetLastCommunityFeeBlockHeight(); i++) {
         addresses.insert(Params().GetCommunityFeeAddressAtHeight(i));
     }
     EXPECT_EQ(addresses.size(), nUnique);
@@ -109,8 +112,9 @@ TEST(FoundersRewardTest, General) {
     EXPECT_EQ(HexStr(params.GetCommunityFeeScriptAtHeight(53127)), "a9145bfbeb4df59710514b7004041e75ad287dad9bc887");
     EXPECT_EQ(params.GetCommunityFeeAddressAtHeight(53127), "t2EwBFfC96DCiCAcJuEqGUbUes8rTNmaD6Q");
 
-    int minHeight = params.GetCommunityFeeStartHeight();
-    int maxHeight = params.GetLastCommunityFeeBlockHeight();
+    auto consensusParams = Params().GetConsensus();
+    int minHeight = consensusParams.GetCommunityFeeStartHeight();
+    int maxHeight = consensusParams.GetLastCommunityFeeBlockHeight();
 
     // If the block height parameter is out of bounds, there is an assert.
     EXPECT_DEATH(params.GetCommunityFeeScriptAtHeight(0), "nHeight");
@@ -119,18 +123,10 @@ TEST(FoundersRewardTest, General) {
     EXPECT_DEATH(params.GetCommunityFeeAddressAtHeight(maxHeight+1), "nHeight");
 }
 
-TEST(FoundersRewardTest, RegtestGetLastBlockBlossom) {
-    int blossomActivationHeight = Consensus::PRE_BLOSSOM_REGTEST_HALVING_INTERVAL / 2; // = 75
-    auto params = RegtestActivateBlossom(false, blossomActivationHeight);
-    int lastCFHeight = Params().GetLastCommunityFeeBlockHeight();
-    EXPECT_EQ(0, params.Halving(lastCFHeight));
-    RegtestDeactivateBlossom();
-}
-
 TEST(FoundersRewardTest, MainnetGetLastBlock) {
     SelectParams(CBaseChainParams::MAIN);
     auto params = Params().GetConsensus();
-    int lastCFHeight = Params().GetLastCommunityFeeBlockHeight();
+    int lastCFHeight = params.GetLastCommunityFeeBlockHeight();
     EXPECT_EQ(1, params.Halving(lastCFHeight));
 }
 
@@ -161,16 +157,16 @@ TEST(FoundersRewardTest, Regtest) {
 
 // Test that 5% community fee is fully rewarded in a defined period.
 // On Mainnet: nHeight > 328500 && nHeight <= 1400000 (494687187.5 BTCZ)
-TEST(FoundersRewardTest, SlowStartSubsidy) {
+TEST(FoundersRewardTest, CommunityFee) {
     SelectParams(CBaseChainParams::MAIN);
-    CChainParams params = Params();
 
-    int minHeight = params.GetCommunityFeeStartHeight();
-    int maxHeight = params.GetLastCommunityFeeBlockHeight();
+    auto consensusParams = Params().GetConsensus();
+    int minHeight = consensusParams.GetCommunityFeeStartHeight();
+    int maxHeight = consensusParams.GetLastCommunityFeeBlockHeight();
 
     CAmount totalSubsidy = 0;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, params.GetConsensus()) * 0.05;
+        CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams) * 0.05;
 	if (nHeight > minHeight) {
             totalSubsidy += nSubsidy;
         }
@@ -185,10 +181,11 @@ TEST(FoundersRewardTest, SlowStartSubsidy) {
 // Since on the main network vCommunityFeeStartHeight does not start from 0,
 // the first 22 elements of vCommunityFeeAddress are skipped.
 void verifyNumberOfRewards(bool fMainNet) {
-    CChainParams params = Params();
+    auto params = Params();
+    auto consensusParams = Params().GetConsensus();
 
-    int minHeight = params.GetCommunityFeeStartHeight();
-    int maxHeight = params.GetLastCommunityFeeBlockHeight();
+    int minHeight = consensusParams.GetCommunityFeeStartHeight();
+    int maxHeight = consensusParams.GetLastCommunityFeeBlockHeight();
 
     std::map<std::string, CAmount> ms;
     for (int nHeight = 1; nHeight <= maxHeight; nHeight++) {
@@ -236,4 +233,72 @@ TEST(FoundersRewardTest, PerAddressRewardMainnet) {
 TEST(FoundersRewardTest, PerAddressRewardTestnet) {
     SelectParams(CBaseChainParams::TESTNET);
     verifyNumberOfRewards(false);
+}
+
+// Verify that post-Canopy, block rewards are split according to ZIP 207.
+TEST(FundingStreamsRewardTest, Zip207Distribution) {
+    auto consensus = RegtestActivateCanopy(false, 200);
+
+    int minHeight = consensus.GetLastCommunityFeeBlockHeight() + 1;
+
+    KeyIO keyIO(Params());
+    auto sk = libzcash::SaplingSpendingKey(uint256());
+    for (int idx = Consensus::FIRST_FUNDING_STREAM; idx < Consensus::MAX_FUNDING_STREAMS; idx++) {
+        // we can just use the same addresses for all streams, all we're trying to do here
+        // is validate that the streams add up to the 20% of block reward.
+        auto shieldedAddr = keyIO.EncodePaymentAddress(sk.default_address());
+        UpdateFundingStreamParameters(
+            (Consensus::FundingStreamIndex) idx,
+            Consensus::FundingStream::ParseFundingStream(
+                consensus,
+                Params(),
+                minHeight,
+                minHeight + 12,
+                {
+                    "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
+                    shieldedAddr,
+                }
+            )
+        );
+    }
+
+    int maxHeight = consensus.GetLastCommunityFeeBlockHeight();
+    std::map<std::string, CAmount> ms;
+    for (int nHeight = minHeight; nHeight <= maxHeight; nHeight++) {
+        auto blockSubsidy = GetBlockSubsidy(nHeight, consensus);
+        auto elems = GetActiveFundingStreamElements(nHeight, blockSubsidy, consensus);
+
+        CAmount totalFunding = 0;
+        for (Consensus::FundingStreamElement elem : elems) {
+            totalFunding += elem.second;
+        }
+        EXPECT_EQ(totalFunding, blockSubsidy / 5);
+    }
+
+    RegtestDeactivateCanopy();
+}
+
+TEST(FundingStreamsRewardTest, ParseFundingStream) {
+    auto consensus = RegtestActivateCanopy(false, 200);
+
+    int minHeight = consensus.GetLastCommunityFeeBlockHeight() + 1;
+
+    KeyIO keyIO(Params());
+    auto sk = libzcash::SaplingSpendingKey(uint256());
+    auto shieldedAddr = keyIO.EncodePaymentAddress(sk.default_address());
+    ASSERT_THROW(
+        Consensus::FundingStream::ParseFundingStream(
+            consensus,
+            Params(),
+            minHeight,
+            minHeight + 13,
+            {
+                "t2UNzUUx8mWBCRYPRezvA363EYXyEpHokyi",
+                shieldedAddr,
+            }
+        ),
+        std::runtime_error
+    );
+
+    RegtestDeactivateCanopy();
 }

@@ -10,6 +10,7 @@
 #include "util.h"
 #include "fs.h"
 
+#include "clientversion.h"
 #include "chainparamsbase.h"
 #include "random.h"
 #include "serialize.h"

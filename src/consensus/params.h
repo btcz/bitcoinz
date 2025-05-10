@@ -6,12 +6,17 @@
 #ifndef BITCOIN_CONSENSUS_PARAMS_H
 #define BITCOIN_CONSENSUS_PARAMS_H
 
+#include "script/script.h"
+#include "key_constants.h"
 #include "uint256.h"
 
 #include <optional>
 #include <variant>
 
 namespace Consensus {
+
+// Early declaration to ensure it is accessible.
+struct Params;
 
 /**
  * Index into Params.vUpgrades and NetworkUpgradeInfo
@@ -27,7 +32,7 @@ enum UpgradeIndex : uint32_t {
     UPGRADE_TESTDUMMY,
     UPGRADE_OVERWINTER,
     UPGRADE_SAPLING,
-    UPGRADE_BLOSSOM,
+    UPGRADE_CANOPY,
     // NOTE: Also add new upgrades to NetworkUpgradeInfo in upgrades.cpp
     MAX_NETWORK_UPGRADES
 };
@@ -74,16 +79,62 @@ struct NetworkUpgrade {
     std::optional<uint256> hashActivationBlock;
 };
 
-/** ZIP208 block target interval in seconds. */
-static const unsigned int PRE_BLOSSOM_POW_TARGET_SPACING = 150;
-static const unsigned int POST_BLOSSOM_POW_TARGET_SPACING = 75;
-static_assert(POST_BLOSSOM_POW_TARGET_SPACING < PRE_BLOSSOM_POW_TARGET_SPACING, "Blossom target spacing must be less than pre-Blossom target spacing.");
-static const unsigned int PRE_BLOSSOM_HALVING_INTERVAL = 840000;
-static const unsigned int PRE_BLOSSOM_REGTEST_HALVING_INTERVAL = 150;
-static const int BLOSSOM_POW_TARGET_SPACING_RATIO = PRE_BLOSSOM_POW_TARGET_SPACING / POST_BLOSSOM_POW_TARGET_SPACING;
-static_assert(BLOSSOM_POW_TARGET_SPACING_RATIO * POST_BLOSSOM_POW_TARGET_SPACING == PRE_BLOSSOM_POW_TARGET_SPACING, "Invalid BLOSSOM_POW_TARGET_SPACING_RATIO");
-static const unsigned int POST_BLOSSOM_HALVING_INTERVAL = PRE_BLOSSOM_HALVING_INTERVAL * BLOSSOM_POW_TARGET_SPACING_RATIO;
-static const unsigned int POST_BLOSSOM_REGTEST_HALVING_INTERVAL = PRE_BLOSSOM_REGTEST_HALVING_INTERVAL * BLOSSOM_POW_TARGET_SPACING_RATIO;
+typedef std::variant<CScript> FundingStreamAddress;
+
+/**
+ * Index into Params.vFundingStreams.
+ *
+ * Being array indices, these MUST be numbered consecutively.
+ */
+enum FundingStreamIndex : uint32_t {
+    FS_ZIP214_BP,
+    FS_ZIP214_ZF,
+    FS_ZIP214_MG,
+    MAX_FUNDING_STREAMS,
+};
+const auto FIRST_FUNDING_STREAM = FS_ZIP214_BP;
+
+enum FundingStreamError {
+    CANOPY_NOT_ACTIVE,
+    ILLEGAL_RANGE,
+    INSUFFICIENT_ADDRESSES,
+};
+
+class FundingStream
+{
+private:
+    int startHeight;
+    int endHeight;
+    std::vector<FundingStreamAddress> addresses;
+
+    FundingStream(int startHeight, int endHeight, const std::vector<FundingStreamAddress>& addresses):
+        startHeight(startHeight), endHeight(endHeight), addresses(addresses) { }
+public:
+    FundingStream(const FundingStream& fs):
+        startHeight(fs.startHeight), endHeight(fs.endHeight), addresses(fs.addresses) { }
+
+    static std::variant<FundingStream, FundingStreamError> ValidateFundingStream(
+        const Consensus::Params& params,
+        const int startHeight,
+        const int endHeight,
+        const std::vector<FundingStreamAddress>& addresses
+    );
+
+    static FundingStream ParseFundingStream(
+        const Consensus::Params& params,
+        const KeyConstants& keyConstants,
+        const int startHeight,
+        const int endHeight,
+        const std::vector<std::string>& strAddresses);
+
+    int GetStartHeight() const { return startHeight; };
+    int GetEndHeight() const { return endHeight; };
+    const std::vector<FundingStreamAddress>& GetAddresses() const {
+        return addresses;
+    };
+
+    FundingStreamAddress RecipientAddress(const Params& params, int nHeight) const;
+};
 
 /**
  * Parameters that influence chain consensus.
@@ -100,30 +151,48 @@ struct Params {
 
     bool fCoinbaseMustBeShielded;
 
-    /** Needs to evenly divide MAX_SUBSIDY to avoid rounding errors. */
-    int nSubsidySlowStartInterval;
-    /**
-     * Shift based on a linear ramp for slow start:
-     *
-     * MAX_SUBSIDY*(t_s/2 + t_r) = MAX_SUBSIDY*t_h  Coin balance
-     *              t_s   + t_r  = t_h + t_c        Block balance
-     *
-     * t_s = nSubsidySlowStartInterval
-     * t_r = number of blocks between end of slow start and first halving
-     * t_h = nPreBlossomSubsidyHalvingInterval
-     * t_c = SubsidySlowStartShift()
-     */
-    int SubsidySlowStartShift() const { return nSubsidySlowStartInterval / 2; }
-    int nPreBlossomSubsidyHalvingInterval;
-    int nPostBlossomSubsidyHalvingInterval;
+    int nSubsidyHalvingInterval;
 
+    /**
+     * Identify the halving index at the specified height. The result will be
+     * negative during the slow-start period.
+     */
     int Halving(int nHeight) const;
+
+    /**
+     * Get the block height of the specified halving.
+     */
+    int HalvingHeight(int halvingIndex) const;
+
+    /**
+     * Get the block height of the first block at which the community fee is
+     * active.
+     */
+    int GetCommunityFeeStartHeight() const;
+
+    /**
+     * Get the block height of the last block at which the community fee is
+     * active.
+     */
+    int GetLastCommunityFeeBlockHeight() const;
+
+    int FundingPeriodIndex(int fundingStreamStartHeight, int nHeight) const;
 
     /** Used to check majorities for block version upgrade */
     int nMajorityEnforceBlockUpgrade;
     int nMajorityRejectBlockOutdated;
     int nMajorityWindow;
     NetworkUpgrade vUpgrades[MAX_NETWORK_UPGRADES];
+
+    int nFundingPeriodLength;
+    std::optional<FundingStream> vFundingStreams[MAX_FUNDING_STREAMS];
+    void AddZIP207FundingStream(
+        const KeyConstants& keyConstants,
+        FundingStreamIndex idx,
+        int startHeight,
+        int endHeight,
+        const std::vector<std::string>& addresses);
+
     /** Proof of work parameters */
     unsigned int nEquihashN = 144;
     unsigned int nEquihashK = 5;
@@ -132,8 +201,7 @@ struct Params {
     int64_t nPowAveragingWindow;
     int64_t nPowMaxAdjustDown;
     int64_t nPowMaxAdjustUp;
-    int64_t nPreBlossomPowTargetSpacing;
-    int64_t nPostBlossomPowTargetSpacing;
+    int64_t nPowTargetSpacing;
 
     int64_t PoWTargetSpacing(int nHeight) const;
     int64_t AveragingWindowTimespan(int nHeight) const;
@@ -141,7 +209,11 @@ struct Params {
     int64_t MaxActualTimespan(int nHeight) const;
 
     uint256 nMinimumChainWork;
+
+    int vCommunityFeeStartHeight;
+    int vCommunityFeeLastHeight;
 };
+
 } // namespace Consensus
 
 #endif // BITCOIN_CONSENSUS_PARAMS_H
