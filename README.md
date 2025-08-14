@@ -1,4 +1,4 @@
-# BitcoinZ 2.1.0
+# BitcoinZ 2.1.1
 **Keep running wallet to strengthen the BitcoinZ network. Backup your wallet in many locations & keep your coins wallet offline.**
 
 ### Ports:
@@ -16,7 +16,7 @@ Install required dependencies:
 sudo apt-get install \
       build-essential pkg-config libc6-dev m4 g++-multilib \
       autoconf libtool libncurses-dev unzip git python3 python-is-python3 \
-      zlib1g-dev wget bsdmainutils automake
+      zlib1g-dev wget bsdmainutils automake cmake
 ```
 
 Execute the build command:
