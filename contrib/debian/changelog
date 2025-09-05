@@ -2,7 +2,13 @@ bitcoinz (2.2.0-rc1) stable; urgency=high
 
   * 2.2.0-rc1 release.
 
-  -- The BitcoinZ Community <bitcoinzcommunity@gmail.com> May 2025
+  -- The BitcoinZ Community <bitcoinzcommunity@gmail.com> Sep 2025
+
+bitcoinz (2.1.1) stable; urgency=high
+
+  * 2.1.1 release.
+
+  -- The BitcoinZ Community <bitcoinzcommunity@gmail.com> Aug 2025
 
 bitcoinz (2.1.0) stable; urgency=high
 
