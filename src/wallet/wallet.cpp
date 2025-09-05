@@ -468,9 +468,10 @@ bool CWallet::LoadCScript(const CScript& redeemScript)
     /* A sanity check was added in pull #3843 to avoid adding redeemScripts
      * that never can be redeemed. However, old wallets may still contain
      * these. Do not add them to the wallet and warn. */
+    KeyIO keyIO(Params());
     if (redeemScript.size() > MAX_SCRIPT_ELEMENT_SIZE)
     {
-        std::string strAddr = EncodeDestination(CScriptID(redeemScript));
+        std::string strAddr = keyIO.EncodeDestination(CScriptID(redeemScript));
         LogPrintf("%s: Warning: This wallet contains a redeemScript of size %i which exceeds maximum size %i thus can never be redeemed. Do not use address %s.\n",
             __func__, redeemScript.size(), MAX_SCRIPT_ELEMENT_SIZE, strAddr);
         return true;
@@ -681,6 +682,7 @@ void CWallet::AddPendingSaplingMigrationTx(const CTransaction& tx) {
 
 void CWallet::SetBestChain(const CBlockLocator& loc)
 {
+    LOCK(cs_wallet);
     CWalletDB walletdb(strWalletFile);
     SetBestChainINTERNAL(walletdb, loc);
 }
@@ -2521,13 +2523,14 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
     auto nd = this->mapSproutNoteData.at(jsop);
     SproutPaymentAddress pa = nd.address;
 
+    KeyIO keyIO(Params());
     // Get cached decryptor
     ZCNoteDecryption decryptor;
     if (!pwallet->GetNoteDecryptor(pa, decryptor)) {
         // Note decryptors are created when the wallet is loaded, so it should always exist
         throw std::runtime_error(strprintf(
             "Could not find note decryptor for payment address %s",
-            EncodePaymentAddress(pa)));
+            keyIO.EncodePaymentAddress(pa)));
     }
 
     auto hSig = this->vJoinSplit[jsop.js].h_sig(this->joinSplitPubKey);
@@ -2544,12 +2547,12 @@ std::pair<SproutNotePlaintext, SproutPaymentAddress> CWalletTx::DecryptSproutNot
         // Couldn't decrypt with this spending key
         throw std::runtime_error(strprintf(
             "Could not decrypt note for payment address %s",
-            EncodePaymentAddress(pa)));
+            keyIO.EncodePaymentAddress(pa)));
     } catch (const std::exception &exc) {
         // Unexpected failure
         throw std::runtime_error(strprintf(
             "Error while decrypting note for payment address %s: %s",
-            EncodePaymentAddress(pa), exc.what()));
+            keyIO.EncodePaymentAddress(pa), exc.what()));
     }
 }
 
@@ -4106,22 +4109,24 @@ bool CWallet::SetAddressBook(const CTxDestination& address, const string& strNam
     }
     NotifyAddressBookChanged(this, address, strName, ::IsMine(*this, address) != ISMINE_NO,
                              strPurpose, (fUpdated ? CT_UPDATED : CT_NEW) );
+    KeyIO keyIO(Params());
     if (!fFileBacked)
         return false;
-    if (!strPurpose.empty() && !CWalletDB(strWalletFile).WritePurpose(EncodeDestination(address), strPurpose))
+    if (!strPurpose.empty() && !CWalletDB(strWalletFile).WritePurpose(keyIO.EncodeDestination(address), strPurpose))
         return false;
-    return CWalletDB(strWalletFile).WriteName(EncodeDestination(address), strName);
+    return CWalletDB(strWalletFile).WriteName(keyIO.EncodeDestination(address), strName);
 }
 
 bool CWallet::DelAddressBook(const CTxDestination& address)
 {
+    KeyIO keyIO(Params());
     {
         LOCK(cs_wallet); // mapAddressBook
 
         if(fFileBacked)
         {
             // Delete destdata tuples associated with address
-            std::string strAddress = EncodeDestination(address);
+            std::string strAddress = keyIO.EncodeDestination(address);
             for (const std::pair<string, string> &item : mapAddressBook[address].destdata)
             {
                 CWalletDB(strWalletFile).EraseDestData(strAddress, item.first);
@@ -4134,8 +4139,8 @@ bool CWallet::DelAddressBook(const CTxDestination& address)
 
     if (!fFileBacked)
         return false;
-    CWalletDB(strWalletFile).ErasePurpose(EncodeDestination(address));
-    return CWalletDB(strWalletFile).EraseName(EncodeDestination(address));
+    CWalletDB(strWalletFile).ErasePurpose(keyIO.EncodeDestination(address));
+    return CWalletDB(strWalletFile).EraseName(keyIO.EncodeDestination(address));
 }
 
 bool CWallet::SetDefaultKey(const CPubKey &vchPubKey)
@@ -4694,7 +4699,8 @@ bool CWallet::EraseDestData(const CTxDestination &dest, const std::string &key)
         return false;
     if (!fFileBacked)
         return true;
-    return CWalletDB(strWalletFile).EraseDestData(EncodeDestination(dest), key);
+    KeyIO keyIO(Params());
+    return CWalletDB(strWalletFile).EraseDestData(keyIO.EncodeDestination(dest), key);
 }
 
 bool CWallet::LoadDestData(const CTxDestination &dest, const std::string &key, const std::string &value)
@@ -4742,7 +4748,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
                                                                    "begin confirmation on average within n blocks. This is only used if there is sufficient mempool data to estimate the fee; if not, the "
                                                                    "fallback fee set by -mintxfee is used. (default: %u)"),
                                                                  DEFAULT_TX_CONFIRM_TARGET));
-    strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u (pre-Blossom) or %u (post-Blossom))"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_PRE_BLOSSOM_TX_EXPIRY_DELTA, DEFAULT_POST_BLOSSOM_TX_EXPIRY_DELTA));
+    strUsage += HelpMessageOpt("-txexpirydelta", strprintf(_("Set the number of blocks after which a transaction that has not been mined will become invalid (min: %u, default: %u)"), TX_EXPIRING_SOON_THRESHOLD + 1, DEFAULT_TX_EXPIRY_DELTA));
     strUsage += HelpMessageOpt("-upgradewallet", _("Upgrade wallet to latest format on startup"));
     strUsage += HelpMessageOpt("-wallet=<file>", _("Specify wallet file (within data directory)") + " " + strprintf(_("(default: %s)"), DEFAULT_WALLET_DAT));
     strUsage += HelpMessageOpt("-walletbroadcast", _("Make the wallet broadcast transactions") + " " + strprintf(_("(default: %u)"), DEFAULT_WALLETBROADCAST));
@@ -4982,10 +4988,11 @@ bool CWallet::ParameterInteraction()
         return UIError(_("The argument -sendfreetransactions is no longer supported."));
     }
 
+    KeyIO keyIO(Params());
     // Check Sapling migration address if set and is a valid Sapling address
     if (mapArgs.count("-migrationdestaddress")) {
         std::string migrationDestAddress = mapArgs["-migrationdestaddress"];
-        libzcash::PaymentAddress address = DecodePaymentAddress(migrationDestAddress);
+        libzcash::PaymentAddress address = keyIO.DecodePaymentAddress(migrationDestAddress);
         if (std::get_if<libzcash::SaplingPaymentAddress>(&address) == nullptr) {
             return UIError(_("-migrationdestaddress must be a valid Sapling address."));
         }
@@ -5096,8 +5103,9 @@ void CWallet::GetFilteredNotes(
 {
     std::set<PaymentAddress> filterAddresses;
 
+    KeyIO keyIO(Params());
     if (address.length() > 0) {
-        filterAddresses.insert(DecodePaymentAddress(address));
+        filterAddresses.insert(keyIO.DecodePaymentAddress(address));
     }
 
     GetFilteredNotes(sproutEntries, saplingEntries, filterAddresses, minDepth, INT_MAX, ignoreSpent, requireSpendingKey);
@@ -5120,6 +5128,7 @@ void CWallet::GetFilteredNotes(
 {
     LOCK2(cs_main, cs_wallet);
 
+    KeyIO keyIO(Params());
     for (auto & p : mapWallet) {
         CWalletTx wtx = p.second;
 
@@ -5163,7 +5172,7 @@ void CWallet::GetFilteredNotes(
             ZCNoteDecryption decryptor;
             if (!GetNoteDecryptor(pa, decryptor)) {
                 // Note decryptors are created when the wallet is loaded, so it should always exist
-                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", EncodePaymentAddress(pa)));
+                throw std::runtime_error(strprintf("Could not find note decryptor for payment address %s", keyIO.EncodePaymentAddress(pa)));
             }
 
             // determine amount of funds in the note
@@ -5181,10 +5190,10 @@ void CWallet::GetFilteredNotes(
 
             } catch (const note_decryption_failed &err) {
                 // Couldn't decrypt with this spending key
-                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", EncodePaymentAddress(pa)));
+                throw std::runtime_error(strprintf("Could not decrypt note for payment address %s", keyIO.EncodePaymentAddress(pa)));
             } catch (const std::exception &exc) {
                 // Unexpected failure
-                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", EncodePaymentAddress(pa), exc.what()));
+                throw std::runtime_error(strprintf("Error while decrypting note for payment address %s: %s", keyIO.EncodePaymentAddress(pa), exc.what()));
             }
         }
 
@@ -5374,8 +5383,9 @@ KeyAddResult AddViewingKeyToWallet::operator()(const libzcash::InvalidEncoding& 
 
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKey &sk) const {
     auto addr = sk.address();
+    KeyIO keyIO(Params());
     if (log){
-        LogPrint(BCLog::ZRPC, "Importing zaddr %s...\n", EncodePaymentAddress(addr));
+        LogPrint(BCLog::ZRPC, "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(addr));
     }
     if (m_wallet->HaveSproutSpendingKey(addr)) {
         return KeyAlreadyExists;
@@ -5390,9 +5400,10 @@ KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SproutSpendingKe
 KeyAddResult AddSpendingKeyToWallet::operator()(const libzcash::SaplingExtendedSpendingKey &sk) const {
     auto extfvk = sk.ToXFVK();
     auto ivk = extfvk.fvk.in_viewing_key();
+    KeyIO keyIO(Params());
     {
         if (log){
-            LogPrint(BCLog::ZRPC, "Importing zaddr %s...\n", EncodePaymentAddress(sk.DefaultAddress()));
+            LogPrint(BCLog::ZRPC, "Importing zaddr %s...\n", keyIO.EncodePaymentAddress(sk.DefaultAddress()));
         }
 
         // Don't throw error in case a key is already there

@@ -43,9 +43,10 @@ const Consensus::Params& RegtestActivateSapling();
 
 void RegtestDeactivateSapling();
 
-const Consensus::Params& RegtestActivateBlossom(bool updatePow, int blossomActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateCanopy(bool updatePow, int canopyActivationHeight = Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
+const Consensus::Params& RegtestActivateCanopy();
 
-void RegtestDeactivateBlossom();
+void RegtestDeactivateCanopy();
 
 libzcash::SaplingExtendedSpendingKey GetTestMasterSaplingSpendingKey();
 

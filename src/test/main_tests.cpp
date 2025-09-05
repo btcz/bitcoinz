@@ -16,33 +16,16 @@ BOOST_FIXTURE_TEST_SUITE(main_tests, TestingSetup)
 const CAmount INITIAL_SUBSIDY = 12500 * COIN;
 
 static int GetTotalHalvings(const Consensus::Params& consensusParams) {
-    // This assumes that BLOSSOM_POW_TARGET_SPACING_RATIO == 2
-    // and treats blossom activation as a halving event
-    return consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight == Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT ? 64 : 65;
+    return 64;
 }
 
 static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
 {
-    bool blossomActive = false;
-    int blossomActivationHeight = consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight;
-    int nHeight = consensusParams.nSubsidySlowStartInterval;
+    int nHeight = 0;
     BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight, consensusParams), INITIAL_SUBSIDY);
     CAmount nPreviousSubsidy = INITIAL_SUBSIDY;
     for (int nHalvings = 1; nHalvings < GetTotalHalvings(consensusParams); nHalvings++) {
-        if (blossomActive) {
-            if (nHeight == blossomActivationHeight) {
-                int preBlossomHeight = (nHalvings - 1) * consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
-                nHeight += (preBlossomHeight - blossomActivationHeight) * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
-            } else {
-                nHeight += consensusParams.nPostBlossomSubsidyHalvingInterval;
-            }
-        } else {
-            nHeight = nHalvings * consensusParams.nPreBlossomSubsidyHalvingInterval + consensusParams.SubsidySlowStartShift();
-            if (consensusParams.NetworkUpgradeActive(nHeight, Consensus::UPGRADE_BLOSSOM)) {
-                nHeight = blossomActivationHeight;
-                blossomActive = true;
-            }
-        }
+        nHeight = nHalvings * consensusParams.nSubsidyHalvingInterval;
         BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight - 1, consensusParams), nPreviousSubsidy);
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
         BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
@@ -52,23 +35,19 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
     BOOST_CHECK_EQUAL(GetBlockSubsidy(nHeight, consensusParams), 0);
 }
 
-static void TestBlockSubsidyHalvings(int nSubsidySlowStartInterval, int nPreBlossomSubsidyHalvingInterval, int blossomActivationHeight)
+static void TestBlockSubsidyHalvings(int nSubsidyHalvingInterval)
 {
     Consensus::Params consensusParams;
-    consensusParams.nSubsidySlowStartInterval = nSubsidySlowStartInterval;
-    consensusParams.nPreBlossomSubsidyHalvingInterval = nPreBlossomSubsidyHalvingInterval;
-    consensusParams.nPostBlossomSubsidyHalvingInterval = nPreBlossomSubsidyHalvingInterval * Consensus::BLOSSOM_POW_TARGET_SPACING_RATIO;
-    consensusParams.vUpgrades[Consensus::UPGRADE_BLOSSOM].nActivationHeight = blossomActivationHeight;
+    consensusParams.nSubsidyHalvingInterval = nSubsidyHalvingInterval;
     TestBlockSubsidyHalvings(consensusParams);
 }
 
 BOOST_AUTO_TEST_CASE(block_subsidy_test)
 {
     TestBlockSubsidyHalvings(Params(CBaseChainParams::MAIN).GetConsensus()); // As in main
-    TestBlockSubsidyHalvings(20000, Consensus::PRE_BLOSSOM_HALVING_INTERVAL, Consensus::NetworkUpgrade::NO_ACTIVATION_HEIGHT); // Pre-Blossom
-    TestBlockSubsidyHalvings(50, 150, 80); // As in regtest
-    TestBlockSubsidyHalvings(500, 1000, 900); // Just another interval
-    TestBlockSubsidyHalvings(500, 1000, 3000); // Multiple halvings before Blossom activation
+    TestBlockSubsidyHalvings(840000);
+    TestBlockSubsidyHalvings(150); // As in regtest
+    TestBlockSubsidyHalvings(1000); // Just another interval
 }
 
 BOOST_AUTO_TEST_CASE(subsidy_limit_test)
@@ -77,14 +56,6 @@ BOOST_AUTO_TEST_CASE(subsidy_limit_test)
 
     CAmount nSum = 0;
     int nHeight = 0;
-    // Mining slow start
-    for (; nHeight < consensusParams.nSubsidySlowStartInterval; nHeight++) {
-        CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
-        BOOST_CHECK(nSubsidy <= INITIAL_SUBSIDY);
-        nSum += nSubsidy;
-        BOOST_CHECK(MoneyRange(nSum));
-    }
-    BOOST_CHECK_EQUAL(nSum, 0ULL);
 
     // Regular mining
     CAmount nSubsidy;
