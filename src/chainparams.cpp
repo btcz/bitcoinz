@@ -193,9 +193,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // use name as: echo -n hostname | sha256sum
-        vSeeds.push_back(CDNSSeedData("5051c0f9dfb6e29421647ea34bc3c693c2ba2222af3a867519e4cdd6f1b86c2b.BTCZ", "btzseed2.blockhub.info"));
-        vSeeds.push_back(CDNSSeedData("4437c91da6e4c4edca56b57bd52c2e11a3fd7d8b04bd9dec9584fb5220f54b05.BTCZ", "btzseed.blockhub.info"));
-        vSeeds.push_back(CDNSSeedData("d3f8adfdab612a8a41329e4d013d3ee0396289c8afb8c3951aa6deabf13f1ccb.BTCZ", "seed.btcz.app"));
+        vSeeds.push_back(CDNSSeedData("9f6f0c1c6f2d5d2b6a6c3c7c7b4d7a9e7a4c4c0f2e5f7d8a6b3c1d2e4f5a6b7c.BTCZ", "seed.minebtcz.com"));
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
