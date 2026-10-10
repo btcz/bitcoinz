@@ -870,7 +870,7 @@ TEST(ChecktransactionTests, OverwinterFlagNotSet) {
 
     CTransaction tx(mtx);
     MockCValidationState state;
-    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwinter-flag-not-set", false, "")).Times(1);
+    EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "tx-overwintered-flag-not-set", false, "")).Times(1);
     ContextualCheckTransaction(tx, state, Params(), 1, 100);
 
     // Revert to default
@@ -1030,17 +1030,18 @@ TEST(ChecktransactionTests, CanopyRejectsNonzeroVPubOld) {
 
     CTransaction tx(mtx);
 
+    // The final argument is an integer DoS score, not a verification flag.
     // Before Canopy, nonzero vpub_old is accepted in both non-contextual and contextual checks
     MockCValidationState state;
     EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
-    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, true));
+    EXPECT_TRUE(ContextualCheckTransaction(tx, state, Params(), 1, 100));
 
     RegtestActivateCanopy(false, Consensus::NetworkUpgrade::ALWAYS_ACTIVE);
 
     // After Canopy, nonzero vpub_old is accepted in non-contextual checks but rejected in contextual checks
     EXPECT_TRUE(CheckTransactionWithoutProofVerification(tx, state));
     EXPECT_CALL(state, DoS(100, false, REJECT_INVALID, "bad-txns-vpub_old-nonzero", false, "")).Times(1);
-    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, true));
+    EXPECT_FALSE(ContextualCheckTransaction(tx, state, Params(), 10, 100));
 
     RegtestDeactivateCanopy();
 
