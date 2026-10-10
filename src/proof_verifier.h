@@ -30,6 +30,9 @@ public:
     // such as during reindexing.
     static ProofVerifier Disabled();
 
+    // Whether this context requests proof verification.
+    bool PerformsVerification() const { return perform_verification; }
+
     // Verifies that the JoinSplit proof is correct.
     bool VerifySprout(
         const JSDescription& jsdesc,

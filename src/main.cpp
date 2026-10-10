@@ -3830,10 +3830,14 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
             return state.DoS(100, error("%s: more than one coinbase", __func__),
                              REJECT_INVALID, "bad-cb-multiple");
 
-    // Check transactions
-    for (const CTransaction& tx : block.vtx)
+    // A preliminary check may omit Sprout proofs. Such a result must not
+    // satisfy a later strict check through the validation cache.
+    bool hasSproutProofs = false;
+    for (const CTransaction& tx : block.vtx) {
         if (!CheckTransaction(tx, state, verifier))
             return error("%s: CheckTransaction failed", __func__);
+        hasSproutProofs |= !tx.vJoinSplit.empty();
+    }
 
     unsigned int nSigOps = 0;
     for (const CTransaction& tx : block.vtx)
@@ -3844,7 +3848,9 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
         return state.DoS(100, error("%s: out-of-bounds SigOpCount", __func__),
                          REJECT_INVALID, "bad-blk-sigops", true);
 
-    if (fCheckPOW && fCheckMerkleRoot)
+    // Blocks without Sprout proofs retain the existing fast path.
+    if (fCheckPOW && fCheckMerkleRoot &&
+        (!hasSproutProofs || verifier.PerformsVerification()))
         block.fChecked = true;
 
     return true;
