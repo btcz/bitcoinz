@@ -333,6 +333,7 @@ std::string HelpMessage(HelpMessageMode mode)
     if (showDebug)
         strUsage += HelpMessageOpt("-blocksonly", strprintf(_("Whether to reject transactions from network peers. Automatic broadcast and rebroadcast of any transactions from inbound peers is disabled, unless '-whitelistforcerelay' is '1', in which case whitelisted peers' transactions will be relayed. RPC transactions are not affected. (default: %u)"), DEFAULT_BLOCKSONLY));
     strUsage += HelpMessageOpt("-checkblocks=<n>", strprintf(_("How many blocks to check at startup (default: %u, 0 = all)"), DEFAULT_CHECKBLOCKS));
+    strUsage += HelpMessageOpt("-experimentalaccept1789967", "EXPERIMENTAL mainnet-only compatibility: accept the known invalid Sprout proof in the exact historical block 1789967 (default: 0). Changes historical consensus policy; use a separate datadir.");
     strUsage += HelpMessageOpt("-checklevel=<n>", strprintf(_("How thorough the block verification of -checkblocks is (0-4, default: %u)"), DEFAULT_CHECKLEVEL));
     strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file. Relative paths will be prefixed by datadir location. (default: %s)"), BITCOIN_CONF_FILENAME));
     if (mode == HMM_BITCOIND)
@@ -1132,6 +1133,12 @@ bool AppInit2()
 
     if (GetBoolArg("-benchmark", false))
         InitWarning(_("Unsupported argument -benchmark ignored, use -debug=bench."));
+
+    if (GetBoolArg("-experimentalaccept1789967", false)) {
+        if (chainparams.NetworkIDString() != CBaseChainParams::MAIN)
+            return InitError("-experimentalaccept1789967 is only supported on mainnet.");
+        InitWarning("EXPERIMENTAL historical consensus exception enabled for the exact mainnet block 1789967. Its Sprout proof is invalid. Use a separate datadir; disabling this option does not undo an already-connected block.");
+    }
 
     // Checkmempool and checkblockindex default to true in regtest mode
     int ratio = std::min<int>(std::max<int>(GetArg("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0), 1000000);

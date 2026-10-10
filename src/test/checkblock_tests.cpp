@@ -4,11 +4,13 @@
 
 #include "clientversion.h"
 #include "consensus/validation.h"
+#include "consensus/merkle.h"
 #include "fs.h"
 #include "main.h"
 #include "proof_verifier.h"
 #include "test/test_bitcoin.h"
 #include "utiltime.h"
+#include "util.h"
 #include "zcash/Proof.hpp"
 
 #include <cstdio>
@@ -136,6 +138,80 @@ BOOST_AUTO_TEST_CASE(strict_result_survives_preliminary_check_and_disk_roundtrip
     CValidationState diskState;
     BOOST_CHECK(!CheckBlock(fromDisk, diskState, Params(), strict));
     BOOST_CHECK_EQUAL(diskState.GetRejectReason(), rejection);
+}
+
+// Restore global arguments even if a BOOST_REQUIRE aborts a test.
+struct HistoricalCompatibilityOption {
+    const std::map<std::string, std::string> saved = mapArgs;
+    HistoricalCompatibilityOption() { mapArgs["-experimentalaccept1789967"] = "1"; }
+    ~HistoricalCompatibilityOption() { mapArgs = saved; }
+};
+
+BOOST_AUTO_TEST_CASE(historical_opt_in_is_not_a_strict_cache_result)
+{
+    HistoricalCompatibilityOption option;
+    CBlock block;
+    BOOST_REQUIRE(CheckBlock_tests::read_block("bitcoinz-1789967.dat", block));
+    auto strict = ProofVerifier::Strict();
+    auto disabled = ProofVerifier::Disabled();
+    CValidationState preliminary, accepted;
+    BOOST_REQUIRE(CheckBlock(block, preliminary, Params(), disabled));
+    BOOST_CHECK(!block.fChecked);
+    BOOST_REQUIRE(CheckBlock(block, accepted, Params(), strict));
+    BOOST_CHECK(!block.fChecked);
+
+    CDataStream disk(SER_DISK, CLIENT_VERSION);
+    disk << block;
+    CBlock fromDisk;
+    disk >> fromDisk;
+    CValidationState restored;
+    BOOST_REQUIRE(CheckBlock(fromDisk, restored, Params(), strict));
+    BOOST_CHECK(!fromDisk.fChecked);
+
+    mapArgs["-experimentalaccept1789967"] = "0";
+    for (const CBlock* candidate : {&block, &fromDisk}) {
+        CValidationState rejected;
+        BOOST_CHECK(!CheckBlock(*candidate, rejected, Params(), strict));
+        BOOST_CHECK_EQUAL(rejected.GetRejectReason(), "bad-txns-joinsplit-verification-failed");
+    }
+}
+
+BOOST_AUTO_TEST_CASE(historical_opt_in_does_not_cover_other_headers_or_networks)
+{
+    HistoricalCompatibilityOption option;
+    CBlock block;
+    BOOST_REQUIRE(CheckBlock_tests::read_block("bitcoinz-1789967.dat", block));
+    auto strict = ProofVerifier::Strict();
+    CBlock changedHeader = block;
+    ++changedHeader.nTime;
+    CValidationState changed;
+    BOOST_CHECK(!CheckBlock(changedHeader, changed, Params(), strict, false, true));
+    BOOST_CHECK_EQUAL(changed.GetRejectReason(), "bad-txns-joinsplit-verification-failed");
+
+    for (const std::string& network : {CBaseChainParams::TESTNET, CBaseChainParams::REGTEST}) {
+        CValidationState wrongNetwork;
+        BOOST_CHECK(!CheckBlock(block, wrongNetwork, Params(network), strict, false, true));
+        BOOST_CHECK_EQUAL(wrongNetwork.GetRejectReason(), "bad-txns-joinsplit-verification-failed");
+    }
+    // Standalone/mempool transaction validation remains strict even with opt-in.
+    CValidationState transaction;
+    BOOST_CHECK(!CheckTransaction(block.vtx.at(1), transaction, strict));
+    BOOST_CHECK_EQUAL(transaction.GetRejectReason(), "bad-txns-joinsplit-verification-failed");
+}
+
+BOOST_AUTO_TEST_CASE(historical_opt_in_always_binds_the_body_to_the_header)
+{
+    HistoricalCompatibilityOption option;
+    CBlock block;
+    BOOST_REQUIRE(CheckBlock_tests::read_block("bitcoinz-1789967.dat", block));
+    // Retain the historical header but replace its body with genesis's body.
+    // Partial-check callers must not accidentally use the header as a wildcard.
+    block.vtx = Params().GenesisBlock().vtx;
+    auto strict = ProofVerifier::Strict();
+    CValidationState changedBody;
+    BOOST_CHECK(!CheckBlock(block, changedBody, Params(), strict, false, false));
+    BOOST_CHECK_EQUAL(changedBody.GetRejectReason(), "bad-txnmrklroot");
+    BOOST_CHECK(!block.fChecked);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
