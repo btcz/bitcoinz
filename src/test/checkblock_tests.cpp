@@ -215,3 +215,72 @@ BOOST_AUTO_TEST_CASE(historical_opt_in_always_binds_the_body_to_the_header)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_FIXTURE_TEST_SUITE(CheckBlock_inflation_block_tests, JoinSplitTestingSetup)
+
+// Mainnet block 1860181 created 105 billion BTCZ through Sprout JoinSplits
+// with all-zero proofs. Like the fixture above, it is only checked locally.
+static CBlock ReadInflationBlock()
+{
+    CBlock block;
+    BOOST_REQUIRE(CheckBlock_tests::read_block("bitcoinz-1860181.dat", block));
+    BOOST_REQUIRE_EQUAL(block.GetHash().GetHex(),
+        "000001963db0caee911c3409e3d1f1b868cb3fbfacc7e7e7422d5d3b80cbb37d");
+    return block;
+}
+
+BOOST_AUTO_TEST_CASE(inflation_block_proofs_fail_after_a_preliminary_check)
+{
+    CBlock block = ReadInflationBlock();
+    auto disabled = ProofVerifier::Disabled();
+    CValidationState preliminary;
+    BOOST_REQUIRE(CheckBlock(block, preliminary, Params(), disabled));
+    BOOST_CHECK(!block.fChecked);
+
+    // This is the call ConnectBlock makes. Before the fix it returned true
+    // from the cache and the zero proofs were never verified.
+    auto strict = ProofVerifier::Strict();
+    CValidationState state;
+    BOOST_CHECK(!CheckBlock(block, state, Params(), strict));
+    BOOST_CHECK_EQUAL(state.GetRejectReason(), "bad-txns-joinsplit-verification-failed");
+}
+
+BOOST_AUTO_TEST_CASE(inflation_block_is_rejected_without_a_ban)
+{
+    CBlock block = ReadInflationBlock();
+    uint256 prevHash = block.hashPrevBlock;
+    CBlockIndex prev;
+    prev.nHeight = 1860180;
+    prev.phashBlock = &prevHash;
+
+    CValidationState state;
+    BOOST_CHECK(!ContextualCheckBlock(block, state, Params(), &prev));
+    BOOST_CHECK_EQUAL(state.GetRejectReason(), "bad-blk-inflation");
+    int nDoS = -1;
+    BOOST_CHECK(state.IsInvalid(nDoS));
+    BOOST_CHECK_EQUAL(nDoS, 0);
+}
+
+BOOST_AUTO_TEST_CASE(joinsplits_are_disabled_on_mainnet_from_height_1860181)
+{
+    CBlock block = ReadInflationBlock();
+    const CTransaction& tx = block.vtx.at(1);
+    BOOST_REQUIRE_EQUAL(tx.vJoinSplit.size(), 1);
+    bool (*notInIBD)(const CChainParams&) = [](const CChainParams&) { return false; };
+
+    CValidationState disabled;
+    BOOST_CHECK(!ContextualCheckTransaction(tx, disabled, Params(), 1860181, 100, notInIBD));
+    BOOST_CHECK_EQUAL(disabled.GetRejectReason(), "bad-txns-joinsplit-disabled");
+
+    CValidationState before;
+    ContextualCheckTransaction(tx, before, Params(), 1860180, 100, notInIBD);
+    BOOST_CHECK(before.GetRejectReason() != "bad-txns-joinsplit-disabled");
+
+    for (const std::string& network : {CBaseChainParams::TESTNET, CBaseChainParams::REGTEST}) {
+        CValidationState other;
+        ContextualCheckTransaction(tx, other, Params(network), 1860181, 100, notInIBD);
+        BOOST_CHECK(other.GetRejectReason() != "bad-txns-joinsplit-disabled");
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()

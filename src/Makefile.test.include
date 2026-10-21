@@ -17,6 +17,7 @@ EXTRA_DIST += \
 	test/data/bitcoin-util-test.json \
 	test/data/blanktx.hex \
 	test/data/bitcoinz-1789967.dat \
+	test/data/bitcoinz-1860181.dat \
 	test/data/tt-delin1-out.hex \
 	test/data/tt-delout1-out.hex \
 	test/data/tt-locktime317000-out.hex \
