@@ -83,7 +83,8 @@ public:
     // network and disk
     std::vector<CTransaction> vtx;
 
-    // memory only
+    // Memory only: all context-independent checks, including any
+    // Sprout proofs under a strict verifier, completed successfully.
     mutable bool fChecked;
 
     CBlock()

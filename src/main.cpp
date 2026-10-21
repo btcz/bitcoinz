@@ -3791,13 +3791,22 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
     if (block.fChecked)
         return true;
 
+    // Explicit, local compatibility policy for one already-public historical
+    // mainnet block. This acknowledges its invalid Sprout proof; it does not
+    // make that proof valid. Never extend this to a height range or mempool.
+    const bool historicalCompatibility =
+        GetBoolArg("-experimentalaccept1789967", false) &&
+        chainparams.NetworkIDString() == CBaseChainParams::MAIN &&
+        block.GetHash() == uint256S("0000002e04e291438a422e2d5e9d6d67ac87059afefeb03136ff9f21711bb359");
+
     // Check that the header is valid (particularly PoW).  This is mostly
     // redundant with the call in AcceptBlockHeader.
-    if (!CheckBlockHeader(block, state, chainparams, fCheckPOW))
+    if (!CheckBlockHeader(block, state, chainparams, fCheckPOW || historicalCompatibility))
         return false;
 
     // Check the merkle root.
-    if (fCheckMerkleRoot) {
+    // Even partial-check callers must bind the exception to the exact body.
+    if (fCheckMerkleRoot || historicalCompatibility) {
         bool mutated;
         uint256 hashMerkleRoot2 = BlockMerkleRoot(block, &mutated);
         if (block.hashMerkleRoot != hashMerkleRoot2)
@@ -3830,10 +3839,17 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
             return state.DoS(100, error("%s: more than one coinbase", __func__),
                              REJECT_INVALID, "bad-cb-multiple");
 
-    // Check transactions
-    for (const CTransaction& tx : block.vtx)
-        if (!CheckTransaction(tx, state, verifier))
+    // A preliminary check may omit Sprout proofs. Such a result must not
+    // satisfy a later strict check through the validation cache.
+    bool hasSproutProofs = false;
+    auto historicalVerifier = ProofVerifier::Disabled();
+    for (const CTransaction& tx : block.vtx) {
+        const bool historicalTransaction = historicalCompatibility &&
+            tx.GetHash() == uint256S("02ee84491eee2fc6a7e1558bec4adb34f50e6fd8325378bedd3fa341db5e692d");
+        if (!CheckTransaction(tx, state, historicalTransaction ? historicalVerifier : verifier))
             return error("%s: CheckTransaction failed", __func__);
+        hasSproutProofs |= !tx.vJoinSplit.empty();
+    }
 
     unsigned int nSigOps = 0;
     for (const CTransaction& tx : block.vtx)
@@ -3844,8 +3860,15 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
         return state.DoS(100, error("%s: out-of-bounds SigOpCount", __func__),
                          REJECT_INVALID, "bad-blk-sigops", true);
 
-    if (fCheckPOW && fCheckMerkleRoot)
+    // Blocks without Sprout proofs retain the existing fast path.
+    // An exception result is never a strict-proof cache result. Re-evaluate
+    // the policy on every call, including after disabling the option.
+    if (!historicalCompatibility && fCheckPOW && fCheckMerkleRoot &&
+        (!hasSproutProofs || verifier.PerformsVerification()))
         block.fChecked = true;
+
+    if (historicalCompatibility && verifier.PerformsVerification())
+        LogPrintf("EXPERIMENTAL historical compatibility: accepted known invalid Sprout proof in mainnet block 1789967 (%s)\n", block.GetHash().GetHex());
 
     return true;
 }
