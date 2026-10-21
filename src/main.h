@@ -517,6 +517,13 @@ bool CheckBlock(const CBlock& block, CValidationState& state,
  */
 bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches);
 
+/**
+ * On mainnet, mark block 1860181 (the inflation block) and its descendants
+ * invalid and rewind the active chain to block 1860180 if needed. Sets
+ * clearWitnessCaches the first time it marks the block invalid.
+ */
+bool RewindMainnetInflationBlock(const CChainParams& chainparams, bool& clearWitnessCaches);
+
 /** RAII wrapper for VerifyDB: Verify consistency of the block and coin databases */
 class CVerifyDB {
 public:

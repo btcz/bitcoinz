@@ -231,11 +231,12 @@ public:
             ( 1100000, uint256S("0x000000211ead28f86240b83fff913a04caddb3a2f9e19d42a898526f30002429"))
             ( 1200000, uint256S("0x00000093b2415c696284232f27a9c3a363115b197068e6788e3435d09fc77a40"))
             ( 1300000, uint256S("0x000000c525dea4be1246e9b5b1a0db728d7f8ac2fa28dfe0de0d9c82ba79c934"))
-            ( 1400000, uint256S("0x000000d6ec96846f53f6c17b1d6c450be50ad54a25ed047deb3076cd31c0f5fd")),
+            ( 1400000, uint256S("0x000000d6ec96846f53f6c17b1d6c450be50ad54a25ed047deb3076cd31c0f5fd"))
+            ( 1860180, uint256S("0x000002a2a96c4cce6bea19220151116c1a7f6a9ce19fbce3c3286370adb3fd1e")),  // last block before the inflation block
 
-            1722854257,  // * UNIX timestamp of last checkpoint block
-            3896307,     // * total number of transactions between genesis and last checkpoint
-            2244.272832  // * estimated number of transactions per day after checkpoint
+            1792592226,  // * UNIX timestamp of last checkpoint block
+            4790514,     // * total number of transactions between genesis and last checkpoint
+            763.7        // * estimated number of transactions per day after checkpoint
                          //   total number of tx / (checkpoint block height / (24 * 24))
         };
 
