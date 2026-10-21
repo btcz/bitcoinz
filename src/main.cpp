@@ -806,6 +806,28 @@ unsigned int GetP2SHSigOpCount(const CTransaction& tx, const CCoinsViewCache& in
  *    and ContextualCheckBlock (which calls this function).
  * 3. The isInitBlockDownload argument is only to assist with testing.
  */
+// Mainnet block 1860181 created 105 billion BTCZ through Sprout JoinSplits
+// with all-zero proofs. It got in because CheckBlock cached the result of a
+// preliminary check that skipped Sprout proofs. The block is invalid, and
+// JoinSplits are not allowed from its height on.
+static const int MAINNET_SPROUT_DISABLE_HEIGHT = 1860181;
+static const uint256 MAINNET_INFLATION_BLOCK =
+    uint256S("000001963db0caee911c3409e3d1f1b868cb3fbfacc7e7e7422d5d3b80cbb37d");
+
+static bool IsMainnet(const CChainParams& chainparams)
+{
+    return chainparams.NetworkIDString() == CBaseChainParams::MAIN;
+}
+
+// Whether pindex is the mainnet inflation block or built on top of it.
+static bool IsOnMainnetInflationChain(const CBlockIndex* pindex, const CChainParams& chainparams)
+{
+    if (!IsMainnet(chainparams) || pindex->nHeight < MAINNET_SPROUT_DISABLE_HEIGHT)
+        return false;
+    const CBlockIndex* pancestor = pindex->GetAncestor(MAINNET_SPROUT_DISABLE_HEIGHT);
+    return pancestor && *pancestor->phashBlock == MAINNET_INFLATION_BLOCK;
+}
+
 bool ContextualCheckTransaction(
         const CTransaction& tx,
         CValidationState &state,
@@ -966,6 +988,11 @@ bool ContextualCheckTransaction(
         // Rules that apply generally before Canopy. These were
         // previously noncontextual checks that became contextual
         // after Canopy activation.
+    }
+
+    if (IsMainnet(chainparams) && nHeight >= MAINNET_SPROUT_DISABLE_HEIGHT && !tx.vJoinSplit.empty()) {
+        return state.DoS(dosLevel, error("ContextualCheckTransaction(): JoinSplits are disabled from height %d", MAINNET_SPROUT_DISABLE_HEIGHT),
+                         REJECT_INVALID, "bad-txns-joinsplit-disabled");
     }
 
     auto consensusBranchId = CurrentEpochBranchId(nHeight, consensus);
@@ -3935,6 +3962,11 @@ bool ContextualCheckBlock(
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
     const Consensus::Params& consensusParams = chainparams.GetConsensus();
 
+    // Peers sending this block run an old release; reject it without a ban.
+    if (IsMainnet(chainparams) && block.GetHash() == MAINNET_INFLATION_BLOCK)
+        return state.Invalid(error("%s: mainnet inflation block at height %d", __func__, MAINNET_SPROUT_DISABLE_HEIGHT),
+                             REJECT_INVALID, "bad-blk-inflation");
+
     // Check that all transactions are finalized
     for (const CTransaction& tx : block.vtx) {
 
@@ -4022,8 +4054,12 @@ static bool AcceptBlockHeader(const CBlockHeader& block, CValidationState& state
         if (mi == mapBlockIndex.end())
             return state.DoS(10, error("%s: prev block not found", __func__), 0, "bad-prevblk");
         pindexPrev = (*mi).second;
-        if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
-            return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+        if (pindexPrev->nStatus & BLOCK_FAILED_MASK) {
+            // Peers still on the mainnet inflation chain run an old release;
+            // they aren't misbehaving, so don't ban them.
+            int nDoS = IsOnMainnetInflationChain(pindexPrev, chainparams) ? 0 : 100;
+            return state.DoS(nDoS, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+        }
     }
 
     if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, true))
@@ -4630,6 +4666,87 @@ bool CVerifyDB::VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview,
     LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n", chainActive.Height() - pindexState->nHeight, nGoodTransactions);
 
     return true;
+}
+
+bool RewindMainnetInflationBlock(const CChainParams& chainparams, bool& clearWitnessCaches)
+{
+    LOCK(cs_main);
+
+    clearWitnessCaches = false;
+    if (!IsMainnet(chainparams))
+        return true;
+    BlockMap::iterator mi = mapBlockIndex.find(MAINNET_INFLATION_BLOCK);
+    if (mi == mapBlockIndex.end())
+        return true;
+    CBlockIndex* pindexBad = mi->second;
+
+    // The wallet may have followed the inflation chain even when the chain
+    // state on disk has not (after an unclean shutdown), and then its best
+    // block and witnesses point into blocks that are gone. Rebuild them with
+    // a rescan the first time the block is marked invalid.
+    if (!(pindexBad->nStatus & BLOCK_FAILED_VALID))
+        clearWitnessCaches = true;
+
+    // Mark the block and everything built on it as invalid. The flags are
+    // written to the block index, so this happens only once.
+    for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++) {
+        CBlockIndex* pindex = it->second;
+        if (pindex->GetAncestor(pindexBad->nHeight) != pindexBad)
+            continue;
+        pindex->nStatus |= (pindex == pindexBad) ? BLOCK_FAILED_VALID : BLOCK_FAILED_CHILD;
+        setDirtyBlockIndex.insert(pindex);
+        setBlockIndexCandidates.erase(pindex);
+    }
+
+    CValidationState state;
+    if (chainActive.Contains(pindexBad)) {
+        LogPrintf("*** Rewinding %d blocks to remove the mainnet inflation block %s at height %d\n",
+            chainActive.Height() - pindexBad->nHeight + 1, MAINNET_INFLATION_BLOCK.GetHex(), pindexBad->nHeight);
+
+        std::vector<const CBlockIndex*> vRemoved;
+        for (const CBlockIndex* pindex = chainActive.Tip(); pindex != pindexBad->pprev; pindex = pindex->pprev)
+            vRemoved.push_back(pindex);
+
+        // Disconnect without wallet notifications, like RewindBlockIndex. The
+        // rewind is deeper than WITNESS_CACHE_SIZE, so the wallet rebuilds its
+        // witnesses with a rescan instead.
+        while (chainActive.Contains(pindexBad)) {
+            if (!DisconnectTip(state, chainparams, true))
+                return error("%s: unable to disconnect block at height %d", __func__, chainActive.Height());
+            if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC))
+                return false;
+        }
+
+        // Return the other transactions of the removed blocks to the mempool,
+        // in block order, so miners confirm them again. The inflation
+        // transactions fail the JoinSplit rule, and transactions spending
+        // their outputs have missing inputs. Shielded transactions anchored
+        // after block 1860180 have missing anchors and must be sent again.
+        int nReturned = 0;
+        for (auto it = vRemoved.rbegin(); it != vRemoved.rend(); ++it) {
+            CBlock block;
+            if (!ReadBlockFromDisk(block, *it, chainparams.GetConsensus()))
+                return AbortNode(state, "Failed to read block");
+            for (const CTransaction& tx : block.vtx) {
+                CValidationState stateDummy;
+                if (!tx.IsCoinBase() && AcceptToMemoryPool(mempool, stateDummy, tx, false, NULL, NULL))
+                    nReturned++;
+            }
+        }
+        LogPrintf("*** Returned %d transactions from the removed blocks to the mempool\n", nReturned);
+
+        for (BlockMap::iterator it = mapBlockIndex.begin(); it != mapBlockIndex.end(); it++) {
+            CBlockIndex* pindex = it->second;
+            if (pindex->IsValid(BLOCK_VALID_TRANSACTIONS) && pindex->nChainTx &&
+                !setBlockIndexCandidates.value_comp()(pindex, chainActive.Tip()))
+                setBlockIndexCandidates.insert(pindex);
+        }
+    }
+
+    if (pindexBestHeader && IsOnMainnetInflationChain(pindexBestHeader, chainparams))
+        pindexBestHeader = chainActive.Tip();
+
+    return FlushStateToDisk(state, FLUSH_STATE_ALWAYS);
 }
 
 bool RewindBlockIndex(const CChainParams& chainparams, bool& clearWitnessCaches)

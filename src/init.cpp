@@ -1659,6 +1659,12 @@ bool AppInit2()
                         strLoadError = _("Unable to rewind the database to a pre-upgrade state. You will need to redownload the blockchain");
                         break;
                     }
+                    bool clearForInflationRewind = false;
+                    if (!RewindMainnetInflationBlock(chainparams, clearForInflationRewind)) {
+                        strLoadError = _("Unable to rewind past the invalid block at height 1860181. You will need to redownload the blockchain");
+                        break;
+                    }
+                    clearWitnessCaches = clearWitnessCaches || clearForInflationRewind;
                 }
 
                 uiInterface.InitMessage(_("Verifying blocks..."));
